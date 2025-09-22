@@ -1,0 +1,1189 @@
+[
+  {
+    "date": "2025-09-22",
+    "source": "onboarding",
+    "data": [
+      {
+        "train_id": "R001",
+        "date": "2025-09-22",
+        "fitness_certificates": {
+          "Train ID": "R001",
+          "Rolling Stock Valid": "2025-09-19",
+          "Signalling Valid": "2025-09-17",
+          "Telecom Valid": "2025-09-18"
+        },
+        "job_cards": [],
+        "branding": {
+          "Train ID": "R001",
+          "Wrap ID": "W-41",
+          "Advertiser": "Bank A",
+          "Exposure Hours Today": 3,
+          "SLA Hours Month": 97,
+          "Preferred Times": "09:30-12:30",
+          "Audience Profile": "{\"office\":0.47,\"students\":0.32,\"shoppers\":0.21}"
+        },
+        "mileage": {
+          "Train ID": "R001",
+          "Date": "2025-09-22",
+          "Km Travelled": 208
+        },
+        "cleaning": {
+          "Train ID": "R001",
+          "Last Deep Cleaned Date": "2025-09-01"
+        },
+        "stabling": {
+          "Train ID": "R001",
+          "Current Bay": 1.0,
+          "Position": "Rear",
+          "Recommended Departure": "2025-09-22 06:31",
+          "Priority": 2.0
+        },
+        "depot": {}
+      },
+      {
+        "train_id": "R002",
+        "date": "2025-09-22",
+        "fitness_certificates": {
+          "Train ID": "R002",
+          "Rolling Stock Valid": "2025-09-14",
+          "Signalling Valid": "2025-09-22",
+          "Telecom Valid": "2025-09-14"
+        },
+        "job_cards": [],
+        "branding": {
+          "Train ID": "R002",
+          "Wrap ID": "W-44",
+          "Advertiser": "Fitness F",
+          "Exposure Hours Today": 3,
+          "SLA Hours Month": 117,
+          "Preferred Times": "15:30-18:30",
+          "Audience Profile": "{\"office\":0.41,\"students\":0.13,\"shoppers\":0.46}"
+        },
+        "mileage": {
+          "Train ID": "R002",
+          "Date": "2025-09-22",
+          "Km Travelled": 224
+        },
+        "cleaning": {
+          "Train ID": "R002",
+          "Last Deep Cleaned Date": "2025-09-18"
+        },
+        "stabling": {
+          "Train ID": "R002",
+          "Current Bay": 1.0,
+          "Position": "Front",
+          "Recommended Departure": "2025-09-22 07:15",
+          "Priority": 4.0
+        },
+        "depot": {}
+      },
+      {
+        "train_id": "R003",
+        "date": "2025-09-22",
+        "fitness_certificates": {
+          "Train ID": "R003",
+          "Rolling Stock Valid": "2025-09-22",
+          "Signalling Valid": "2025-09-24",
+          "Telecom Valid": "2025-09-22"
+        },
+        "job_cards": [
+          {
+            "Job ID": "J101",
+            "Train ID": "R003",
+            "Status": "Open",
+            "Severity": "Medium",
+            "Description": "HVAC maintenance",
+            "Created At": "2025-09-11",
+            "Expected Completion": "2025-09-16"
+          },
+          {
+            "Job ID": "J102",
+            "Train ID": "R003",
+            "Status": "Open",
+            "Severity": "Critical",
+            "Description": "Brake inspection",
+            "Created At": "2025-09-16",
+            "Expected Completion": "2025-09-17"
+          }
+        ],
+        "branding": {
+          "Train ID": "R003",
+          "Wrap ID": "W-15",
+          "Advertiser": "Food E",
+          "Exposure Hours Today": 3,
+          "SLA Hours Month": 115,
+          "Preferred Times": "09:30-12:30",
+          "Audience Profile": "{\"office\":0.61,\"students\":0.31,\"shoppers\":0.08}"
+        },
+        "mileage": {
+          "Train ID": "R003",
+          "Date": "2025-09-22",
+          "Km Travelled": 222
+        },
+        "cleaning": {
+          "Train ID": "R003",
+          "Last Deep Cleaned Date": "2025-09-21"
+        },
+        "stabling": {
+          "Train ID": "R003",
+          "Current Bay": 1.0,
+          "Position": "Front",
+          "Recommended Departure": "2025-09-22 06:29",
+          "Priority": 5.0
+        },
+        "depot": {}
+      },
+      {
+        "train_id": "R004",
+        "date": "2025-09-22",
+        "fitness_certificates": {
+          "Train ID": "R004",
+          "Rolling Stock Valid": "2025-09-13",
+          "Signalling Valid": "2025-09-20",
+          "Telecom Valid": "2025-09-13"
+        },
+        "job_cards": [
+          {
+            "Job ID": "J103",
+            "Train ID": "R004",
+            "Status": "Open",
+            "Severity": "Low",
+            "Description": "Bogies lubrication",
+            "Created At": "2025-09-11",
+            "Expected Completion": "2025-09-16"
+          }
+        ],
+        "branding": {
+          "Train ID": "R004",
+          "Wrap ID": "W-27",
+          "Advertiser": "E-commerce B",
+          "Exposure Hours Today": 6,
+          "SLA Hours Month": 117,
+          "Preferred Times": "12:30-15:30",
+          "Audience Profile": "{\"office\":0.64,\"students\":0.1,\"shoppers\":0.26}"
+        },
+        "mileage": {
+          "Train ID": "R004",
+          "Date": "2025-09-22",
+          "Km Travelled": 196
+        },
+        "cleaning": {
+          "Train ID": "R004",
+          "Last Deep Cleaned Date": "2025-08-29"
+        },
+        "stabling": {
+          "Train ID": "R004",
+          "Current Bay": 5.0,
+          "Position": "Front",
+          "Recommended Departure": "2025-09-22 07:31",
+          "Priority": 5.0
+        },
+        "depot": {}
+      },
+      {
+        "train_id": "R005",
+        "date": "2025-09-22",
+        "fitness_certificates": {
+          "Train ID": "R005",
+          "Rolling Stock Valid": "2025-09-21",
+          "Signalling Valid": "2025-09-17",
+          "Telecom Valid": "2025-09-24"
+        },
+        "job_cards": [
+          {
+            "Job ID": "J104",
+            "Train ID": "R005",
+            "Status": "Open",
+            "Severity": "High",
+            "Description": "Brake inspection",
+            "Created At": "2025-09-15",
+            "Expected Completion": "2025-09-19"
+          },
+          {
+            "Job ID": "J105",
+            "Train ID": "R005",
+            "Status": "Open",
+            "Severity": "Medium",
+            "Description": "Bogies lubrication",
+            "Created At": "2025-09-14",
+            "Expected Completion": "2025-09-15"
+          },
+          {
+            "Job ID": "J106",
+            "Train ID": "R005",
+            "Status": "Open",
+            "Severity": "Low",
+            "Description": "Telecom/PA system maintenance",
+            "Created At": "2025-09-14",
+            "Expected Completion": "2025-09-19"
+          }
+        ],
+        "branding": {
+          "Train ID": "R005",
+          "Wrap ID": "W-11",
+          "Advertiser": "Fitness F",
+          "Exposure Hours Today": 6,
+          "SLA Hours Month": 101,
+          "Preferred Times": "12:30-15:30",
+          "Audience Profile": "{\"office\":0.45,\"students\":0.39,\"shoppers\":0.16}"
+        },
+        "mileage": {
+          "Train ID": "R005",
+          "Date": "2025-09-22",
+          "Km Travelled": 184
+        },
+        "cleaning": {
+          "Train ID": "R005",
+          "Last Deep Cleaned Date": "2025-09-13"
+        },
+        "stabling": {
+          "Train ID": "R005",
+          "Current Bay": 4.0,
+          "Position": "Rear",
+          "Recommended Departure": "2025-09-22 07:43",
+          "Priority": 1.0
+        },
+        "depot": {}
+      },
+      {
+        "train_id": "R006",
+        "date": "2025-09-22",
+        "fitness_certificates": {
+          "Train ID": "R006",
+          "Rolling Stock Valid": "2025-09-20",
+          "Signalling Valid": "2025-09-13",
+          "Telecom Valid": "2025-09-22"
+        },
+        "job_cards": [
+          {
+            "Job ID": "J107",
+            "Train ID": "R006",
+            "Status": "Closed",
+            "Severity": "Critical",
+            "Description": "HVAC maintenance",
+            "Created At": "2025-09-13",
+            "Expected Completion": "2025-09-14"
+          },
+          {
+            "Job ID": "J108",
+            "Train ID": "R006",
+            "Status": "Open",
+            "Severity": "High",
+            "Description": "Bogies lubrication",
+            "Created At": "2025-09-11",
+            "Expected Completion": "2025-09-12"
+          }
+        ],
+        "branding": {
+          "Train ID": "R006",
+          "Wrap ID": "W-22",
+          "Advertiser": "Bank A",
+          "Exposure Hours Today": 3,
+          "SLA Hours Month": 104,
+          "Preferred Times": "06:30-09:30",
+          "Audience Profile": "{\"office\":0.51,\"students\":0.2,\"shoppers\":0.29}"
+        },
+        "mileage": {
+          "Train ID": "R006",
+          "Date": "2025-09-22",
+          "Km Travelled": 232
+        },
+        "cleaning": {
+          "Train ID": "R006",
+          "Last Deep Cleaned Date": "2025-09-14"
+        },
+        "stabling": {
+          "Train ID": "R006",
+          "Current Bay": NaN,
+          "Position": "Departed",
+          "Recommended Departure": null,
+          "Priority": NaN
+        },
+        "depot": {}
+      },
+      {
+        "train_id": "R007",
+        "date": "2025-09-22",
+        "fitness_certificates": {
+          "Train ID": "R007",
+          "Rolling Stock Valid": "2025-09-15",
+          "Signalling Valid": "2025-09-16",
+          "Telecom Valid": "2025-09-14"
+        },
+        "job_cards": [],
+        "branding": {
+          "Train ID": "R007",
+          "Wrap ID": "W-17",
+          "Advertiser": "Bank A",
+          "Exposure Hours Today": 6,
+          "SLA Hours Month": 114,
+          "Preferred Times": "06:30-09:30",
+          "Audience Profile": "{\"office\":0.69,\"students\":0.21,\"shoppers\":0.1}"
+        },
+        "mileage": {
+          "Train ID": "R007",
+          "Date": "2025-09-22",
+          "Km Travelled": 198
+        },
+        "cleaning": {
+          "Train ID": "R007",
+          "Last Deep Cleaned Date": "2025-09-14"
+        },
+        "stabling": {
+          "Train ID": "R007",
+          "Current Bay": 4.0,
+          "Position": "Rear",
+          "Recommended Departure": "2025-09-22 06:35",
+          "Priority": 2.0
+        },
+        "depot": {}
+      },
+      {
+        "train_id": "R008",
+        "date": "2025-09-22",
+        "fitness_certificates": {
+          "Train ID": "R008",
+          "Rolling Stock Valid": "2025-09-17",
+          "Signalling Valid": "2025-09-26",
+          "Telecom Valid": "2025-09-25"
+        },
+        "job_cards": [
+          {
+            "Job ID": "J109",
+            "Train ID": "R008",
+            "Status": "Closed",
+            "Severity": "Low",
+            "Description": "Bogies lubrication",
+            "Created At": "2025-09-16",
+            "Expected Completion": "2025-09-20"
+          }
+        ],
+        "branding": {
+          "Train ID": "R008",
+          "Wrap ID": "W-36",
+          "Advertiser": "Retail C",
+          "Exposure Hours Today": 5,
+          "SLA Hours Month": 116,
+          "Preferred Times": "09:30-12:30",
+          "Audience Profile": "{\"office\":0.61,\"students\":0.11,\"shoppers\":0.28}"
+        },
+        "mileage": {
+          "Train ID": "R008",
+          "Date": "2025-09-22",
+          "Km Travelled": 233
+        },
+        "cleaning": {
+          "Train ID": "R008",
+          "Last Deep Cleaned Date": "2025-09-17"
+        },
+        "stabling": {
+          "Train ID": "R008",
+          "Current Bay": 3.0,
+          "Position": "Front",
+          "Recommended Departure": "2025-09-22 06:11",
+          "Priority": 4.0
+        },
+        "depot": {}
+      },
+      {
+        "train_id": "R009",
+        "date": "2025-09-22",
+        "fitness_certificates": {
+          "Train ID": "R009",
+          "Rolling Stock Valid": "2025-09-13",
+          "Signalling Valid": "2025-09-18",
+          "Telecom Valid": "2025-09-13"
+        },
+        "job_cards": [
+          {
+            "Job ID": "J110",
+            "Train ID": "R009",
+            "Status": "Open",
+            "Severity": "High",
+            "Description": "Door mechanism check",
+            "Created At": "2025-09-14",
+            "Expected Completion": "2025-09-17"
+          },
+          {
+            "Job ID": "J111",
+            "Train ID": "R009",
+            "Status": "Open",
+            "Severity": "High",
+            "Description": "HVAC maintenance",
+            "Created At": "2025-09-12",
+            "Expected Completion": "2025-09-14"
+          }
+        ],
+        "branding": {
+          "Train ID": "R009",
+          "Wrap ID": "W-15",
+          "Advertiser": "Retail C",
+          "Exposure Hours Today": 3,
+          "SLA Hours Month": 94,
+          "Preferred Times": "06:30-09:30",
+          "Audience Profile": "{\"office\":0.51,\"students\":0.24,\"shoppers\":0.25}"
+        },
+        "mileage": {
+          "Train ID": "R009",
+          "Date": "2025-09-22",
+          "Km Travelled": 239
+        },
+        "cleaning": {
+          "Train ID": "R009",
+          "Last Deep Cleaned Date": "2025-08-29"
+        },
+        "stabling": {
+          "Train ID": "R009",
+          "Current Bay": 3.0,
+          "Position": "Rear",
+          "Recommended Departure": "2025-09-22 07:43",
+          "Priority": 1.0
+        },
+        "depot": {}
+      },
+      {
+        "train_id": "R010",
+        "date": "2025-09-22",
+        "fitness_certificates": {
+          "Train ID": "R010",
+          "Rolling Stock Valid": "2025-09-24",
+          "Signalling Valid": "2025-09-13",
+          "Telecom Valid": "2025-09-13"
+        },
+        "job_cards": [
+          {
+            "Job ID": "J112",
+            "Train ID": "R010",
+            "Status": "Open",
+            "Severity": "Critical",
+            "Description": "Signalling system check",
+            "Created At": "2025-09-11",
+            "Expected Completion": "2025-09-16"
+          }
+        ],
+        "branding": {
+          "Train ID": "R010",
+          "Wrap ID": "W-24",
+          "Advertiser": "E-commerce B",
+          "Exposure Hours Today": 5,
+          "SLA Hours Month": 102,
+          "Preferred Times": "09:30-12:30",
+          "Audience Profile": "{\"office\":0.6,\"students\":0.31,\"shoppers\":0.09}"
+        },
+        "mileage": {
+          "Train ID": "R010",
+          "Date": "2025-09-22",
+          "Km Travelled": 205
+        },
+        "cleaning": {
+          "Train ID": "R010",
+          "Last Deep Cleaned Date": "2025-09-18"
+        },
+        "stabling": {
+          "Train ID": "R010",
+          "Current Bay": NaN,
+          "Position": "Departed",
+          "Recommended Departure": null,
+          "Priority": NaN
+        },
+        "depot": {}
+      },
+      {
+        "train_id": "R011",
+        "date": "2025-09-22",
+        "fitness_certificates": {
+          "Train ID": "R011",
+          "Rolling Stock Valid": "2025-09-22",
+          "Signalling Valid": "2025-09-24",
+          "Telecom Valid": "2025-09-26"
+        },
+        "job_cards": [
+          {
+            "Job ID": "J113",
+            "Train ID": "R011",
+            "Status": "Closed",
+            "Severity": "Low",
+            "Description": "Bogies lubrication",
+            "Created At": "2025-09-16",
+            "Expected Completion": "2025-09-19"
+          }
+        ],
+        "branding": {
+          "Train ID": "R011",
+          "Wrap ID": "W-44",
+          "Advertiser": "Fitness F",
+          "Exposure Hours Today": 3,
+          "SLA Hours Month": 118,
+          "Preferred Times": "09:30-12:30",
+          "Audience Profile": "{\"office\":0.56,\"students\":0.17,\"shoppers\":0.27}"
+        },
+        "mileage": {
+          "Train ID": "R011",
+          "Date": "2025-09-22",
+          "Km Travelled": 181
+        },
+        "cleaning": {
+          "Train ID": "R011",
+          "Last Deep Cleaned Date": "2025-08-31"
+        },
+        "stabling": {
+          "Train ID": "R011",
+          "Current Bay": 4.0,
+          "Position": "Front",
+          "Recommended Departure": "2025-09-22 07:10",
+          "Priority": 3.0
+        },
+        "depot": {}
+      },
+      {
+        "train_id": "R012",
+        "date": "2025-09-22",
+        "fitness_certificates": {
+          "Train ID": "R012",
+          "Rolling Stock Valid": "2025-09-13",
+          "Signalling Valid": "2025-09-26",
+          "Telecom Valid": "2025-09-26"
+        },
+        "job_cards": [
+          {
+            "Job ID": "J114",
+            "Train ID": "R012",
+            "Status": "Open",
+            "Severity": "Medium",
+            "Description": "Telecom/PA system maintenance",
+            "Created At": "2025-09-15",
+            "Expected Completion": "2025-09-19"
+          },
+          {
+            "Job ID": "J115",
+            "Train ID": "R012",
+            "Status": "Open",
+            "Severity": "Critical",
+            "Description": "Door mechanism check",
+            "Created At": "2025-09-14",
+            "Expected Completion": "2025-09-16"
+          },
+          {
+            "Job ID": "J116",
+            "Train ID": "R012",
+            "Status": "Open",
+            "Severity": "High",
+            "Description": "Interior cleaning & detailing",
+            "Created At": "2025-09-12",
+            "Expected Completion": "2025-09-16"
+          }
+        ],
+        "branding": {
+          "Train ID": "R012",
+          "Wrap ID": "W-30",
+          "Advertiser": "Telecom D",
+          "Exposure Hours Today": 5,
+          "SLA Hours Month": 120,
+          "Preferred Times": "18:30-21:30",
+          "Audience Profile": "{\"office\":0.47,\"students\":0.2,\"shoppers\":0.33}"
+        },
+        "mileage": {
+          "Train ID": "R012",
+          "Date": "2025-09-22",
+          "Km Travelled": 214
+        },
+        "cleaning": {
+          "Train ID": "R012",
+          "Last Deep Cleaned Date": "2025-08-29"
+        },
+        "stabling": {
+          "Train ID": "R012",
+          "Current Bay": NaN,
+          "Position": "Departed",
+          "Recommended Departure": null,
+          "Priority": NaN
+        },
+        "depot": {}
+      },
+      {
+        "train_id": "R013",
+        "date": "2025-09-22",
+        "fitness_certificates": {
+          "Train ID": "R013",
+          "Rolling Stock Valid": "2025-09-22",
+          "Signalling Valid": "2025-09-23",
+          "Telecom Valid": "2025-09-16"
+        },
+        "job_cards": [
+          {
+            "Job ID": "J117",
+            "Train ID": "R013",
+            "Status": "Open",
+            "Severity": "Medium",
+            "Description": "Wheel alignment check",
+            "Created At": "2025-09-16",
+            "Expected Completion": "2025-09-17"
+          },
+          {
+            "Job ID": "J118",
+            "Train ID": "R013",
+            "Status": "Closed",
+            "Severity": "Medium",
+            "Description": "Door mechanism check",
+            "Created At": "2025-09-11",
+            "Expected Completion": "2025-09-15"
+          }
+        ],
+        "branding": {
+          "Train ID": "R013",
+          "Wrap ID": "W-50",
+          "Advertiser": "Bank A",
+          "Exposure Hours Today": 4,
+          "SLA Hours Month": 82,
+          "Preferred Times": "12:30-15:30",
+          "Audience Profile": "{\"office\":0.52,\"students\":0.12,\"shoppers\":0.36}"
+        },
+        "mileage": {
+          "Train ID": "R013",
+          "Date": "2025-09-22",
+          "Km Travelled": 197
+        },
+        "cleaning": {
+          "Train ID": "R013",
+          "Last Deep Cleaned Date": "2025-08-24"
+        },
+        "stabling": {
+          "Train ID": "R013",
+          "Current Bay": 3.0,
+          "Position": "Front",
+          "Recommended Departure": "2025-09-22 07:30",
+          "Priority": 1.0
+        },
+        "depot": {}
+      },
+      {
+        "train_id": "R014",
+        "date": "2025-09-22",
+        "fitness_certificates": {
+          "Train ID": "R014",
+          "Rolling Stock Valid": "2025-09-23",
+          "Signalling Valid": "2025-09-25",
+          "Telecom Valid": "2025-09-25"
+        },
+        "job_cards": [],
+        "branding": {
+          "Train ID": "R014",
+          "Wrap ID": "W-37",
+          "Advertiser": "Fitness F",
+          "Exposure Hours Today": 5,
+          "SLA Hours Month": 93,
+          "Preferred Times": "15:30-18:30",
+          "Audience Profile": "{\"office\":0.52,\"students\":0.37,\"shoppers\":0.11}"
+        },
+        "mileage": {
+          "Train ID": "R014",
+          "Date": "2025-09-22",
+          "Km Travelled": 199
+        },
+        "cleaning": {
+          "Train ID": "R014",
+          "Last Deep Cleaned Date": "2025-09-04"
+        },
+        "stabling": {
+          "Train ID": "R014",
+          "Current Bay": 2.0,
+          "Position": "Rear",
+          "Recommended Departure": "2025-09-22 06:10",
+          "Priority": 2.0
+        },
+        "depot": {}
+      },
+      {
+        "train_id": "R015",
+        "date": "2025-09-22",
+        "fitness_certificates": {
+          "Train ID": "R015",
+          "Rolling Stock Valid": "2025-09-19",
+          "Signalling Valid": "2025-09-16",
+          "Telecom Valid": "2025-09-20"
+        },
+        "job_cards": [
+          {
+            "Job ID": "J119",
+            "Train ID": "R015",
+            "Status": "Open",
+            "Severity": "Critical",
+            "Description": "Signalling system check",
+            "Created At": "2025-09-12",
+            "Expected Completion": "2025-09-13"
+          },
+          {
+            "Job ID": "J120",
+            "Train ID": "R015",
+            "Status": "Closed",
+            "Severity": "Low",
+            "Description": "Signalling system check",
+            "Created At": "2025-09-11",
+            "Expected Completion": "2025-09-14"
+          },
+          {
+            "Job ID": "J121",
+            "Train ID": "R015",
+            "Status": "Open",
+            "Severity": "Critical",
+            "Description": "Door mechanism check",
+            "Created At": "2025-09-13",
+            "Expected Completion": "2025-09-14"
+          }
+        ],
+        "branding": {
+          "Train ID": "R015",
+          "Wrap ID": "W-30",
+          "Advertiser": "E-commerce B",
+          "Exposure Hours Today": 5,
+          "SLA Hours Month": 88,
+          "Preferred Times": "09:30-12:30",
+          "Audience Profile": "{\"office\":0.62,\"students\":0.26,\"shoppers\":0.12}"
+        },
+        "mileage": {
+          "Train ID": "R015",
+          "Date": "2025-09-22",
+          "Km Travelled": 197
+        },
+        "cleaning": {
+          "Train ID": "R015",
+          "Last Deep Cleaned Date": "2025-09-19"
+        },
+        "stabling": {
+          "Train ID": "R015",
+          "Current Bay": NaN,
+          "Position": "Departed",
+          "Recommended Departure": null,
+          "Priority": NaN
+        },
+        "depot": {}
+      },
+      {
+        "train_id": "R016",
+        "date": "2025-09-22",
+        "fitness_certificates": {
+          "Train ID": "R016",
+          "Rolling Stock Valid": "2025-09-16",
+          "Signalling Valid": "2025-09-25",
+          "Telecom Valid": "2025-09-19"
+        },
+        "job_cards": [
+          {
+            "Job ID": "J122",
+            "Train ID": "R016",
+            "Status": "Closed",
+            "Severity": "Medium",
+            "Description": "HVAC maintenance",
+            "Created At": "2025-09-11",
+            "Expected Completion": "2025-09-14"
+          },
+          {
+            "Job ID": "J123",
+            "Train ID": "R016",
+            "Status": "Closed",
+            "Severity": "Medium",
+            "Description": "Door mechanism check",
+            "Created At": "2025-09-14",
+            "Expected Completion": "2025-09-16"
+          }
+        ],
+        "branding": {
+          "Train ID": "R016",
+          "Wrap ID": "W-48",
+          "Advertiser": "Food E",
+          "Exposure Hours Today": 6,
+          "SLA Hours Month": 117,
+          "Preferred Times": "15:30-18:30",
+          "Audience Profile": "{\"office\":0.51,\"students\":0.4,\"shoppers\":0.09}"
+        },
+        "mileage": {
+          "Train ID": "R016",
+          "Date": "2025-09-22",
+          "Km Travelled": 204
+        },
+        "cleaning": {
+          "Train ID": "R016",
+          "Last Deep Cleaned Date": "2025-09-03"
+        },
+        "stabling": {
+          "Train ID": "R016",
+          "Current Bay": 4.0,
+          "Position": "Rear",
+          "Recommended Departure": "2025-09-22 06:20",
+          "Priority": 3.0
+        },
+        "depot": {}
+      },
+      {
+        "train_id": "R017",
+        "date": "2025-09-22",
+        "fitness_certificates": {
+          "Train ID": "R017",
+          "Rolling Stock Valid": "2025-09-26",
+          "Signalling Valid": "2025-09-15",
+          "Telecom Valid": "2025-09-24"
+        },
+        "job_cards": [],
+        "branding": {
+          "Train ID": "R017",
+          "Wrap ID": "W-09",
+          "Advertiser": "Food E",
+          "Exposure Hours Today": 6,
+          "SLA Hours Month": 85,
+          "Preferred Times": "06:30-09:30",
+          "Audience Profile": "{\"office\":0.66,\"students\":0.15,\"shoppers\":0.19}"
+        },
+        "mileage": {
+          "Train ID": "R017",
+          "Date": "2025-09-22",
+          "Km Travelled": 235
+        },
+        "cleaning": {
+          "Train ID": "R017",
+          "Last Deep Cleaned Date": "2025-09-08"
+        },
+        "stabling": {
+          "Train ID": "R017",
+          "Current Bay": 3.0,
+          "Position": "Front",
+          "Recommended Departure": "2025-09-22 07:17",
+          "Priority": 2.0
+        },
+        "depot": {}
+      },
+      {
+        "train_id": "R018",
+        "date": "2025-09-22",
+        "fitness_certificates": {
+          "Train ID": "R018",
+          "Rolling Stock Valid": "2025-09-16",
+          "Signalling Valid": "2025-09-20",
+          "Telecom Valid": "2025-09-18"
+        },
+        "job_cards": [
+          {
+            "Job ID": "J124",
+            "Train ID": "R018",
+            "Status": "Open",
+            "Severity": "Low",
+            "Description": "Telecom/PA system maintenance",
+            "Created At": "2025-09-14",
+            "Expected Completion": "2025-09-16"
+          },
+          {
+            "Job ID": "J125",
+            "Train ID": "R018",
+            "Status": "Open",
+            "Severity": "Low",
+            "Description": "HVAC maintenance",
+            "Created At": "2025-09-11",
+            "Expected Completion": "2025-09-15"
+          }
+        ],
+        "branding": {
+          "Train ID": "R018",
+          "Wrap ID": "W-11",
+          "Advertiser": "Fitness F",
+          "Exposure Hours Today": 6,
+          "SLA Hours Month": 118,
+          "Preferred Times": "06:30-09:30",
+          "Audience Profile": "{\"office\":0.52,\"students\":0.28,\"shoppers\":0.2}"
+        },
+        "mileage": {
+          "Train ID": "R018",
+          "Date": "2025-09-22",
+          "Km Travelled": 217
+        },
+        "cleaning": {
+          "Train ID": "R018",
+          "Last Deep Cleaned Date": "2025-09-20"
+        },
+        "stabling": {
+          "Train ID": "R018",
+          "Current Bay": 2.0,
+          "Position": "Front",
+          "Recommended Departure": "2025-09-22 06:59",
+          "Priority": 4.0
+        },
+        "depot": {}
+      },
+      {
+        "train_id": "R019",
+        "date": "2025-09-22",
+        "fitness_certificates": {
+          "Train ID": "R019",
+          "Rolling Stock Valid": "2025-09-22",
+          "Signalling Valid": "2025-09-21",
+          "Telecom Valid": "2025-09-13"
+        },
+        "job_cards": [],
+        "branding": {
+          "Train ID": "R019",
+          "Wrap ID": "W-30",
+          "Advertiser": "Food E",
+          "Exposure Hours Today": 5,
+          "SLA Hours Month": 115,
+          "Preferred Times": "06:30-09:30",
+          "Audience Profile": "{\"office\":0.6,\"students\":0.13,\"shoppers\":0.27}"
+        },
+        "mileage": {
+          "Train ID": "R019",
+          "Date": "2025-09-22",
+          "Km Travelled": 188
+        },
+        "cleaning": {
+          "Train ID": "R019",
+          "Last Deep Cleaned Date": "2025-09-21"
+        },
+        "stabling": {
+          "Train ID": "R019",
+          "Current Bay": 5.0,
+          "Position": "Front",
+          "Recommended Departure": "2025-09-22 07:27",
+          "Priority": 3.0
+        },
+        "depot": {}
+      },
+      {
+        "train_id": "R020",
+        "date": "2025-09-22",
+        "fitness_certificates": {
+          "Train ID": "R020",
+          "Rolling Stock Valid": "2025-09-21",
+          "Signalling Valid": "2025-09-14",
+          "Telecom Valid": "2025-09-15"
+        },
+        "job_cards": [
+          {
+            "Job ID": "J126",
+            "Train ID": "R020",
+            "Status": "Open",
+            "Severity": "Critical",
+            "Description": "Door mechanism check",
+            "Created At": "2025-09-14",
+            "Expected Completion": "2025-09-19"
+          }
+        ],
+        "branding": {
+          "Train ID": "R020",
+          "Wrap ID": "W-35",
+          "Advertiser": "Retail C",
+          "Exposure Hours Today": 5,
+          "SLA Hours Month": 87,
+          "Preferred Times": "12:30-15:30",
+          "Audience Profile": "{\"office\":0.53,\"students\":0.24,\"shoppers\":0.23}"
+        },
+        "mileage": {
+          "Train ID": "R020",
+          "Date": "2025-09-22",
+          "Km Travelled": 221
+        },
+        "cleaning": {
+          "Train ID": "R020",
+          "Last Deep Cleaned Date": "2025-09-19"
+        },
+        "stabling": {
+          "Train ID": "R020",
+          "Current Bay": NaN,
+          "Position": "Departed",
+          "Recommended Departure": null,
+          "Priority": NaN
+        },
+        "depot": {}
+      },
+      {
+        "train_id": "R021",
+        "date": "2025-09-22",
+        "fitness_certificates": {
+          "Train ID": "R021",
+          "Rolling Stock Valid": "2025-09-21",
+          "Signalling Valid": "2025-09-16",
+          "Telecom Valid": "2025-09-19"
+        },
+        "job_cards": [
+          {
+            "Job ID": "J127",
+            "Train ID": "R021",
+            "Status": "Closed",
+            "Severity": "Medium",
+            "Description": "Signalling system check",
+            "Created At": "2025-09-13",
+            "Expected Completion": "2025-09-16"
+          },
+          {
+            "Job ID": "J128",
+            "Train ID": "R021",
+            "Status": "Open",
+            "Severity": "Critical",
+            "Description": "HVAC maintenance",
+            "Created At": "2025-09-15",
+            "Expected Completion": "2025-09-17"
+          },
+          {
+            "Job ID": "J129",
+            "Train ID": "R021",
+            "Status": "Open",
+            "Severity": "Low",
+            "Description": "Bogies lubrication",
+            "Created At": "2025-09-12",
+            "Expected Completion": "2025-09-14"
+          }
+        ],
+        "branding": {
+          "Train ID": "R021",
+          "Wrap ID": "W-47",
+          "Advertiser": "Fitness F",
+          "Exposure Hours Today": 5,
+          "SLA Hours Month": 112,
+          "Preferred Times": "09:30-12:30",
+          "Audience Profile": "{\"office\":0.55,\"students\":0.13,\"shoppers\":0.32}"
+        },
+        "mileage": {
+          "Train ID": "R021",
+          "Date": "2025-09-22",
+          "Km Travelled": 212
+        },
+        "cleaning": {
+          "Train ID": "R021",
+          "Last Deep Cleaned Date": "2025-09-15"
+        },
+        "stabling": {},
+        "depot": {}
+      },
+      {
+        "train_id": "R022",
+        "date": "2025-09-22",
+        "fitness_certificates": {
+          "Train ID": "R022",
+          "Rolling Stock Valid": "2025-09-22",
+          "Signalling Valid": "2025-09-13",
+          "Telecom Valid": "2025-09-14"
+        },
+        "job_cards": [],
+        "branding": {
+          "Train ID": "R022",
+          "Wrap ID": "W-41",
+          "Advertiser": "Retail C",
+          "Exposure Hours Today": 4,
+          "SLA Hours Month": 89,
+          "Preferred Times": "12:30-15:30",
+          "Audience Profile": "{\"office\":0.63,\"students\":0.26,\"shoppers\":0.11}"
+        },
+        "mileage": {
+          "Train ID": "R022",
+          "Date": "2025-09-22",
+          "Km Travelled": 237
+        },
+        "cleaning": {
+          "Train ID": "R022",
+          "Last Deep Cleaned Date": "2025-09-14"
+        },
+        "stabling": {},
+        "depot": {}
+      },
+      {
+        "train_id": "R023",
+        "date": "2025-09-22",
+        "fitness_certificates": {
+          "Train ID": "R023",
+          "Rolling Stock Valid": "2025-09-16",
+          "Signalling Valid": "2025-09-24",
+          "Telecom Valid": "2025-09-14"
+        },
+        "job_cards": [],
+        "branding": {
+          "Train ID": "R023",
+          "Wrap ID": "W-50",
+          "Advertiser": "Food E",
+          "Exposure Hours Today": 3,
+          "SLA Hours Month": 118,
+          "Preferred Times": "12:30-15:30",
+          "Audience Profile": "{\"office\":0.55,\"students\":0.13,\"shoppers\":0.32}"
+        },
+        "mileage": {
+          "Train ID": "R023",
+          "Date": "2025-09-22",
+          "Km Travelled": 238
+        },
+        "cleaning": {
+          "Train ID": "R023",
+          "Last Deep Cleaned Date": "2025-09-05"
+        },
+        "stabling": {},
+        "depot": {}
+      },
+      {
+        "train_id": "R024",
+        "date": "2025-09-22",
+        "fitness_certificates": {
+          "Train ID": "R024",
+          "Rolling Stock Valid": "2025-09-18",
+          "Signalling Valid": "2025-09-14",
+          "Telecom Valid": "2025-09-20"
+        },
+        "job_cards": [],
+        "branding": {
+          "Train ID": "R024",
+          "Wrap ID": "W-24",
+          "Advertiser": "Retail C",
+          "Exposure Hours Today": 4,
+          "SLA Hours Month": 83,
+          "Preferred Times": "09:30-12:30",
+          "Audience Profile": "{\"office\":0.66,\"students\":0.38,\"shoppers\":-0.04}"
+        },
+        "mileage": {
+          "Train ID": "R024",
+          "Date": "2025-09-22",
+          "Km Travelled": 217
+        },
+        "cleaning": {
+          "Train ID": "R024",
+          "Last Deep Cleaned Date": "2025-09-02"
+        },
+        "stabling": {},
+        "depot": {}
+      },
+      {
+        "train_id": "R025",
+        "date": "2025-09-22",
+        "fitness_certificates": {
+          "Train ID": "R025",
+          "Rolling Stock Valid": "2025-09-19",
+          "Signalling Valid": "2025-09-16",
+          "Telecom Valid": "2025-09-26"
+        },
+        "job_cards": [
+          {
+            "Job ID": "J130",
+            "Train ID": "R025",
+            "Status": "Open",
+            "Severity": "Low",
+            "Description": "Telecom/PA system maintenance",
+            "Created At": "2025-09-16",
+            "Expected Completion": "2025-09-21"
+          }
+        ],
+        "branding": {
+          "Train ID": "R025",
+          "Wrap ID": "W-06",
+          "Advertiser": "Fitness F",
+          "Exposure Hours Today": 6,
+          "SLA Hours Month": 84,
+          "Preferred Times": "18:30-21:30",
+          "Audience Profile": "{\"office\":0.63,\"students\":0.14,\"shoppers\":0.23}"
+        },
+        "mileage": {
+          "Train ID": "R025",
+          "Date": "2025-09-22",
+          "Km Travelled": 206
+        },
+        "cleaning": {
+          "Train ID": "R025",
+          "Last Deep Cleaned Date": "2025-09-21"
+        },
+        "stabling": {},
+        "depot": {}
+      }
+    ]
+  }
+]
