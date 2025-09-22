@@ -1,7 +1,8 @@
 from fastapi import APIRouter, HTTPException
-from schemas import NightlyUpdateModel, BrandingAppendModel, DepotDeepCleaningInput
-from config import UNIFIED_JSON_PATH, HISTORICAL_JSON_PATH, DEPOT_JSON_PATH
+from schemas import NightlyUpdateModel, BrandingAppendModel, DepotDeepCleaningInput, ParkingAssignmentModel
+from config import UNIFIED_JSON_PATH, HISTORICAL_JSON_PATH, DEPOT_JSON_PATH, PARKING_JSON_PATH
 import json
+import os
 from datetime import datetime
 
 router = APIRouter()
@@ -177,3 +178,209 @@ def update_deep_cleaning(body: DepotDeepCleaningInput):
 
     return {"message": "Depot deep cleaning updated", "depot": depot}
 
+@router.get("/parking/bays")
+def get_parking_bays():
+    """Return available parking bays with their capacities"""
+    parking_bays = [
+        {"bay_id": "PT01", "type": "stabling", "positions": [1, 2]},
+        {"bay_id": "PT02", "type": "stabling", "positions": [1, 2]},
+        {"bay_id": "PT03", "type": "stabling", "positions": [1, 2]},
+        {"bay_id": "PT04", "type": "stabling", "positions": [1, 2]},
+        {"bay_id": "PT05", "type": "stabling", "positions": [1, 2]},
+        {"bay_id": "PT06", "type": "stabling", "positions": [1, 2]},
+        {"bay_id": "PT07", "type": "stabling", "positions": [1, 2]},
+        {"bay_id": "PT08", "type": "stabling", "positions": [1, 2]},
+        {"bay_id": "PT09", "type": "stabling", "positions": [1, 2]},
+        {"bay_id": "PT10", "type": "stabling", "positions": [1, 2]},
+        {"bay_id": "PT11", "type": "stabling", "positions": [1, 2]},
+        {"bay_id": "PT12", "type": "stabling", "positions": [1, 2]},
+        {"bay_id": "IBL01", "type": "maintenance", "positions": [1]},
+        {"bay_id": "IBL02", "type": "maintenance", "positions": [1]},
+        {"bay_id": "IBL03", "type": "maintenance", "positions": [1]},
+        {"bay_id": "IBL04", "type": "maintenance", "positions": [1]},
+        {"bay_id": "IBL05", "type": "maintenance", "positions": [1]},
+    ]
+    return {"bays": parking_bays}
+
+@router.get("/parking/assignments")
+def get_parking_assignments():
+    """Return all current parking assignments"""
+    try:
+        # Create directory if it doesn't exist
+        os.makedirs(os.path.dirname(PARKING_JSON_PATH), exist_ok=True)
+        
+        if not os.path.exists(PARKING_JSON_PATH):
+            # Create empty parking file if it doesn't exist
+            with open(PARKING_JSON_PATH, "w") as f:
+                json.dump([], f, indent=2)
+            return {"assignments": []}
+        
+        with open(PARKING_JSON_PATH, "r") as f:
+            assignments = json.load(f)
+        
+        # Filter out departed trains (those with departure_time)
+        current_assignments = [a for a in assignments if not a.get("departure_time")]
+        return {"assignments": current_assignments}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error reading parking data: {str(e)}")
+
+@router.post("/parking/assignment")
+def create_parking_assignment(assignment: ParkingAssignmentModel):
+    """Create a new parking assignment"""
+    try:
+        # Create directory if it doesn't exist
+        os.makedirs(os.path.dirname(PARKING_JSON_PATH), exist_ok=True)
+        
+        # Validate bay and position
+        if not validate_bay_position(assignment.bay, assignment.position):
+            raise HTTPException(status_code=400, detail="Invalid bay or position")
+        
+        # Load existing assignments
+        if os.path.exists(PARKING_JSON_PATH):
+            with open(PARKING_JSON_PATH, "r") as f:
+                assignments = json.load(f)
+        else:
+            assignments = []
+        
+        # Check if train already has an active assignment
+        for existing in assignments:
+            if existing["train_id"] == assignment.train_id and not existing.get("departure_time"):
+                raise HTTPException(status_code=400, detail=f"Train {assignment.train_id} already has an active parking assignment")
+        
+        # Check if position is already occupied
+        for existing in assignments:
+            if (existing["bay"] == assignment.bay and 
+                existing["position"] == assignment.position and 
+                not existing.get("departure_time")):
+                raise HTTPException(status_code=400, detail=f"Position {assignment.bay}-{assignment.position} is already occupied")
+        
+        # Add arrival time if not provided
+        assignment_dict = assignment.dict()
+        if not assignment_dict.get("arrival_time"):
+            assignment_dict["arrival_time"] = datetime.now().isoformat()
+        
+        assignments.append(assignment_dict)
+        
+        # Save to file
+        with open(PARKING_JSON_PATH, "w") as f:
+            json.dump(assignments, f, indent=2)
+        
+        return {"message": "Parking assignment created successfully", "assignment": assignment_dict}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error creating parking assignment: {str(e)}")
+
+@router.put("/parking/assignment/{train_id}")
+def update_parking_assignment(train_id: str, assignment: ParkingAssignmentModel):
+    """Update an existing parking assignment"""
+    try:
+        if not os.path.exists(PARKING_JSON_PATH):
+            raise HTTPException(status_code=404, detail="No parking assignments found")
+        
+        # Validate bay and position
+        if not validate_bay_position(assignment.bay, assignment.position):
+            raise HTTPException(status_code=400, detail="Invalid bay or position")
+        
+        with open(PARKING_JSON_PATH, "r") as f:
+            assignments = json.load(f)
+        
+        found = False
+        for i, existing in enumerate(assignments):
+            if existing["train_id"] == train_id and not existing.get("departure_time"):
+                # Check if new position is available (excluding current assignment)
+                for other in assignments:
+                    if (other["train_id"] != train_id and 
+                        other["bay"] == assignment.bay and 
+                        other["position"] == assignment.position and 
+                        not other.get("departure_time")):
+                        raise HTTPException(status_code=400, detail=f"Position {assignment.bay}-{assignment.position} is already occupied")
+                
+                # Update assignment
+                assignment_dict = assignment.dict()
+                assignment_dict["arrival_time"] = existing["arrival_time"]  # Keep original arrival time
+                assignments[i] = assignment_dict
+                found = True
+                break
+        
+        if not found:
+            raise HTTPException(status_code=404, detail=f"No active parking assignment found for train {train_id}")
+        
+        # Save to file
+        with open(PARKING_JSON_PATH, "w") as f:
+            json.dump(assignments, f, indent=2)
+        
+        return {"message": f"Parking assignment updated for train {train_id}", "assignment": assignment_dict}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error updating parking assignment: {str(e)}")
+
+@router.delete("/parking/assignment/{train_id}")
+def delete_parking_assignment(train_id: str):
+    """Remove a parking assignment (mark as departed)"""
+    try:
+        if not os.path.exists(PARKING_JSON_PATH):
+            raise HTTPException(status_code=404, detail="No parking assignments found")
+        
+        with open(PARKING_JSON_PATH, "r") as f:
+            assignments = json.load(f)
+        
+        found = False
+        for i, assignment in enumerate(assignments):
+            if assignment["train_id"] == train_id and not assignment.get("departure_time"):
+                assignments[i]["departure_time"] = datetime.now().isoformat()
+                found = True
+                break
+        
+        if not found:
+            raise HTTPException(status_code=404, detail=f"No active parking assignment found for train {train_id}")
+        
+        # Save to file
+        with open(PARKING_JSON_PATH, "w") as f:
+            json.dump(assignments, f, indent=2)
+        
+        return {"message": f"Parking assignment removed for train {train_id}"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error removing parking assignment: {str(e)}")
+
+# Helper function to validate bay and position
+def validate_bay_position(bay: str, position: int) -> bool:
+    """Validate that the bay and position combination is valid"""
+    try:
+        if bay.startswith("PT"):  # Parking tracks
+            # Extract the number after "PT"
+            track_num_str = bay[2:]
+            if not track_num_str.isdigit():
+                return False
+                
+            track_num = int(track_num_str)
+            if track_num < 1 or track_num > 12:
+                return False
+            if position not in [1, 2]:
+                return False
+                
+        elif bay.startswith("IBL"):  # Maintenance bays
+            # Extract the number after "IBL"
+            bay_num_str = bay[3:]
+            if not bay_num_str.isdigit():
+                return False
+                
+            bay_num = int(bay_num_str)
+            if bay_num < 1 or bay_num > 5:
+                return False
+            if position != 1:  # Maintenance bays have only position 1
+                return False
+        else:
+            return False
+        
+        return True
+        
+    except (ValueError, IndexError):
+        return False

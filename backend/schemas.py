@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from typing import Optional
 
 class DepotMetadata(BaseModel):
     name: str
@@ -47,3 +48,21 @@ class NightlyUpdateModel(BaseModel):
     branding: BrandingModel | None = None
     cleaning: CleaningModel | None = None
     stabling: StablingModel | None = None
+
+class ParkingAssignmentModel(BaseModel):
+    train_id: str
+    bay: str  # PT01, PT02, ..., PT12 or IBL01, IBL02, ..., IBL05
+    position: int  # 1 or 2 for parking tracks, 1-5 for maintenance
+    status: str = "parking"  # parking or maintenance
+    arrival_time: Optional[str] = None
+    departure_time: Optional[str] = None
+    notes: Optional[str] = None
+
+class ParkingAssignmentResponse(BaseModel):
+    train_id: str
+    bay: str
+    position: int
+    status: str
+    arrival_time: str
+    departure_time: Optional[str] = None
+    notes: Optional[str] = None
