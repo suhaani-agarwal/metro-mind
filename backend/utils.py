@@ -3,9 +3,20 @@ import shutil
 import os
 from datetime import datetime
 from config import UPLOAD_DIR, UNIFIED_JSON_PATH, DEPOT_JSON_PATH
+import math
 
 # Ensure the upload directory exists
 os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+def replace_nan_with_none(obj):
+    if isinstance(obj, dict):
+        return {k: replace_nan_with_none(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [replace_nan_with_none(x) for x in obj]
+    elif isinstance(obj, float) and math.isnan(obj):
+        return None
+    else:
+        return obj
 
 def save_uploaded_files(files: dict) -> dict:
     saved_paths = {}
@@ -85,19 +96,19 @@ def build_final_unified_schema(parsed_data: dict):
     for train_id in sorted(train_ids):
         norm_train_id = normalize_tid(train_id)
         train_obj = {
-            "train_id": norm_train_id,
-            "date": today_date,
-            "fitness_certificates": get_train_row(parsed_data.get("fitness_sample", []), norm_train_id),
-            "job_cards": [
-                row for row in parsed_data.get("jobcards_sample", [])
-                if normalize_tid(row.get("Train ID") or row.get("train_id") or row.get("trainid")) == norm_train_id
-            ],
-            "branding": get_train_row(parsed_data.get("branding_sample", []), norm_train_id),
-            "mileage": get_train_row(parsed_data.get("mileage_sample", []), norm_train_id),
-            "cleaning": get_train_row(parsed_data.get("cleaning_sample", []), norm_train_id),
-            "stabling": get_train_row(parsed_data.get("stabling_sample", []), norm_train_id),
-            "depot": depot_info
-        }
+    "train_id": norm_train_id,
+    "date": today_date,
+    "fitness_certificates": replace_nan_with_none(get_train_row(parsed_data.get("fitness_sample", []), norm_train_id)),
+    "job_cards": replace_nan_with_none([
+        row for row in parsed_data.get("jobcards_sample", [])
+        if normalize_tid(row.get("Train ID") or row.get("train_id") or row.get("trainid")) == norm_train_id
+    ]),
+    "branding": replace_nan_with_none(get_train_row(parsed_data.get("branding_sample", []), norm_train_id)),
+    "mileage": replace_nan_with_none(get_train_row(parsed_data.get("mileage_sample", []), norm_train_id)),
+    "cleaning": replace_nan_with_none(get_train_row(parsed_data.get("cleaning_sample", []), norm_train_id)),
+    "stabling": replace_nan_with_none(get_train_row(parsed_data.get("stabling_sample", []), norm_train_id)),
+    "depot": replace_nan_with_none(depot_info)
+}
         final_data.append(train_obj)
 
     # Save directly to unified.json

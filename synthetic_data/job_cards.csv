@@ -1,0 +1,31 @@
+Job ID,Train ID,Status,Severity,Description,Created At,Expected Completion
+J101,R003,Open,Medium,HVAC maintenance,2025-09-11,2025-09-16
+J102,R003,Open,Critical,Brake inspection,2025-09-16,2025-09-17
+J103,R004,Open,Low,Bogies lubrication,2025-09-11,2025-09-16
+J104,R005,Open,High,Brake inspection,2025-09-15,2025-09-19
+J105,R005,Open,Medium,Bogies lubrication,2025-09-14,2025-09-15
+J106,R005,Open,Low,Telecom/PA system maintenance,2025-09-14,2025-09-19
+J107,R006,Closed,Critical,HVAC maintenance,2025-09-13,2025-09-14
+J108,R006,Open,High,Bogies lubrication,2025-09-11,2025-09-12
+J109,R008,Closed,Low,Bogies lubrication,2025-09-16,2025-09-20
+J110,R009,Open,High,Door mechanism check,2025-09-14,2025-09-17
+J111,R009,Open,High,HVAC maintenance,2025-09-12,2025-09-14
+J112,R010,Open,Critical,Signalling system check,2025-09-11,2025-09-16
+J113,R011,Closed,Low,Bogies lubrication,2025-09-16,2025-09-19
+J114,R012,Open,Medium,Telecom/PA system maintenance,2025-09-15,2025-09-19
+J115,R012,Open,Critical,Door mechanism check,2025-09-14,2025-09-16
+J116,R012,Open,High,Interior cleaning & detailing,2025-09-12,2025-09-16
+J117,R013,Open,Medium,Wheel alignment check,2025-09-16,2025-09-17
+J118,R013,Closed,Medium,Door mechanism check,2025-09-11,2025-09-15
+J119,R015,Open,Critical,Signalling system check,2025-09-12,2025-09-13
+J120,R015,Closed,Low,Signalling system check,2025-09-11,2025-09-14
+J121,R015,Open,Critical,Door mechanism check,2025-09-13,2025-09-14
+J122,R016,Closed,Medium,HVAC maintenance,2025-09-11,2025-09-14
+J123,R016,Closed,Medium,Door mechanism check,2025-09-14,2025-09-16
+J124,R018,Open,Low,Telecom/PA system maintenance,2025-09-14,2025-09-16
+J125,R018,Open,Low,HVAC maintenance,2025-09-11,2025-09-15
+J126,R020,Open,Critical,Door mechanism check,2025-09-14,2025-09-19
+J127,R021,Closed,Medium,Signalling system check,2025-09-13,2025-09-16
+J128,R021,Open,Critical,HVAC maintenance,2025-09-15,2025-09-17
+J129,R021,Open,Low,Bogies lubrication,2025-09-12,2025-09-14
+J130,R025,Open,Low,Telecom/PA system maintenance,2025-09-16,2025-09-21
