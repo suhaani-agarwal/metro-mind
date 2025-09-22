@@ -16,6 +16,7 @@ interface TrainAssignment {
   };
   departure_slot: number;
   departure_order: number;
+  departure_time?: string;
   optimization_score?: string | number;
   needs_shunting?: boolean;
   is_priority_slot?: boolean;
@@ -125,6 +126,8 @@ interface SwapAnalysis {
     passenger_impact_severity: string;
     is_peak_hour: boolean;
     overall_impact_score: number;
+    estimated_shunting_moves?: number;
+    estimated_extra_fuel_liters?: number;
   };
   recommendation: {
     decision: string;
@@ -157,6 +160,10 @@ const Layer2Dashboard: React.FC = () => {
   const [timetableData, setTimetableData] = useState<TimetableData | null>(null);
   const [standbyTrains, setStandbyTrains] = useState<StandbyTrain[]>([]);
   const [swapAnalysis, setSwapAnalysis] = useState<SwapAnalysis | null>(null);
+  const [overrideReason, setOverrideReason] = useState<string>('');
+  const [showOverride, setShowOverride] = useState(false);
+  const [overrideSubmitting, setOverrideSubmitting] = useState(false);
+  const [suggestedOverrides, setSuggestedOverrides] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingWhatIf, setLoadingWhatIf] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -178,7 +185,7 @@ const Layer2Dashboard: React.FC = () => {
       setLoading(true);
       setError(null);
       
-      const response = await fetch(`http://localhost:8000/schedule/test?service_date=${selectedDate}`);
+      const response = await fetch(`http://localhost:5005/schedule/test?service_date=${selectedDate}`);
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
@@ -204,7 +211,7 @@ const Layer2Dashboard: React.FC = () => {
   const fetchStandbyTrains = async () => {
     try {
       setLoadingWhatIf(true);
-      const response = await fetch('http://localhost:8000/whatif/standby-trains');
+      const response = await fetch('http://localhost:5005/whatif/standby-trains');
       if (!response.ok) throw new Error('Failed to fetch standby trains');
       
       const result = await response.json();
@@ -224,7 +231,7 @@ const Layer2Dashboard: React.FC = () => {
 
     try {
       setLoadingWhatIf(true);
-      const response = await fetch('http://localhost:8000/whatif/analyze', {
+      const response = await fetch('http://localhost:5005/whatif/analyze', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -256,24 +263,82 @@ const Layer2Dashboard: React.FC = () => {
     fetchStandbyTrains();
   };
 
+  const openOverridePanel = () => {
+    setShowOverride(true);
+    fetchSuggestedOverrides();
+  };
+
+  const fetchSuggestedOverrides = async () => {
+    try {
+      const response = await fetch('http://localhost:5005/overrides/suggestions');
+      const result = await response.json();
+      setSuggestedOverrides(result.suggestions || []);
+    } catch (err) {
+      console.error('Error fetching suggestions:', err);
+    }
+  };
+
+  const loadLatestSuggestions = async () => {
+    try {
+      const response = await fetch('http://localhost:5005/overrides/suggestions/latest');
+      const result = await response.json();
+      setSuggestedOverrides(result.suggestions || []);
+    } catch (err) {
+      console.error('Error loading suggestions:', err);
+    }
+  };
+
+  const submitOverride = async () => {
+    if (!selectedScheduledTrain || !selectedStandbyTrain || !overrideReason) {
+      alert('Select both trains and enter a reason');
+      return;
+    }
+    try {
+      setOverrideSubmitting(true);
+      const findTrain = (id: string) => {
+        const sched = (data?.optimized_assignments || []).find(t => t.train_id === id);
+        const stdby = (data?.standby_trains || []).find(t => t.train_id === id);
+        return sched || stdby || { train_id: id };
+      };
+      const scheduled_train_config = findTrain(selectedScheduledTrain);
+      const standby_train_config = findTrain(selectedStandbyTrain);
+      const res = await fetch('http://localhost:5005/overrides/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          scheduled_train_id: selectedScheduledTrain,
+          standby_train_id: selectedStandbyTrain,
+          scheduled_train_config,
+          standby_train_config,
+          reason: overrideReason,
+          context: undefined
+        })
+      });
+      const out = await res.json();
+      if (!res.ok) throw new Error(out.detail || 'Failed to save override');
+      alert('Override saved');
+      setOverrideReason('');
+      fetchSuggestedOverrides();
+    } catch (err) {
+      console.error('Override error:', err);
+      alert(err instanceof Error ? err.message : 'Failed to save override');
+    } finally {
+      setOverrideSubmitting(false);
+    }
+  };
+
   const fetchValidationData = async () => {
     try {
-      const response = await fetch('http://localhost:8000/schedule/test');
-      const result = await response.json();
-      
-      if (result.input_validation || result.test_data_validation) {
-        setValidationData(result.input_validation || result.test_data_validation);
-      }
-      
-      setShowValidation(true);
+      await fetchSuggestedOverrides();
+      alert('Override suggestions generated using AI. Scroll to Suggested Overrides section.');
     } catch (err) {
-      console.error('Error fetching validation:', err);
+      console.error('Error generating suggestions:', err);
     }
   };
 
   const fetchTimetableData = async () => {
     try {
-      const response = await fetch(`http://localhost:8000/timetable/info?service_date=${selectedDate}`);
+      const response = await fetch(`http://localhost:5005/timetable/info?service_date=${selectedDate}`);
       const result = await response.json();
       setTimetableData(result);
       setShowTimetable(true);
@@ -375,12 +440,12 @@ const Layer2Dashboard: React.FC = () => {
             >
               Try Again
             </button>
-            <button
-              onClick={fetchValidationData}
-              className="w-full bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-6 rounded-lg transition-all duration-200"
-            >
-              Check Data Validation
-            </button>
+              <button
+                onClick={loadLatestSuggestions}
+                className="w-full bg-emerald-700 hover:bg-emerald-600 text-white font-semibold py-2 px-6 rounded-lg transition-all duration-200"
+              >
+                View Override Suggestions (AI)
+              </button>
           </div>
         </div>
       </div>
@@ -493,7 +558,7 @@ const Layer2Dashboard: React.FC = () => {
           
           <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl shadow-lg p-6 text-center">
             <div className="text-2xl font-bold text-indigo-400">
-              {data.departure_slots?.length || 8}
+              {data.departure_slots?.length || 10}
             </div>
             <div className="text-sm text-gray-400">Available Slots</div>
           </div>
@@ -591,7 +656,15 @@ const Layer2Dashboard: React.FC = () => {
         {/* Input Validation Warnings */}
         {currentValidation && (currentValidation.warnings.length > 0 || currentValidation.errors.length > 0) && (
           <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-2xl shadow-xl p-6 mb-6">
-            <h2 className="text-xl font-bold text-gray-100 mb-4">Data Validation</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-gray-100">Data Validation</h2>
+              <button
+                onClick={fetchSuggestedOverrides}
+                className="px-3 py-1 text-sm bg-emerald-700 hover:bg-emerald-600 text-white rounded-md"
+              >
+                View Override Suggestions (AI)
+              </button>
+            </div>
             
             {currentValidation.errors.length > 0 && (
               <div className="mb-4">
@@ -629,6 +702,12 @@ const Layer2Dashboard: React.FC = () => {
                 🔄 What-If Analysis
               </button>
               <button
+                onClick={openOverridePanel}
+                className="px-4 py-2 text-sm bg-emerald-700 hover:bg-emerald-600 text-white rounded-md transition-colors font-medium"
+              >
+                ✍️ Override Schedule
+              </button>
+              <button
                 onClick={() => setShowDebug(!showDebug)}
                 className="px-3 py-1 text-sm bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-md transition-colors"
               >
@@ -645,6 +724,7 @@ const Layer2Dashboard: React.FC = () => {
                   <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Rank</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Train ID</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Bay</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Departure</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Readiness</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Status</th>
                   {showDebug && <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Debug Info</th>}
@@ -680,6 +760,10 @@ const Layer2Dashboard: React.FC = () => {
                         <div className="text-xs text-gray-400">Position: {train.bay_position}</div>
                       )}
                     </td>
+                  <td className="px-4 py-3">
+                    <div className="text-gray-200 font-medium">{train.departure_time || '-'}</div>
+                    <div className="text-xs text-gray-500">Slot #{train.departure_slot}</div>
+                  </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <span className="text-lg">{getReadinessIcon(train.readiness)}</span>
@@ -690,7 +774,7 @@ const Layer2Dashboard: React.FC = () => {
                     </td>
                     <td className="px-4 py-3">
                       <div className="space-y-1">
-                        {train.needs_shunting && (
+                      {train.needs_shunting && (
                           <span className="px-2 py-1 bg-orange-900/50 text-orange-300 border border-orange-700 text-xs rounded-md block w-fit">
                             Shunting Required
                           </span>
@@ -735,6 +819,24 @@ const Layer2Dashboard: React.FC = () => {
             </div>
           )}
         </div>
+
+        {/* Suggested Overrides */}
+        {suggestedOverrides.length > 0 && (
+          <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-2xl shadow-xl p-6 mt-6">
+            <h2 className="text-xl font-bold text-gray-100 mb-4">Suggested Overrides</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {suggestedOverrides.map((sug, idx) => (
+                <div key={idx} className="p-4 bg-gray-900/50 border border-gray-700 rounded-lg">
+                  <div className="font-semibold text-gray-200">{sug.from_train} → {sug.to_train}</div>
+                  <div className="text-sm text-gray-400 mt-1">{sug.reason}</div>
+                  {sug.confidence && (
+                    <div className="text-xs text-teal-300 mt-2">Confidence: {sug.confidence}</div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Standby Trains Summary */}
         {data.standby_trains && data.standby_trains.length > 0 && (
@@ -1096,6 +1198,18 @@ const Layer2Dashboard: React.FC = () => {
                               {swapAnalysis.impact_analysis.readiness_score_change > 0 ? '+' : ''}{swapAnalysis.impact_analysis.readiness_score_change}%
                             </span>
                           </div>
+                          {(typeof swapAnalysis.impact_analysis.estimated_shunting_moves === 'number') && (
+                            <div className="flex justify-between">
+                              <span className="text-gray-300">Est. Extra Shunting Moves:</span>
+                              <span className="font-medium text-orange-300">{swapAnalysis.impact_analysis.estimated_shunting_moves}</span>
+                            </div>
+                          )}
+                          {(typeof swapAnalysis.impact_analysis.estimated_extra_fuel_liters === 'number') && (
+                            <div className="flex justify-between">
+                              <span className="text-gray-300">Est. Extra Fuel:</span>
+                              <span className="font-medium text-orange-300">{swapAnalysis.impact_analysis.estimated_extra_fuel_liters} L</span>
+                            </div>
+                          )}
                           <div className="flex justify-between">
                             <span className="text-gray-300">Risk Level:</span>
                             <span className={`px-2 py-1 rounded text-xs font-medium ${getRiskLevelColor(swapAnalysis.impact_analysis.risk_level)}`}>
@@ -1355,6 +1469,62 @@ const Layer2Dashboard: React.FC = () => {
           </div>
         )}
       </div>
+      {/* Override Modal */}
+      {showOverride && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-800 border border-gray-700 rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-2xl font-bold text-gray-100">Override Schedule</h3>
+                <button onClick={() => setShowOverride(false)} className="text-gray-400 hover:text-gray-200 text-2xl">✕</button>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h4 className="text-lg font-semibold text-gray-200 mb-3">Select Scheduled Train</h4>
+                  <div className="space-y-2 max-h-72 overflow-y-auto pr-2">
+                    {sortedAssignments.map((t) => (
+                      <div key={t.train_id} onClick={() => setSelectedScheduledTrain(t.train_id)}
+                        className={`p-3 border rounded cursor-pointer ${selectedScheduledTrain===t.train_id? 'border-emerald-500 bg-emerald-900/30':'border-gray-600 hover:border-gray-500 bg-gray-900/30'}`}>
+                        <div className="flex justify-between">
+                          <div className="text-gray-100 font-medium">{t.train_id}</div>
+                          <div className="text-xs text-gray-400">Readiness {t.readiness}%</div>
+                        </div>
+                        <div className="text-xs text-gray-500">Bay {t.bay} • Slot {t.departure_slot}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <h4 className="text-lg font-semibold text-gray-200 mb-3">Select Standby Train</h4>
+                  <div className="space-y-2 max-h-72 overflow-y-auto pr-2">
+                    {(data.standby_trains || []).map((t) => (
+                      <div key={t.train_id} onClick={() => setSelectedStandbyTrain(t.train_id)}
+                        className={`p-3 border rounded cursor-pointer ${selectedStandbyTrain===t.train_id? 'border-emerald-500 bg-emerald-900/30':'border-gray-600 hover:border-gray-500 bg-gray-900/30'}`}>
+                        <div className="flex justify-between">
+                          <div className="text-gray-100 font-medium">{t.train_id}</div>
+                          <div className="text-xs text-gray-400">Readiness {t.readiness}%</div>
+                        </div>
+                        <div className="text-xs text-gray-500">Bay {t.bay} • Pos {t.bay_position}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div className="mt-6">
+                <label className="block text-sm font-medium text-gray-300 mb-1">Reason</label>
+                <textarea value={overrideReason} onChange={(e)=>setOverrideReason(e.target.value)}
+                  className="w-full bg-gray-900 border border-gray-700 rounded-md text-gray-100 p-3 min-h-[100px] focus:outline-none focus:ring-2 focus:ring-emerald-600"></textarea>
+              </div>
+              <div className="mt-4 flex justify-end">
+                <button onClick={submitOverride} disabled={overrideSubmitting}
+                  className="px-4 py-2 bg-emerald-700 hover:bg-emerald-600 disabled:bg-gray-600 text-white rounded-md">
+                  {overrideSubmitting? 'Saving...':'Save Override'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -10,7 +10,7 @@ class DepotMetadata(BaseModel):
     washing_lines: int
     lifting_bays: int | None = None
     max_capacity_trains: int
-    operational_hours: str  # e.g., "05:00-23:00"
+    operational_hours: str
 
 class DepotDeepCleaningInput(BaseModel):
     manual_labour_available_today: int

@@ -1,214 +1,75 @@
-# # layer2_service.py
-# from ortools.sat.python import cp_model
-# import logging
-# from typing import Dict, List, Optional, Any
-# import numpy as np
-
-# # Set up logging
-# logging.basicConfig(level=logging.INFO)
-# logger = logging.getLogger(__name__)
-
-# class Layer2Optimizer:
-#     """
-#     Simplified Layer-2 CP-SAT optimization for train scheduling
-#     Only considers readiness score and parking geometry
-#     """
-    
-#     def __init__(self):
-#         self.model = cp_model.CpModel()
-#         self.solver = cp_model.CpSolver()
-#         self.solver.parameters.max_time_in_seconds = 30
-#         self.solver.parameters.num_search_workers = 8
-        
-#     def run_layer2(
-#         self,
-#         readiness_scores: Dict[str, int],  # {train_id: readiness_score (1-10)}
-#         initial_parking: Dict[str, str],   # {bay_id: train_id}
-#         service_start_time: int = 7,       # 07:00 hrs
-#         service_end_time: int = 22,        # 22:00 hrs
-#         peak_hours: tuple = (8, 20),       # 08:00-20:00 peak hours
-#         headway_peak: int = 9,             # 9 minutes peak headway
-#         headway_off_peak: int = 11         # 11 minutes off-peak headway
-#     ) -> Dict[str, Any]:
-#         """
-#         Generate optimal train schedule based on readiness scores and parking geometry
-#         """
-#         logger.info("Starting Simplified Layer-2 optimization")
-        
-#         trains = list(readiness_scores.keys())
-#         bays = list(initial_parking.keys())
-        
-#         logger.info(f"Processing {len(trains)} trains, {len(bays)} bays")
-        
-#         # Generate departure slots based on service hours and headway
-#         departure_slots = self._generate_departure_slots(
-#             service_start_time, service_end_time, 
-#             peak_hours, headway_peak, headway_off_peak
-#         )
-        
-#         # -------------------------
-#         # VARIABLES
-#         # -------------------------
-#         departure_assignments = {}  # d[t, slot] = 1 if train t departs at slot
-        
-#         for t in trains:
-#             for slot_idx, slot_time in enumerate(departure_slots):
-#                 departure_assignments[t, slot_idx] = self.model.NewBoolVar(f"d_{t}_{slot_idx}")
-        
-#         # -------------------------
-#         # HARD CONSTRAINTS
-#         # -------------------------
-#         self._add_hard_constraints(trains, departure_slots, departure_assignments)
-        
-#         # -------------------------
-#         # SOFT CONSTRAINTS
-#         # -------------------------
-#         objective_terms = self._add_soft_constraints(
-#             trains, readiness_scores, departure_slots, departure_assignments
-#         )
-        
-#         # -------------------------
-#         # OBJECTIVE
-#         # -------------------------
-#         if objective_terms:
-#             self.model.Maximize(sum(objective_terms))  # Maximize readiness score sum
-#         else:
-#             logger.warning("No soft constraints added")
-        
-#         # -------------------------
-#         # SOLVE
-#         # -------------------------
-#         status = self.solver.Solve(self.model)
-        
-#         if status not in [cp_model.OPTIMAL, cp_model.FEASIBLE]:
-#             return self._handle_infeasible_case(trains, readiness_scores)
-        
-#         # -------------------------
-#         # POST-PROCESS
-#         # -------------------------
-#         return self._process_results(
-#             trains, readiness_scores, departure_slots, 
-#             departure_assignments, status, initial_parking
-#         )
-    
-#     def _generate_departure_slots(self, start_time, end_time, peak_hours, headway_peak, headway_off_peak):
-#         """Generate departure time slots based on Kochi metro schedule"""
-#         departure_slots = []
-#         current_time = start_time * 60  # Convert to minutes
-        
-#         while current_time <= end_time * 60:
-#             # Check if current time is within peak hours
-#             is_peak = peak_hours[0] <= (current_time / 60) < peak_hours[1]
-#             headway = headway_peak if is_peak else headway_off_peak
-            
-#             departure_slots.append(current_time)
-#             current_time += headway
-        
-#         logger.info(f"Generated {len(departure_slots)} departure slots")
-#         return departure_slots
-    
-#     def _add_hard_constraints(self, trains, departure_slots, departure_assignments):
-#         """Add hard constraints"""
-#         logger.info("Adding hard constraints...")
-        
-#         # 1. Each train must depart exactly once
-#         for t in trains:
-#             self.model.Add(sum(departure_assignments[t, slot_idx] 
-#                             for slot_idx in range(len(departure_slots))) == 1)
-        
-#         # 2. Each departure slot can have at most one train
-#         for slot_idx in range(len(departure_slots)):
-#             self.model.Add(sum(departure_assignments[t, slot_idx] 
-#                             for t in trains) <= 1)
-    
-#     def _add_soft_constraints(self, trains, readiness_scores, departure_slots, departure_assignments):
-#         """Add soft constraints - prioritize higher readiness trains for better slots"""
-#         logger.info("Adding soft constraints...")
-        
-#         objective_terms = []
-        
-#         # Weight earlier slots more (priority for better readiness trains)
-#         slot_weights = []
-#         for slot_idx in range(len(departure_slots)):
-#             # Earlier slots get higher weight (linear decay)
-#             weight = len(departure_slots) - slot_idx
-#             slot_weights.append(weight)
-        
-#         for t in trains:
-#             readiness = readiness_scores[t]
-#             for slot_idx in range(len(departure_slots)):
-#                 # Objective: readiness_score * slot_weight
-#                 term = self.model.NewIntVar(0, 1000, f"obj_{t}_{slot_idx}")
-#                 self.model.Add(term == readiness * slot_weights[slot_idx]).OnlyEnforceIf(
-#                     departure_assignments[t, slot_idx])
-#                 self.model.Add(term == 0).OnlyEnforceIf(
-#                     departure_assignments[t, slot_idx].Not())
-#                 objective_terms.append(term)
-        
-#         return objective_terms
-    
-#     def _handle_infeasible_case(self, trains, readiness_scores):
-#         """Handle infeasible cases"""
-#         logger.error("Model is infeasible - providing fallback solution")
-        
-#         # Simple fallback: sort by readiness score
-#         sorted_trains = sorted(trains, key=lambda t: readiness_scores[t], reverse=True)
-        
-#         return {
-#             "schedule": [{"train_id": t, "readiness_score": readiness_scores[t]} 
-#                         for t in sorted_trains],
-#             "departure_times": [],
-#             "solver_status": "INFEASIBLE",
-#             "warning": "Using fallback solution (sorted by readiness)"
-#         }
-    
-#     def _process_results(self, trains, readiness_scores, departure_slots, 
-#                         departure_assignments, status, initial_parking):
-#         """Process and format the solver results"""
-#         schedule = []
-        
-#         # Get departure assignments
-#         for slot_idx, slot_time in enumerate(departure_slots):
-#             for t in trains:
-#                 if self.solver.Value(departure_assignments[t, slot_idx]):
-#                     hours = int(slot_time // 60)
-#                     minutes = int(slot_time % 60)
-#                     departure_str = f"{hours:02d}:{minutes:02d}"
-                    
-#                     schedule.append({
-#                         "train_id": t,
-#                         "readiness_score": readiness_scores[t],
-#                         "departure_time": departure_str,
-#                         "initial_bay": next((b for b, train in initial_parking.items() 
-#                                            if train == t), "Unknown"),
-#                         "slot_priority": len(departure_slots) - slot_idx  # Higher = better
-#                     })
-#                     break
-        
-#         # Sort by departure time
-#         schedule.sort(key=lambda x: x["departure_time"])
-        
-#         logger.info("Optimization completed successfully")
-#         return {
-#             "schedule": schedule,
-#             "total_trains": len(trains),
-#             "total_slots": len(departure_slots),
-#             "solver_status": "OPTIMAL" if status == cp_model.OPTIMAL else "FEASIBLE",
-#             "objective_value": self.solver.ObjectiveValue() if status == cp_model.OPTIMAL else None
-#         }
-
-# # Singleton instance
-# layer2_optimizer = Layer2Optimizer()
-
-# def run_layer2(*args, **kwargs):
-#     return layer2_optimizer.run_layer2(*args, **kwargs)
-# layer2_service.py
 from ortools.sat.python import cp_model
 from typing import Dict, Any, List
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 import json
 from pathlib import Path
 import holidays
+import os
+
+def load_layer1_output() -> Dict[str, Any]:
+    """Load the actual output from Layer 1 optimization"""
+    try:
+        output_path = Path(__file__).parent.parent.parent / "data" / "output.json"
+        with open(output_path, 'r') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        # Fallback to test data if output.json doesn't exist
+        test_path = Path(__file__).parent.parent / "test_data.json"
+        with test_path.open() as f:
+            return json.load(f)
+
+def load_parking_override() -> List[Dict[str, Any]]:
+    """Optionally load parking.json (synthetic for now) to override parking assignments.
+    Expected format: [{"train_id": "TM001", "bay": "PT01", "position": 1}, ...]
+    """
+    try:
+        path = Path(__file__).parent.parent.parent / "data" / "parking.json"
+        if path.exists():
+            with path.open("r", encoding="utf-8") as f:
+                data = json.load(f)
+                if isinstance(data, list):
+                    return data
+    except Exception:
+        pass
+    return []
+
+def convert_layer1_to_layer2_format(layer1_output: Dict[str, Any]) -> Dict[str, Any]:
+    """Convert Layer 1 output format to Layer 2 input format"""
+    
+    # Extract parking assignments from optional parking.json override, else Layer 1
+    override = load_parking_override()
+    if override:
+        parking_assignments = override
+    else:
+        parking_assignments = []
+        for assignment in layer1_output.get("parking_assignments", []):
+            parking_assignments.append({
+                "train_id": assignment["train_id"],
+                "bay": assignment["track_id"],
+                "position": assignment["position_in_track"]
+            })
+    
+    # Extract readiness data
+    readiness_data = []
+    for item in layer1_output.get("readiness_scores", []):
+        # Add a top-level summary for validation/UI convenience
+        details_dict = item.get("details", {}) or {}
+        summary_text = details_dict.get("summary") or details_dict.get("combined") or item.get("summary") or ""
+        new_item = dict(item)
+        new_item["summary"] = summary_text
+        readiness_data.append(new_item)
+    
+    return {
+        "parking": {
+            "assignments": parking_assignments,
+            "total_shunting_moves": layer1_output.get("total_shunting_moves", 0),
+            "optimization_date": layer1_output.get("metadata", {}).get("processing_time", datetime.now().isoformat())
+        },
+        "readiness": readiness_data,
+        "trains_to_service": layer1_output.get("trains_to_service", []),
+        "trains_to_standby": layer1_output.get("trains_to_standby", []),
+        "trains_to_ibl": layer1_output.get("trains_to_ibl", [])
+    }
 
 def get_timetable_config(service_date=None):
     """Get the appropriate timetable configuration based on date"""
@@ -243,6 +104,7 @@ def get_timetable_config(service_date=None):
             "off_peak_headway": 9.083, # Same as peak for regular days
             "service_type": "regular"
         }
+
 def _generate_scheduling_rationale(
     train_id: str, 
     train_positions: Dict, 
@@ -251,13 +113,32 @@ def _generate_scheduling_rationale(
     all_valid_trains: List[str],
     chosen_slot: int,
     needs_shunting: bool,
-    got_priority_slot: bool
+    got_priority_slot: bool,
+    layer1_details: Dict[str, Any] = None
 ) -> Dict[str, Any]:
     """Generate rationale for why this specific train was selected"""
     
     train_readiness = readiness_lookup[train_id]
     train_position = train_positions[train_id]
     train_bay = bay_assignments[train_id]
+    
+    # Get Layer 1 details if available
+    layer1_info = ""
+    if layer1_details and train_id in layer1_details:
+        details = layer1_details[train_id].get("details", {})
+        if "combined" in details:
+            # Extract key reasons from Layer 1
+            combined = details["combined"]
+            if "❌ Expired certificates" in combined:
+                layer1_info = "Had expired certificates in Layer 1"
+            elif "❌ Critical job card" in combined:
+                layer1_info = "Had critical job cards in Layer 1"
+            elif "❌ Overdue for" in combined:
+                layer1_info = "Was overdue for maintenance in Layer 1"
+            elif "🚨" in combined:
+                layer1_info = "Had urgent issues in Layer 1"
+            elif "⚠️" in combined:
+                layer1_info = "Had warnings in Layer 1"
     
     # Find other trains in same bay for comparison
     same_bay_trains = [t for t in all_valid_trains 
@@ -269,7 +150,8 @@ def _generate_scheduling_rationale(
         "readiness_advantage": "",
         "position_advantage": "",
         "shunting_benefit": "",
-        "slot_assignment_reason": ""
+        "slot_assignment_reason": "",
+        "layer1_considerations": layer1_info
     }
     
     # Determine primary reason for selection
@@ -312,7 +194,8 @@ def _generate_not_selected_rationale(
     train_positions: Dict,
     bay_assignments: Dict,
     readiness_lookup: Dict,
-    all_valid_trains: List[str]
+    all_valid_trains: List[str],
+    layer1_details: Dict[str, Any] = None
 ) -> Dict[str, Any]:
     """Generate rationale for why this train was NOT selected"""
     
@@ -320,23 +203,28 @@ def _generate_not_selected_rationale(
     train_position = train_positions[train_id]
     train_bay = bay_assignments[train_id]
     
-    # Find selected trains for comparison
-    # This would need access to the solver results, but for simplicity:
-    # we'll focus on the most likely reasons
+    # Get Layer 1 details if available
+    layer1_info = ""
+    if layer1_details and train_id in layer1_details:
+        details = layer1_details[train_id].get("details", {})
+        summary = details.get("summary", "")
+        if "❌ Must go to IBL" in summary:
+            layer1_info = "Was assigned to IBL in Layer 1 due to critical issues"
     
     rationale = {
         "primary_reason": "",
         "readiness_factor": "",
         "position_factor": "",
         "shunting_factor": "",
-        "alternative_selected": ""
+        "alternative_selected": "",
+        "layer1_considerations": layer1_info
     }
     
     # Find other trains in same bay
     same_bay_trains = [t for t in all_valid_trains 
                       if bay_assignments[t] == train_bay and t != train_id]
     
-    if train_readiness < 80:
+    if train_readiness < 70:  # Lower threshold for rejection
         rationale["primary_reason"] = "low_readiness_score"
         rationale["readiness_factor"] = f"Readiness score ({train_readiness}%) below competitive threshold"
     elif train_position > 2:
@@ -346,32 +234,68 @@ def _generate_not_selected_rationale(
     elif same_bay_trains:
         # Check if there's a better positioned train in same bay
         better_positioned = [t for t in same_bay_trains 
-                           if train_positions[t] < train_position]
+                           if train_positions[t] < train_position and readiness_lookup[t] >= train_readiness]
         if better_positioned:
             rationale["primary_reason"] = "better_alternative_available"
-            rationale["alternative_selected"] = f"Train(s) {better_positioned} in same bay had better positions"
+            rationale["alternative_selected"] = f"Train(s) {better_positioned} in same bay had better positions and similar/higher readiness"
     else:
         rationale["primary_reason"] = "insufficient_optimization_score"
         rationale["readiness_factor"] = f"Combined readiness and position score insufficient for top 8 slots"
     
     return rationale
 
-def generate_departure_slots(timetable_config, max_slots=8):
-    """Generate exactly 8 departure slots (just slot numbers, no times)"""
-    return list(range(1, max_slots + 1))  # Returns [1, 2, 3, 4, 5, 6, 7, 8]
+def generate_departure_slots(timetable_config, max_slots=10):
+    """Generate slot numbers 1..max_slots (default 10)."""
+    return list(range(1, max_slots + 1))
+
+def compute_departure_times(timetable_config: Dict[str, Any], departure_slots: List[int]) -> Dict[int, str]:
+    """Compute HH:MM departure time for each slot at fixed 10-minute gaps from first_service."""
+    try:
+        first = timetable_config.get("first_service", "07:30")
+        hours, minutes = map(int, first.split(":"))
+    except Exception:
+        hours, minutes = 7, 30
+    start = datetime(2000, 1, 1, hours, minutes)
+    slot_to_time = {}
+    for slot in sorted(departure_slots):
+        dt = start + timedelta(minutes=(slot - 1) * 10)
+        slot_to_time[slot] = dt.strftime("%H:%M")
+    return slot_to_time
 
 def run_layer2_service(
-    parking_json: Dict[str, Any],
-    readiness_json: List[Dict[str, Any]],
-    ads_json: List[Dict[str, Any]],  # Keep parameter for compatibility but ignore
+    parking_json: Dict[str, Any] = None,
+    readiness_json: List[Dict[str, Any]] = None,
+    ads_json: List[Dict[str, Any]] = None,  # Keep parameter for compatibility but ignore
     service_day: str = "weekday",
-    service_date: date = None
+    service_date: date = None,
+    use_layer1_output: bool = True  # New parameter to use actual Layer 1 output
 ) -> Dict[str, Any]:
     """
     Layer 2 optimization: Slot-based train scheduling (1-8 slots)
     Focus on readiness score and minimizing shunting operations
     """
     try:
+        # Use Layer 1 output if requested and available
+        if use_layer1_output:
+            try:
+                layer1_output = load_layer1_output()
+                if layer1_output and "readiness_scores" in layer1_output:
+                    converted_data = convert_layer1_to_layer2_format(layer1_output)
+                    parking_json = converted_data["parking"]
+                    readiness_json = converted_data["readiness"]
+                    print("✅ Using actual Layer 1 output data")
+            except Exception as e:
+                print(f"⚠️ Could not load Layer 1 output, using provided data: {e}")
+                use_layer1_output = False
+        
+        # If no data provided, use Layer 1 output
+        if parking_json is None or readiness_json is None:
+            layer1_output = load_layer1_output()
+            converted_data = convert_layer1_to_layer2_format(layer1_output)
+            parking_json = converted_data["parking"]
+            readiness_json = converted_data["readiness"]
+            use_layer1_output = True
+        
         model = cp_model.CpModel()
 
         # Extract trains and bay information with positions
@@ -388,17 +312,8 @@ def run_layer2_service(
                 assigned_trains.append(train_id)
                 bay_assignments[train_id] = bay_id
                 train_positions[train_id] = position
-        elif "current_positions" in parking_json:
-            for position in parking_json["current_positions"]:
-                train_id = position["train_id"]
-                bay_id = position["bay_id"]
-                pos = position.get("position", 1)
-                
-                assigned_trains.append(train_id)
-                bay_assignments[train_id] = bay_id
-                train_positions[train_id] = pos
         else:
-            # Legacy format
+            # Legacy format handling
             assigned_trains = list(parking_json.keys()) if isinstance(parking_json, dict) else []
             bay_assignments = parking_json if isinstance(parking_json, dict) else {}
             # Assign default positions
@@ -408,16 +323,26 @@ def run_layer2_service(
         if not assigned_trains:
             return {"status": "No trains assigned from Layer 1", "error": "Invalid input format"}
 
-        # Create readiness lookup
+        # Create readiness lookup and Layer 1 details lookup
         readiness_lookup = {}
         readiness_summaries = {}
+        layer1_details_lookup = {}
+        branding_urgency_lookup = {}
+        
         for train_data in readiness_json:
             train_id = train_data["train_id"]
-            readiness_lookup[train_id] = train_data["score"]
+            readiness_lookup[train_id] = train_data.get("score", 0)
+            details_dict = train_data.get("details", {}) or {}
+            summary_text = details_dict.get("summary") or train_data.get("summary") or details_dict.get("combined") or "No summary available"
             readiness_summaries[train_id] = {
-                "summary": train_data.get("summary", "No summary available"),
-                "details": train_data.get("details", {})
+                "summary": summary_text,
+                "details": details_dict
             }
+            layer1_details_lookup[train_id] = train_data
+            # Branding urgency derived from breakdown (values >100 indicate urgency)
+            breakdown = train_data.get("breakdown", {}) or {}
+            branding_score = breakdown.get("branding_contracts", 100)
+            branding_urgency_lookup[train_id] = max(0.0, float(branding_score) - 100.0)
         
         valid_trains = [t for t in assigned_trains if t in readiness_lookup]
         
@@ -426,8 +351,10 @@ def run_layer2_service(
 
         # Get timetable configuration and generate 8 slots
         timetable_config = get_timetable_config(service_date)
-        departure_slots = generate_departure_slots(timetable_config, max_slots=8)  # [1,2,3,4,5,6,7,8]
-        max_trains_to_schedule = 8
+        # Schedule exactly 10 trains as per requirements
+        departure_slots = generate_departure_slots(timetable_config, max_slots=10)
+        max_trains_to_schedule = 10
+        slot_to_time = compute_departure_times(timetable_config, departure_slots)
         
         print(f"Debug: Valid trains: {len(valid_trains)}, Available slots: {len(departure_slots)}")
         print(f"Debug: Will schedule exactly {max_trains_to_schedule} trains")
@@ -450,7 +377,7 @@ def run_layer2_service(
         # 1. Primary variable: train to departure slot assignment
         departure_vars = {}
         for train in valid_trains:
-            for slot_num in departure_slots:  # slot_num is 1,2,3,4,5,6,7,8
+            for slot_num in departure_slots:
                 departure_vars[train, slot_num] = model.NewBoolVar(f"dep_{train}_slot_{slot_num}")
 
         # 2. Train selection variable
@@ -530,10 +457,6 @@ def run_layer2_service(
                                     constraint_var = model.NewBoolVar(f"shunt_constraint_{train_a}_slot_{slot_a}_{train_b}_slot_{slot_b}")
                                     
                                     # constraint_var is true when all conditions are met:
-                                    # - train_a is selected AND gets slot_a
-                                    # - train_b is selected AND gets slot_b  
-                                    # - slot_a < slot_b (train_a leaves before train_b)
-                                    # - pos_a > pos_b (train_a is behind train_b)
                                     model.Add(constraint_var <= departure_vars[train_a, slot_a])
                                     model.Add(constraint_var <= departure_vars[train_b, slot_b])
                                     model.Add(constraint_var <= train_selected_vars[train_a])
@@ -549,11 +472,12 @@ def run_layer2_service(
         # --- OBJECTIVE FUNCTION: Focus on readiness and minimize shunting ---
         objective_terms = []
         
-        # Optimization weights - SIMPLIFIED AND FOCUSED
+        # Optimization weights
         READINESS_WEIGHT = 1000          # High weight for train readiness
         SHUNTING_PENALTY = 5000          # VERY HIGH penalty for shunting operations
         PRIORITY_SLOT_BONUS = 2000       # Bonus for high-readiness trains in priority slots (1-3)
         POSITION_BONUS_WEIGHT = 800      # Bonus for trains in better positions (front of bay)
+        BRANDING_URGENCY_WEIGHT = 50     # Low weight; readiness + shunting dominate
         
         # 1. Readiness score optimization
         for train in valid_trains:
@@ -563,9 +487,15 @@ def run_layer2_service(
             objective_terms.append((readiness_score * READINESS_WEIGHT // 100) * train_selected_vars[train])
             
             for slot_num in departure_slots:
-                # Higher bonus for earlier slots (slot 1 gets highest bonus)
-                slot_preference = (len(departure_slots) + 1 - slot_num) * readiness_score * 10
+                # Higher bonus for earlier slots (slot 1 gets highest bonus), scaled by readiness
+                early_factor = (len(departure_slots) + 1 - slot_num)
+                slot_preference = early_factor * readiness_score * 10
                 objective_terms.append(slot_preference * departure_vars[train, slot_num])
+                # Branding urgency prefers earlier slots
+                branding_urgency = int(branding_urgency_lookup.get(train, 0))
+                if branding_urgency > 0:
+                    branding_bonus = early_factor * branding_urgency * BRANDING_URGENCY_WEIGHT
+                    objective_terms.append(branding_bonus * departure_vars[train, slot_num])
                 
                 # Extra bonus for high-readiness trains getting priority slots (1-3)
                 if readiness_score >= 90 and slot_num in priority_slots:
@@ -575,7 +505,7 @@ def run_layer2_service(
         for train in valid_trains:
             position = train_positions[train]
             # Front position (1) gets highest bonus, decreasing for higher positions
-            position_bonus = POSITION_BONUS_WEIGHT // position  # Position 1 gets 800, Position 2 gets 400, etc.
+            position_bonus = POSITION_BONUS_WEIGHT // position
             objective_terms.append(position_bonus * train_selected_vars[train])
 
         # 3. HEAVY shunting penalty - this is the key to minimize shunting
@@ -620,14 +550,18 @@ def run_layer2_service(
                         "bay": bay_assignments.get(train, "Unknown"),
                         "position": train_positions.get(train, 1),
                         "reason": "Train behind this one needs to depart earlier"
-                          })
+                    })
                 
                 # Get priority slot status
                 got_priority_slot = solver.Value(priority_slot_vars[train]) == 1
                 scheduling_rationale = _generate_scheduling_rationale(
                     train, train_positions, bay_assignments, readiness_lookup, 
-                    valid_trains, chosen_slot, needs_shunting, got_priority_slot
-                    )
+                    valid_trains, chosen_slot, needs_shunting, got_priority_slot,
+                    layer1_details_lookup
+                )
+                # Add branding rationale when applicable
+                if branding_urgency_lookup.get(train, 0) > 0 and chosen_slot <= 3:
+                    scheduling_rationale["secondary_factors"].append("Branding urgency prioritized for peak exposure")
                 
                 assignment = {
                     "train_id": train,
@@ -638,6 +572,7 @@ def run_layer2_service(
                     "readiness_details": readiness_summaries[train]["details"],
                     "departure_slot": chosen_slot,
                     "departure_order": chosen_slot,
+                    "departure_time": slot_to_time.get(chosen_slot, None),
                     "needs_shunting": needs_shunting,
                     "is_priority_slot": got_priority_slot,
                     "optimization_score": "CP-SAT Optimized",
@@ -647,8 +582,10 @@ def run_layer2_service(
                 optimized_assignments.append(assignment)
             else:
                 not_selected_rationale = _generate_not_selected_rationale(
-                        train, train_positions, bay_assignments, readiness_lookup, valid_trains
-                            )
+                    train, train_positions, bay_assignments, readiness_lookup, 
+                    valid_trains, layer1_details_lookup
+                )
+                
                 # Track standby trains
                 standby_trains.append({
                     "train_id": train,
@@ -661,26 +598,27 @@ def run_layer2_service(
                     "scheduling_rationale": not_selected_rationale
                 })
 
-        # Sort by departure slot (1, 2, 3, 4, 5, 6, 7, 8)
+        # Sort by departure slot (1..slot_count)
         optimized_assignments.sort(key=lambda x: x["departure_slot"])
 
-        return {
+        result = {
             "solver_status": "OPTIMAL" if status == cp_model.OPTIMAL else "FEASIBLE",
             "objective_value": solver.ObjectiveValue(),
             "optimized_assignments": optimized_assignments,
             "standby_trains": standby_trains,
             "timetable_info": timetable_config,
-            "departure_slots": departure_slots,  # [1,2,3,4,5,6,7,8]
+            "departure_slots": departure_slots,
             "total_trains_available": len(valid_trains),
             "total_trains_scheduled": len(optimized_assignments),
             "total_standby_trains": len(standby_trains),
             "shunting_operations_required": len(shunting_operations),
             "trains_requiring_shunting": shunting_operations,
             "service_date": service_date.isoformat() if service_date else date.today().isoformat(),
+            "data_source": "Layer 1 Output" if use_layer1_output else "Provided Data",
             "optimization_summary": {
                 "readiness_weighted": True,
-                "ad_revenue_optimized": False,  # REMOVED
-                "demographic_targeting": False,  # REMOVED
+                "ad_revenue_optimized": False,
+                "demographic_targeting": False,
                 "parking_position_optimized": True,
                 "shunting_constraints": True,
                 "shunting_minimization": "Heavy penalty applied",
@@ -697,6 +635,8 @@ def run_layer2_service(
                 }
             }
         }
+        
+        return result
 
     except Exception as e:
         return {
@@ -710,12 +650,11 @@ def run_layer2_service_old(parking_json=None, readiness_json=None,
                           ads_json=None, service_day="weekday"):
     """Legacy function for backward compatibility"""
     if parking_json is None:
-        test_path = Path(__file__).parent.parent / "test_data.json"
-        with test_path.open() as f:
-            test_data = json.load(f)
-        parking_json = test_data["parking"]
-        readiness_json = test_data["readiness"]
-        ads_json = test_data["ads"]
-        service_day = test_data["service_day"]
+        # Use Layer 1 output instead of test data
+        layer1_output = load_layer1_output()
+        converted_data = convert_layer1_to_layer2_format(layer1_output)
+        parking_json = converted_data["parking"]
+        readiness_json = converted_data["readiness"]
+        ads_json = []  # Ads not used
     
     return run_layer2_service(parking_json, readiness_json, ads_json, service_day)

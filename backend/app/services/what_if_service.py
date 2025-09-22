@@ -153,7 +153,8 @@ class WhatIfAnalyzer:
         impact_analysis = self._calculate_swap_impact(
             scheduled_readiness, 
             standby_readiness,
-            departure_time
+            departure_time,
+            standby_rationale
         )
         
         return {
@@ -421,7 +422,8 @@ Please format your response as JSON with the following structure:
         self, 
         scheduled_readiness: Dict, 
         standby_readiness: Dict,
-        departure_time: str
+        departure_time: str,
+        standby_rationale: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Calculate quantitative impact metrics"""
         
@@ -434,13 +436,30 @@ Please format your response as JSON with the following structure:
         
         risk_multiplier = 1.5 if is_peak else 1.0
         
+        # Simple shunting/fuel estimate based on rationale keywords
+        # If standby was previously rejected due to shunting/position, assume extra moves and fuel
+        estimated_additional_moves = 0
+        estimated_extra_fuel_liters = 0.0
+        try:
+            standby_reason = standby_rationale or {}
+            reason_text = (standby_reason.get("primary_reason", "") + " " + standby_reason.get("position_factor", "") + " " + standby_reason.get("shunting_factor", "")).lower()
+            if "shunting" in reason_text or "position" in reason_text:
+                # crude estimate: 2-4 extra moves if swapping in poorly positioned train
+                estimated_additional_moves = 3
+                # Assume ~2.5 liters per shunting move for yard movement (example figure)
+                estimated_extra_fuel_liters = round(estimated_additional_moves * 2.5, 1)
+        except Exception:
+            pass
+
         return {
             "readiness_score_change": score_diff,
             "risk_level": self._calculate_risk_level(score_diff, is_peak),
             "estimated_delay_risk": f"{abs(score_diff) * risk_multiplier / 10:.1f}%",
             "passenger_impact_severity": "HIGH" if is_peak and score_diff > 15 else "MEDIUM" if score_diff > 10 else "LOW",
             "is_peak_hour": is_peak,
-            "overall_impact_score": abs(score_diff) * risk_multiplier
+            "overall_impact_score": abs(score_diff) * risk_multiplier,
+            "estimated_shunting_moves": estimated_additional_moves,
+            "estimated_extra_fuel_liters": estimated_extra_fuel_liters
         }
     
     def _calculate_risk_level(self, score_diff: float, is_peak: bool) -> str:
@@ -472,6 +491,12 @@ Please format your response as JSON with the following structure:
         
         # Use the actual reasons from optimization
         reasoning = []
+        final_recommendation = "REVIEW_REQUIRED"
+
+        # Helper flags
+        shunting_issue = "shunting" in standby_rationale.get("shunting_factor", "").lower() or "poor_parking" in standby_rationale.get("primary_reason", "").lower()
+        standby_better_readiness = standby_score > scheduled_score
+        big_readiness_gain = standby_score >= scheduled_score + 5
         
         # If standby was rejected for shunting reasons
         if "shunting" in standby_rationale.get("shunting_factor", "").lower():
@@ -497,10 +522,19 @@ Please format your response as JSON with the following structure:
             final_recommendation = "REJECT"
             reasoning.append("Would lose high-readiness train from priority slot - goes against optimization goals")
         
-        # If it's just a close call
-        elif abs(score_diff) < 5:
-            final_recommendation = "APPROVE" if ai_recommendation == "APPROVE" else "REVIEW_REQUIRED"
-            reasoning.append("Marginal difference detected - AI technical analysis considered")
+        # Branding-driven selection: if standby has notably higher readiness and no shunting issue, approve
+        elif big_readiness_gain and not shunting_issue:
+            final_recommendation = "APPROVE"
+            reasoning.append("Standby readiness significantly higher with acceptable shunting - approve despite branding considerations")
+        
+        # If it's just a close call (<=7 points) and positioning is acceptable, lean to APPROVE/REVIEW
+        elif abs(score_diff) <= 7:
+            if not shunting_issue:
+                final_recommendation = "APPROVE" if ai_recommendation in ("APPROVE", "REVIEW_REQUIRED") else "REVIEW_REQUIRED"
+                reasoning.append("Small readiness difference and acceptable positioning - swap can be approved")
+            else:
+                final_recommendation = "REVIEW_REQUIRED"
+                reasoning.append("Small readiness difference but positioning/shunting needs review")
         
         else:
             final_recommendation = ai_recommendation

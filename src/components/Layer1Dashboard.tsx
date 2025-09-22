@@ -12,7 +12,7 @@ const styles = {
     color: '#f8fafc',
     fontFamily: 'Inter, system-ui, sans-serif'
   },
-  
+
   header: {
     display: 'flex',
     justifyContent: 'space-between',
@@ -25,7 +25,7 @@ const styles = {
     border: '1px solid rgba(148, 163, 184, 0.2)',
     backdropFilter: 'blur(10px)'
   },
-  
+
   title: {
     margin: 0,
     fontSize: '2rem',
@@ -34,7 +34,7 @@ const styles = {
     WebkitBackgroundClip: 'text',
     WebkitTextFillColor: 'transparent'
   },
-  
+
   btn: {
     background: 'linear-gradient(135deg, #06d6a0, #0891b2)',
     color: '#ffffff',
@@ -46,7 +46,7 @@ const styles = {
     cursor: 'pointer',
     transition: 'all 0.3s ease'
   },
-  
+
   btnOutline: {
     background: 'rgba(30, 41, 59, 0.6)',
     color: '#38bdf8',
@@ -57,7 +57,7 @@ const styles = {
     cursor: 'pointer',
     transition: 'all 0.3s ease'
   },
-  
+
   error: {
     background: 'linear-gradient(135deg, #dc2626, #991b1b)',
     padding: '1rem 1.5rem',
@@ -65,27 +65,27 @@ const styles = {
     color: '#ffffff',
     marginBottom: '1.5rem'
   },
-  
+
   main: {
     display: 'grid',
     gridTemplateColumns: '400px 1fr',
     gap: '2rem',
     alignItems: 'start'
   },
-  
+
   left: {
     display: 'flex',
     flexDirection: 'column' as const,
     gap: '1.5rem',
     height: 'fit-content'
   },
-  
+
   right: {
     display: 'flex',
     flexDirection: 'column' as const,
     gap: '1.5rem'
   },
-  
+
   card: {
     background: 'rgba(15, 23, 42, 0.8)',
     border: '1px solid rgba(148, 163, 184, 0.2)',
@@ -93,26 +93,26 @@ const styles = {
     borderRadius: '16px',
     backdropFilter: 'blur(10px)'
   },
-  
+
   cardTitle: {
     margin: '0 0 1rem 0',
     fontSize: '1.25rem',
     fontWeight: '700',
     color: '#f8fafc'
   },
-  
+
   scrollContainer: {
     maxHeight: '500px', // Match map + details height
     overflowY: 'auto' as const,
     paddingRight: '0.5rem'
   },
-  
+
   grid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
     gap: '1rem'
   },
-  
+
   scoreCard: {
     padding: '1rem',
     borderRadius: '12px',
@@ -120,7 +120,7 @@ const styles = {
     border: '1px solid rgba(6, 214, 160, 0.2)',
     transition: 'all 0.3s ease'
   },
-  
+
   trainId: {
     fontWeight: '800',
     fontSize: '1.1rem',
@@ -128,7 +128,7 @@ const styles = {
     fontFamily: 'Monaco, monospace',
     marginBottom: '0.5rem'
   },
-  
+
   score: {
     fontSize: '2rem',
     fontWeight: '900',
@@ -136,45 +136,45 @@ const styles = {
     fontFamily: 'Monaco, monospace',
     marginBottom: '0.5rem'
   },
-  
+
   details: {
     fontSize: '0.85rem',
     color: '#94a3b8',
     lineHeight: '1.4'
   },
-  
+
   rowList: {
     display: 'grid',
     gridTemplateColumns: '1fr 1fr',
     gap: '1rem'
   },
-  
+
   smallCard: {
     background: 'rgba(30, 41, 59, 0.6)',
     border: '1px solid rgba(148, 163, 184, 0.1)',
     padding: '1rem',
     borderRadius: '12px'
   },
-  
+
   smallCardTitle: {
     margin: '0 0 0.75rem 0',
     fontSize: '1rem',
     fontWeight: '600',
     color: '#cbd5e1'
   },
-  
+
   listScroll: {
     maxHeight: '120px',
     overflowY: 'auto' as const,
     paddingRight: '0.5rem'
   },
-  
+
   badgeGrid: {
     display: 'flex',
     flexWrap: 'wrap' as const,
     gap: '0.5rem'
   },
-  
+
   listBadgeSmall: {
     border: 'none',
     padding: '0.5rem 0.75rem',
@@ -189,7 +189,7 @@ const styles = {
     color: '#6ee7b7',
     // border: '1px solid rgba(6, 214, 160, 0.3)'
   },
-  
+
   listBadgeSmallIbl: {
     border: 'none',
     padding: '0.5rem 0.75rem',
@@ -204,7 +204,7 @@ const styles = {
     color: '#7dd3fc',
     // border: '1px solid rgba(56, 189, 248, 0.3)'
   },
-  
+
   fullWidthCard: {
     gridColumn: '1 / -1',
     background: 'rgba(15, 23, 42, 0.8)',
@@ -214,7 +214,7 @@ const styles = {
     backdropFilter: 'blur(10px)',
     marginTop: '2rem'
   },
-  
+
   cleaningList: {
     listStyle: 'none',
     margin: 0,
@@ -223,7 +223,7 @@ const styles = {
     gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
     gap: '1rem'
   },
-  
+
   cleaningItem: {
     display: 'flex',
     justifyContent: 'space-between',
@@ -234,29 +234,29 @@ const styles = {
     border: '1px solid rgba(148, 163, 184, 0.1)',
     transition: 'all 0.3s ease'
   },
-  
+
   itemLeft: {
     flex: 1
   },
-  
+
   itemRight: {
     textAlign: 'right' as const,
     color: '#cbd5e1'
   },
-  
+
   small: {
     fontSize: '0.85rem',
     color: '#94a3b8',
     marginTop: '0.25rem'
   },
-  
+
   empty: {
     color: '#64748b',
     textAlign: 'center' as const,
     padding: '2rem',
     fontStyle: 'italic'
   },
-  
+
   detailsCard: {
     background: 'rgba(15, 23, 42, 0.8)',
     border: '1px solid rgba(148, 163, 184, 0.2)',
@@ -265,7 +265,7 @@ const styles = {
     backdropFilter: 'blur(10px)',
     height: 'fit-content'
   },
-  
+
   summaryRow: {
     display: 'flex',
     alignItems: 'center',
@@ -273,7 +273,7 @@ const styles = {
     borderBottom: '1px solid rgba(148, 163, 184, 0.1)',
     marginBottom: '1rem'
   },
-  
+
   scoreBadge: {
     background: 'linear-gradient(135deg, rgba(6, 214, 160, 0.2), rgba(16, 185, 129, 0.1))',
     color: '#06d6a0',
@@ -283,7 +283,7 @@ const styles = {
     fontSize: '0.9rem',
     marginLeft: '1rem'
   },
-  
+
   detailHeader: {
     color: '#38bdf8',
     fontSize: '1rem',
@@ -292,7 +292,7 @@ const styles = {
     paddingBottom: '0.5rem',
     borderBottom: '1px solid rgba(56, 189, 248, 0.2)'
   },
-  
+
   detailsList: {
     listStyle: 'none',
     margin: 0,
@@ -300,7 +300,7 @@ const styles = {
     display: 'grid',
     gap: '0.75rem'
   },
-  
+
   detailItem: {
     background: 'rgba(30, 41, 59, 0.6)',
     padding: '0.75rem 1rem',
@@ -309,7 +309,7 @@ const styles = {
     color: '#e2e8f0',
     borderLeft: '3px solid rgba(56, 189, 248, 0.4)'
   },
-  
+
   reasonItem: {
     background: 'rgba(15, 23, 42, 0.6)',
     padding: '0.75rem 1rem',
@@ -319,7 +319,7 @@ const styles = {
     fontSize: '0.9rem',
     borderLeft: '3px solid rgba(168, 85, 247, 0.4)'
   },
-  
+
   muted: {
     color: '#64748b',
     fontSize: '0.9rem'
@@ -424,16 +424,16 @@ export default function Layer1Dashboard() {
       <header style={styles.header}>
         <h1 style={styles.title}>Tonight's Parking + Cleaning Schedule</h1>
         <div>
-          <button 
-            style={{...styles.btn, ...(loading ? {opacity: 0.6, cursor: 'not-allowed'} : {})}}
-            onClick={handleGenerate} 
+          <button
+            style={{ ...styles.btn, ...(loading ? { opacity: 0.6, cursor: 'not-allowed' } : {}) }}
+            onClick={handleGenerate}
             disabled={loading}
           >
             Get today's schedule
           </button>
-          <button 
-            style={{...styles.btnOutline, ...(loading ? {opacity: 0.6, cursor: 'not-allowed'} : {})}}
-            onClick={handleFetch} 
+          <button
+            style={{ ...styles.btnOutline, ...(loading ? { opacity: 0.6, cursor: 'not-allowed' } : {}) }}
+            onClick={handleFetch}
             disabled={loading}
           >
             Refresh
@@ -493,11 +493,11 @@ export default function Layer1Dashboard() {
         </div>
 
         <div style={styles.right}>
-          <ParkingMapComponent 
-            assignments={data?.parking_assignments || []} 
-            depotLayout={data?.explanation} 
-            selected={selectedTrain} 
-            onSelect={setSelectedTrain} 
+          <ParkingMapComponent
+            assignments={data?.parking_assignments || []}
+            depotLayout={data?.explanation}
+            selected={selectedTrain}
+            onSelect={setSelectedTrain}
           />
 
           <div style={styles.detailsCard}>

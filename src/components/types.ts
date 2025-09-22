@@ -23,7 +23,11 @@ export interface ParkingAssignment {
 }
 
 export interface DepotLayout {
-  parking_tracks: Array<{ id: string; capacity?: number; current_trains?: string[] }>;
+  parking_tracks: Array<{
+    id: string;
+    capacity?: number;
+    current_trains?: string[];
+  }>;
   ibl_bays: string[];
   connections: Record<string, string[]>;
   exit_points: string[];

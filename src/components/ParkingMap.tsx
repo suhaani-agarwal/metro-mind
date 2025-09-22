@@ -48,7 +48,7 @@ export default function ParkingMap({ assignments, depotLayout, selected, onSelec
   const [isAnimating, setIsAnimating] = useState(false);
   const [simulationSpeed, setSimulationSpeed] = useState(1);
   const intervalRef = useRef<number | null>(null);
-  
+
   // Map train -> assignment
   const assignMap: Record<string, ParkingAssignment> = {};
   assignments.forEach(a => { assignMap[a.train_id] = a; });
@@ -94,40 +94,40 @@ export default function ParkingMap({ assignments, depotLayout, selected, onSelec
   // Enhanced depot layout with realistic proportions
   const svgW = 1200;
   const svgH = 600;
-  
+
   // Main spine running horizontally through center
   const spineY = svgH / 2;
   const spineStartX = 100;
   const spineEndX = svgW - 100;
-  
+
   // IBL maintenance bays (top section) - 5 parallel tracks
   const iblBays = depotLayout?.ibl_bays || ['IBL01', 'IBL02', 'IBL03', 'IBL04', 'IBL05'];
   const iblY = 120;
   const iblSpacing = 180;
   const iblPositions: Record<string, { x: number, y: number }> = {};
   iblBays.forEach((bay, i) => {
-    iblPositions[bay] = { 
-      x: spineStartX + 200 + (i * iblSpacing), 
-      y: iblY 
+    iblPositions[bay] = {
+      x: spineStartX + 200 + (i * iblSpacing),
+      y: iblY
     };
   });
 
   // Parking tracks (bottom section) - 12 tracks in 2 rows
   const parkingTracks = depotLayout?.parking_tracks || [
-    { id: 'PT01', capacity: 2 }, { id: 'PT02', capacity: 2 }, 
+    { id: 'PT01', capacity: 2 }, { id: 'PT02', capacity: 2 },
     { id: 'PT03', capacity: 2 }, { id: 'PT04', capacity: 2 },
     { id: 'PT05', capacity: 2 }, { id: 'PT06', capacity: 2 },
     { id: 'PT07', capacity: 2 }, { id: 'PT08', capacity: 2 },
     { id: 'PT09', capacity: 2 }, { id: 'PT10', capacity: 2 },
     { id: 'PT11', capacity: 2 }, { id: 'PT12', capacity: 2 }
   ];
-  
+
   const trackPositions: Record<string, { x: number, y: number }> = {};
   parkingTracks.forEach((track, i) => {
     const row = Math.floor(i / 6);
     const col = i % 6;
-    trackPositions[track.id || ''] = { 
-      x: spineStartX + 200 + (col * 150), 
+    trackPositions[track.id || ''] = {
+      x: spineStartX + 200 + (col * 150),
       y: spineY + 100 + (row * 60)
     };
   });
@@ -148,18 +148,18 @@ export default function ParkingMap({ assignments, depotLayout, selected, onSelec
   };
 
   // Track routing algorithm - finds path through actual track connections
-  const findTrackPath = (startNode: string, endNode: string): Array<{x: number, y: number}> => {
+  const findTrackPath = (startNode: string, endNode: string): Array<{ x: number, y: number }> => {
     const allPositions = { ...iblPositions, ...trackPositions, ...exitPositions, ...junctionPositions };
-    
+
     const startPos = allPositions[startNode];
     const endPos = allPositions[endNode];
-    
+
     if (!startPos || !endPos) return [];
-    
+
     // Define track connectivity based on our layout
     const getRouteWaypoints = (start: string, end: string): string[] => {
       const route: string[] = [start];
-      
+
       // IBL to Parking: IBL -> JCT_IBL -> JCT_PARK -> Parking
       if (iblBays.includes(start) && parkingTracks.find(p => p.id === end)) {
         route.push('JCT_IBL', 'JCT_PARK', end);
@@ -194,10 +194,10 @@ export default function ParkingMap({ assignments, depotLayout, selected, onSelec
           route.push(end);
         }
       }
-      
+
       return route;
     };
-    
+
     const waypoints = getRouteWaypoints(startNode, endNode);
     return waypoints.map(node => allPositions[node]).filter(Boolean);
   };
@@ -209,43 +209,43 @@ export default function ParkingMap({ assignments, depotLayout, selected, onSelec
         {/* Grid background */}
         <defs>
           <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-            <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(100,150,255,0.1)" strokeWidth="0.5"/>
+            <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(100,150,255,0.1)" strokeWidth="0.5" />
           </pattern>
           <filter id="glow">
-            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
-            <feMerge> 
-              <feMergeNode in="coloredBlur"/>
-              <feMergeNode in="SourceGraphic"/>
+            <feGaussianBlur stdDeviation="3" result="coloredBlur" />
+            <feMerge>
+              <feMergeNode in="coloredBlur" />
+              <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
           <linearGradient id="trackGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" style={{stopColor:"#4a5568", stopOpacity:1}} />
-            <stop offset="50%" style={{stopColor:"#718096", stopOpacity:1}} />
-            <stop offset="100%" style={{stopColor:"#4a5568", stopOpacity:1}} />
+            <stop offset="0%" style={{ stopColor: "#4a5568", stopOpacity: 1 }} />
+            <stop offset="50%" style={{ stopColor: "#718096", stopOpacity: 1 }} />
+            <stop offset="100%" style={{ stopColor: "#4a5568", stopOpacity: 1 }} />
           </linearGradient>
         </defs>
-        
-        <rect width="100%" height="100%" fill="url(#grid)" opacity="0.3"/>
+
+        <rect width="100%" height="100%" fill="url(#grid)" opacity="0.3" />
 
         {/* Main spine track */}
         <g style={styles.mainSpine}>
-          <line 
-            x1={spineStartX} y1={spineY} 
-            x2={spineEndX} y2={spineY} 
-            stroke="url(#trackGradient)" 
+          <line
+            x1={spineStartX} y1={spineY}
+            x2={spineEndX} y2={spineY}
+            stroke="url(#trackGradient)"
             strokeWidth="12"
             filter="url(#glow)"
           />
-          <line 
-            x1={spineStartX} y1={spineY-2} 
-            x2={spineEndX} y2={spineY-2} 
-            stroke="#e2e8f0" 
+          <line
+            x1={spineStartX} y1={spineY - 2}
+            x2={spineEndX} y2={spineY - 2}
+            stroke="#e2e8f0"
             strokeWidth="2"
           />
-          <line 
-            x1={spineStartX} y1={spineY+2} 
-            x2={spineEndX} y2={spineY+2} 
-            stroke="#e2e8f0" 
+          <line
+            x1={spineStartX} y1={spineY + 2}
+            x2={spineEndX} y2={spineY + 2}
+            stroke="#e2e8f0"
             strokeWidth="2"
           />
         </g>
@@ -254,50 +254,50 @@ export default function ParkingMap({ assignments, depotLayout, selected, onSelec
         {iblBays.map((bay, i) => {
           const pos = iblPositions[bay];
           const connectionX = spineStartX + 150;
-          
+
           return (
             <g key={bay} style={styles.iblTrack}>
               {/* Main track */}
-              <line 
-                x1={pos.x - 80} y1={pos.y} 
-                x2={pos.x + 80} y2={pos.y} 
-                stroke="url(#trackGradient)" 
+              <line
+                x1={pos.x - 80} y1={pos.y}
+                x2={pos.x + 80} y2={pos.y}
+                stroke="url(#trackGradient)"
                 strokeWidth="10"
                 filter="url(#glow)"
               />
-              
+
               {/* Rails */}
-              <line x1={pos.x - 80} y1={pos.y-2} x2={pos.x + 80} y2={pos.y-2} stroke="#e2e8f0" strokeWidth="1.5"/>
-              <line x1={pos.x - 80} y1={pos.y+2} x2={pos.x + 80} y2={pos.y+2} stroke="#e2e8f0" strokeWidth="1.5"/>
-              
+              <line x1={pos.x - 80} y1={pos.y - 2} x2={pos.x + 80} y2={pos.y - 2} stroke="#e2e8f0" strokeWidth="1.5" />
+              <line x1={pos.x - 80} y1={pos.y + 2} x2={pos.x + 80} y2={pos.y + 2} stroke="#e2e8f0" strokeWidth="1.5" />
+
               {/* Sleepers */}
-              {Array.from({length: 16}, (_, j) => (
-                <rect 
+              {Array.from({ length: 16 }, (_, j) => (
+                <rect
                   key={j}
-                  x={pos.x - 75 + j * 10} 
-                  y={pos.y - 4} 
-                  width="2" 
+                  x={pos.x - 75 + j * 10}
+                  y={pos.y - 4}
+                  width="2"
                   height="8"
                   fill="#4a5568"
                 />
               ))}
-              
+
               {/* Connection to spine */}
-              <path 
+              <path
                 d={`M ${connectionX} ${spineY} Q ${connectionX + 30} ${(spineY + pos.y) / 2} ${pos.x - 80} ${pos.y}`}
-                stroke="url(#trackGradient)" 
-                strokeWidth="8" 
+                stroke="url(#trackGradient)"
+                strokeWidth="8"
                 fill="none"
                 filter="url(#glow)"
               />
-              
+
               {/* Track label with futuristic styling */}
               <g transform={`translate(${pos.x}, ${pos.y - 25})`}>
-                <rect x="-20" y="-8" width="40" height="16" rx="8" fill="rgba(56,178,172,0.2)" stroke="#38b2ac" strokeWidth="1"/>
-                <text 
-                  textAnchor="middle" 
+                <rect x="-20" y="-8" width="40" height="16" rx="8" fill="rgba(56,178,172,0.2)" stroke="#38b2ac" strokeWidth="1" />
+                <text
+                  textAnchor="middle"
                   y="4"
-                  fill="#38b2ac" 
+                  fill="#38b2ac"
                   fontSize="11"
                   fontWeight="bold"
                   fontFamily="monospace"
@@ -307,8 +307,8 @@ export default function ParkingMap({ assignments, depotLayout, selected, onSelec
               </g>
 
               {/* Maintenance equipment indicators */}
-              <circle cx={pos.x - 50} cy={pos.y - 15} r="3" fill="#38b2ac" opacity="0.7"/>
-              <circle cx={pos.x + 50} cy={pos.y - 15} r="3" fill="#38b2ac" opacity="0.7"/>
+              <circle cx={pos.x - 50} cy={pos.y - 15} r="3" fill="#38b2ac" opacity="0.7" />
+              <circle cx={pos.x + 50} cy={pos.y - 15} r="3" fill="#38b2ac" opacity="0.7" />
             </g>
           );
         })}
@@ -317,48 +317,48 @@ export default function ParkingMap({ assignments, depotLayout, selected, onSelec
         {parkingTracks.map((track, i) => {
           const pos = trackPositions[track.id || ''];
           const connectionX = spineStartX + 150;
-          
+
           return (
             <g key={track.id} style={styles.parkingTrack}>
               {/* Main track */}
-              <line 
-                x1={pos.x - 60} y1={pos.y} 
-                x2={pos.x + 60} y2={pos.y} 
-                stroke="url(#trackGradient)" 
+              <line
+                x1={pos.x - 60} y1={pos.y}
+                x2={pos.x + 60} y2={pos.y}
+                stroke="url(#trackGradient)"
                 strokeWidth="8"
               />
-              
+
               {/* Rails */}
-              <line x1={pos.x - 60} y1={pos.y-1.5} x2={pos.x + 60} y2={pos.y-1.5} stroke="#e2e8f0" strokeWidth="1"/>
-              <line x1={pos.x - 60} y1={pos.y+1.5} x2={pos.x + 60} y2={pos.y+1.5} stroke="#e2e8f0" strokeWidth="1"/>
-              
+              <line x1={pos.x - 60} y1={pos.y - 1.5} x2={pos.x + 60} y2={pos.y - 1.5} stroke="#e2e8f0" strokeWidth="1" />
+              <line x1={pos.x - 60} y1={pos.y + 1.5} x2={pos.x + 60} y2={pos.y + 1.5} stroke="#e2e8f0" strokeWidth="1" />
+
               {/* Sleepers */}
-              {Array.from({length: 12}, (_, j) => (
-                <rect 
+              {Array.from({ length: 12 }, (_, j) => (
+                <rect
                   key={j}
-                  x={pos.x - 55 + j * 10} 
-                  y={pos.y - 3} 
-                  width="1.5" 
+                  x={pos.x - 55 + j * 10}
+                  y={pos.y - 3}
+                  width="1.5"
                   height="6"
                   fill="#4a5568"
                 />
               ))}
-              
+
               {/* Connection to spine */}
-              <path 
+              <path
                 d={`M ${connectionX} ${spineY} Q ${connectionX + 20} ${(spineY + pos.y) / 2} ${pos.x - 60} ${pos.y}`}
-                stroke="url(#trackGradient)" 
-                strokeWidth="6" 
+                stroke="url(#trackGradient)"
+                strokeWidth="6"
                 fill="none"
               />
-              
+
               {/* Track label */}
               <g transform={`translate(${pos.x}, ${pos.y - 20})`}>
-                <rect x="-15" y="-6" width="30" height="12" rx="6" fill="rgba(102,126,234,0.2)" stroke="#667eea" strokeWidth="1"/>
-                <text 
-                  textAnchor="middle" 
+                <rect x="-15" y="-6" width="30" height="12" rx="6" fill="rgba(102,126,234,0.2)" stroke="#667eea" strokeWidth="1" />
+                <text
+                  textAnchor="middle"
                   y="3"
-                  fill="#667eea" 
+                  fill="#667eea"
                   fontSize="9"
                   fontWeight="bold"
                   fontFamily="monospace"
@@ -370,7 +370,7 @@ export default function ParkingMap({ assignments, depotLayout, selected, onSelec
               {/* Position markers */}
               {[1, 2].map((position, idx) => (
                 <g key={position} transform={`translate(${pos.x - 25 + (idx * 50)}, ${pos.y})`}>
-                  <circle r="5" fill="rgba(251,191,36,0.3)" stroke="#fbbf24" strokeWidth="2"/>
+                  <circle r="5" fill="rgba(251,191,36,0.3)" stroke="#fbbf24" strokeWidth="2" />
                   <text textAnchor="middle" y="2" fill="#fbbf24" fontSize="8" fontWeight="bold">{position}</text>
                 </g>
               ))}
@@ -389,7 +389,7 @@ export default function ParkingMap({ assignments, depotLayout, selected, onSelec
               strokeWidth="2"
               filter="url(#glow)"
             />
-            <circle cx={pos.x} cy={pos.y} r="12" fill="rgba(16,185,129,0.3)"/>
+            <circle cx={pos.x} cy={pos.y} r="12" fill="rgba(16,185,129,0.3)" />
             <text
               x={pos.x} y={pos.y + 3}
               textAnchor="middle"
@@ -402,7 +402,7 @@ export default function ParkingMap({ assignments, depotLayout, selected, onSelec
             </text>
             {/* Signal indicators */}
             <circle cx={pos.x + 25} cy={pos.y - 25} r="4" fill="#10b981" opacity="0.8">
-              <animate attributeName="opacity" values="0.3;1;0.3" dur="2s" repeatCount="indefinite"/>
+              <animate attributeName="opacity" values="0.3;1;0.3" dur="2s" repeatCount="indefinite" />
             </circle>
           </g>
         ))}
@@ -410,10 +410,10 @@ export default function ParkingMap({ assignments, depotLayout, selected, onSelec
         {/* Junction indicators */}
         {Object.entries(junctionPositions).map(([id, pos]) => (
           <g key={id}>
-            <polygon 
-              points={`${pos.x-8},${pos.y-8} ${pos.x+8},${pos.y-8} ${pos.x+8},${pos.y+8} ${pos.x-8},${pos.y+8}`}
-              fill="rgba(236,72,153,0.2)" 
-              stroke="#ec4899" 
+            <polygon
+              points={`${pos.x - 8},${pos.y - 8} ${pos.x + 8},${pos.y - 8} ${pos.x + 8},${pos.y + 8} ${pos.x - 8},${pos.y + 8}`}
+              fill="rgba(236,72,153,0.2)"
+              stroke="#ec4899"
               strokeWidth="1"
             />
           </g>
@@ -437,25 +437,25 @@ export default function ParkingMap({ assignments, depotLayout, selected, onSelec
           };
         }
       }
-      
+
       if (!position) return null;
-      
+
       const isSelected = selected === a.train_id;
-      
+
       return (
-            <g
-                key={a.train_id}
-                className={`train ${isSelected ? 'selected' : ''}`}
-                onClick={() => onSelect?.(isSelected ? null : a.train_id)}
-                style={{cursor: 'pointer'}}
-            >
+        <g
+          key={a.train_id}
+          className={`train ${isSelected ? 'selected' : ''}`}
+          onClick={() => onSelect?.(isSelected ? null : a.train_id)}
+          style={{ cursor: 'pointer' }}
+        >
           {/* Train shadow */}
-          <ellipse 
-            cx={position.x + 2} cy={position.y + 18} 
-            rx="22" ry="6" 
+          <ellipse
+            cx={position.x + 2} cy={position.y + 18}
+            rx="22" ry="6"
             fill="rgba(0,0,0,0.3)"
           />
-          
+
           {/* Train body with gradient */}
           <defs>
             <linearGradient id={`trainGrad-${a.train_id}`} x1="0%" y1="0%" x2="0%" y2="100%">
@@ -463,34 +463,34 @@ export default function ParkingMap({ assignments, depotLayout, selected, onSelec
               <stop offset="100%" stopColor={isSelected ? '#f59e0b' : '#048b5c'} />
             </linearGradient>
           </defs>
-          
-          <rect 
-            x={position.x - 20} y={position.y - 12} 
-            width={40} height={24} 
-            rx="6" 
+
+          <rect
+            x={position.x - 20} y={position.y - 12}
+            width={40} height={24}
+            rx="6"
             fill={`url(#trainGrad-${a.train_id})`}
-            stroke={isSelected ? '#f59e0b' : '#048b5c'} 
+            stroke={isSelected ? '#f59e0b' : '#048b5c'}
             strokeWidth="2"
             filter={isSelected ? "url(#glow)" : "none"}
           />
-          
+
           {/* Train details */}
           <rect x={position.x - 16} y={position.y - 8} width={7} height={5} rx="1" fill="rgba(0,0,0,0.7)" />
           <rect x={position.x - 6} y={position.y - 8} width={7} height={5} rx="1" fill="rgba(0,0,0,0.7)" />
           <rect x={position.x + 4} y={position.y - 8} width={7} height={5} rx="1" fill="rgba(0,0,0,0.7)" />
-          
+
           {/* Front/rear lights */}
-          <circle cx={position.x - 18} cy={position.y} r="2" fill="#fbbf24"/>
-          <circle cx={position.x + 18} cy={position.y} r="2" fill="#ef4444"/>
-          
+          <circle cx={position.x - 18} cy={position.y} r="2" fill="#fbbf24" />
+          <circle cx={position.x + 18} cy={position.y} r="2" fill="#ef4444" />
+
           {/* Train ID with background */}
-          <rect 
-            x={position.x - 12} y={position.y + 16} 
-            width={24} height={12} 
-            rx="4" 
+          <rect
+            x={position.x - 12} y={position.y + 16}
+            width={24} height={12}
+            rx="4"
             fill="rgba(0,0,0,0.8)"
           />
-          <text 
+          <text
             x={position.x} y={position.y + 24}
             textAnchor="middle"
             fill="#ffffff"
@@ -508,13 +508,13 @@ export default function ParkingMap({ assignments, depotLayout, selected, onSelec
   // Enhanced shunting path animation with realistic routing
   const renderShuntingPath = () => {
     if (!selectedAssignment || !selectedAssignment.shunting_path) return null;
-    
+
     const pathNodes = selectedAssignment.shunting_path;
     if (pathNodes.length < 2) return null;
 
     // Generate realistic track path between consecutive nodes
-    const fullTrackPath: Array<{x: number, y: number}> = [];
-    
+    const fullTrackPath: Array<{ x: number, y: number }> = [];
+
     for (let i = 0; i < pathNodes.length - 1; i++) {
       const segmentPath = findTrackPath(pathNodes[i], pathNodes[i + 1]);
       if (i === 0) {
@@ -528,15 +528,15 @@ export default function ParkingMap({ assignments, depotLayout, selected, onSelec
     if (fullTrackPath.length < 2) return null;
 
     // Create smooth curved path following tracks
-    const createTrackPath = (points: Array<{x: number, y: number}>) => {
+    const createTrackPath = (points: Array<{ x: number, y: number }>) => {
       if (points.length < 2) return '';
-      
+
       let d = `M ${points[0].x} ${points[0].y}`;
-      
+
       for (let i = 1; i < points.length; i++) {
         const prev = points[i - 1];
         const curr = points[i];
-        
+
         // Use smooth curves for track transitions
         if (i === 1) {
           d += ` L ${curr.x} ${curr.y}`;
@@ -556,7 +556,7 @@ export default function ParkingMap({ assignments, depotLayout, selected, onSelec
     };
 
     const fullPath = createTrackPath(fullTrackPath);
-    
+
     // Calculate animated portion based on progress
     const animatedPoints = Math.min(animationStep + 1, fullTrackPath.length);
     const animatedPath = createTrackPath(fullTrackPath.slice(0, animatedPoints));
@@ -564,17 +564,17 @@ export default function ParkingMap({ assignments, depotLayout, selected, onSelec
     return (
       <g style={styles.shuntingPath}>
         {/* Full path (dimmed) */}
-        <path 
+        <path
           d={fullPath}
           stroke="rgba(251,191,36,0.3)"
           strokeWidth="4"
           fill="none"
           strokeDasharray="8,4"
         />
-        
+
         {/* Animated path */}
         {animationStep > 0 && animatedPoints > 1 && (
-          <path 
+          <path
             d={animatedPath}
             stroke="#fbbf24"
             strokeWidth="6"
@@ -583,7 +583,7 @@ export default function ParkingMap({ assignments, depotLayout, selected, onSelec
             markerEnd="url(#arrowhead)"
           />
         )}
-        
+
         {/* Track junction indicators */}
         {fullTrackPath.slice(0, animatedPoints).map((pos, i) => {
           if (i % 3 === 0) { // Show every 3rd point to avoid clutter
@@ -597,24 +597,24 @@ export default function ParkingMap({ assignments, depotLayout, selected, onSelec
                 strokeWidth="1"
                 opacity="0.8"
               >
-                <animate attributeName="r" values="3;6;3" dur="2s" repeatCount="indefinite"/>
+                <animate attributeName="r" values="3;6;3" dur="2s" repeatCount="indefinite" />
               </circle>
             );
           }
           return null;
         })}
-        
+
         {/* Moving train indicator */}
         {animationStep > 0 && animatedPoints <= fullTrackPath.length && (
-        <g transform={`translate(${fullTrackPath[Math.min(animatedPoints - 1, fullTrackPath.length - 1)].x}, ${fullTrackPath[Math.min(animatedPoints - 1, fullTrackPath.length - 1)].y})`}>
+          <g transform={`translate(${fullTrackPath[Math.min(animatedPoints - 1, fullTrackPath.length - 1)].x}, ${fullTrackPath[Math.min(animatedPoints - 1, fullTrackPath.length - 1)].y})`}>
             <circle r="12" fill="rgba(251,191,36,0.3)" stroke="#fbbf24" strokeWidth="2">
-            <animate attributeName="r" values="8;16;8" dur="1s" repeatCount="indefinite"/>
+              <animate attributeName="r" values="8;16;8" dur="1s" repeatCount="indefinite" />
             </circle>
-            <polygon points="-8,-6 8,-6 8,6 -8,6" fill="#fbbf24"/>
+            <polygon points="-8,-6 8,-6 8,6 -8,6" fill="#fbbf24" />
             <text y="2" textAnchor="middle" fill="#000" fontSize="8" fontWeight="bold">
-            {selectedAssignment.train_id}
+              {selectedAssignment.train_id}
             </text>
-        </g>
+          </g>
         )}
       </g>
     );
@@ -647,7 +647,7 @@ export default function ParkingMap({ assignments, depotLayout, selected, onSelec
         }}>
           Kochi Metro Depot - Real-time Operations
         </h3>
-        
+
         {selectedAssignment && (
           <div style={{
             display: 'flex',
@@ -661,8 +661,8 @@ export default function ParkingMap({ assignments, depotLayout, selected, onSelec
                 setIsAnimating(!isAnimating);
               }}
               style={{
-                background: isAnimating 
-                  ? 'linear-gradient(90deg, #ef4444, #dc2626)' 
+                background: isAnimating
+                  ? 'linear-gradient(90deg, #ef4444, #dc2626)'
                   : 'linear-gradient(90deg, #10b981, #059669)',
                 color: 'white',
                 border: 'none',
@@ -675,8 +675,8 @@ export default function ParkingMap({ assignments, depotLayout, selected, onSelec
             >
               {isAnimating ? 'Stop Simulation' : 'Start Simulation'}
             </button>
-            
-            <select 
+
+            <select
               value={simulationSpeed}
               onChange={(e) => setSimulationSpeed(Number(e.target.value))}
               style={{
@@ -725,13 +725,13 @@ export default function ParkingMap({ assignments, depotLayout, selected, onSelec
               Moves: {selectedAssignment.moves_required}
             </span>
           </div>
-          
+
           <div style={{ color: '#cbd5e1', fontSize: '0.9rem' }}>
             <strong>Route:</strong> {selectedAssignment.shunting_path.join(' → ')}
           </div>
         </div>
       )}
-      
+
       <div style={{
         background: '#020617',
         borderRadius: '8px',
@@ -739,7 +739,7 @@ export default function ParkingMap({ assignments, depotLayout, selected, onSelec
         border: '2px solid rgba(148, 163, 184, 0.1)',
         position: 'relative'
       }}>
-        <svg 
+        <svg
           viewBox={`0 0 ${svgW} ${svgH}`}
           style={{
             width: '100%',
@@ -760,13 +760,13 @@ export default function ParkingMap({ assignments, depotLayout, selected, onSelec
               <polygon points="0 0, 10 4, 0 8" fill="#fbbf24" />
             </marker>
           </defs>
-          
+
           {renderTracks()}
           {renderShuntingPath()}
           {renderTrains()}
         </svg>
       </div>
-      
+
       <div style={{
         textAlign: 'center',
         color: '#94a3b8',

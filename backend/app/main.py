@@ -13,7 +13,13 @@ from app.utils.layer2 import validate_input_data, validate_date_format
 from pathlib import Path
 import json
 from datetime import date, datetime
-from app.services.layer2_service import run_layer2_service, get_timetable_config, generate_departure_slots
+from app.services.layer2_service import (
+    run_layer2_service,
+    get_timetable_config,
+    generate_departure_slots,
+    convert_layer1_to_layer2_format,
+    load_layer1_output,
+)
 from app.services.what_if_service import WhatIfAnalyzer, analyze_train_swap
 
 # Configure logging
@@ -36,6 +42,9 @@ DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data")
 
 app.include_router(onboarding.router, prefix="/api/onboarding", tags=["Onboarding"])
 app.include_router(nightly.router, prefix="/api/nightly", tags=["Nightly"])
+
+OVERRIDES_PATH = Path(__file__).parent.parent / "data" / "overrides.json"
+SUGGESTIONS_PATH = Path(__file__).parent.parent / "data" / "suggestions.json"
 
 def load_test_data() -> Dict[str, Any]:
     """Load test data with error handling"""
@@ -170,41 +179,42 @@ def schedule(payload: ScheduleRequest):
 # Enhanced test endpoint with validation
 @app.get("/schedule/test")
 def schedule_test(service_date: Optional[str] = None):
-    """Test endpoint using built-in test data with enhanced validation"""
+    """Layer 2 scheduling using actual Layer 1 output (output.json)."""
     try:
-        test_data = load_test_data()
-        
-        # Validate test data
+        # Load Layer 1 output and convert for validation context
+        layer1_output = load_layer1_output()
+        converted = convert_layer1_to_layer2_format(layer1_output)
+
+        # Validate converted Layer 1 data
         validation = validate_input_data(
-            test_data["parking"], 
-            test_data["readiness"], 
-            test_data.get("ads", [])
+            converted["parking"], 
+            converted["readiness"], 
+            []
         )
-        
+
         target_date = None
         if service_date:
             target_date = validate_date_format(service_date)
-        
+
+        # Run Layer 2 optimization using Layer 1 output internally
         result = run_layer2_service(
-            parking_json=test_data["parking"],
-            readiness_json=test_data["readiness"],
-            ads_json=test_data.get("ads", []),
-            service_day=test_data.get("service_day", "weekday"),
-            service_date=target_date
+            service_day="weekday",
+            service_date=target_date,
+            use_layer1_output=True,
         )
-        
-        # Add test data info
-        result["test_data_validation"] = validation
-        result["test_data_source"] = "test_data.json"
+
+        # Add info
+        result["input_validation"] = validation
+        result["data_source"] = "Layer 1 Output"
         result["processing_time"] = datetime.now().isoformat()
         result["optimization_focus"] = "Readiness scores and minimal shunting operations"
-        
+
         return result
-        
+
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Test scheduling failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Layer 2 scheduling failed: {str(e)}")
 
 # Advanced scheduling with optimization parameters
 @app.post("/schedule/advanced")
@@ -255,112 +265,109 @@ def schedule_advanced(payload: ScheduleRequest, params: OptimizationParams = Non
 
 @app.get("/whatif/standby-trains")
 def get_standby_trains():
-    """Get all trains that are on standby (have readiness data but aren't scheduled)"""
+    """Get all standby trains using Layer 1 output and current Layer 2 schedule."""
     try:
-        test_data = load_test_data()
-        
+        layer1_output = load_layer1_output()
+        converted = convert_layer1_to_layer2_format(layer1_output)
+
         # Run optimization to get current schedule
         optimization_result = run_layer2_service(
-            parking_json=test_data["parking"],
-            readiness_json=test_data["readiness"],
-            ads_json=test_data.get("ads", []),
-            service_day=test_data.get("service_day", "weekday")
+            service_day="weekday",
+            use_layer1_output=True,
         )
-        
+
         # Initialize analyzer and get standby trains
         analyzer = WhatIfAnalyzer()
-        standby_trains = analyzer.get_standby_trains(optimization_result, test_data["readiness"])
-        
+        standby_trains = analyzer.get_standby_trains(optimization_result, converted["readiness"])
+
         return {
             "standby_trains": standby_trains,
             "total_standby": len(standby_trains),
             "scheduled_trains_count": len(optimization_result.get("optimized_assignments", [])),
             "generated_at": datetime.now().isoformat()
         }
-        
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get standby trains: {str(e)}")
 
 @app.get("/whatif/scenarios")
 def get_all_swap_scenarios():
-    """Get all possible train swap scenarios for analysis"""
+    """Get all possible train swap scenarios for analysis using Layer 1 output."""
     try:
-        test_data = load_test_data()
-        
+        layer1_output = load_layer1_output()
+        converted = convert_layer1_to_layer2_format(layer1_output)
+
         # Run optimization to get current schedule
         optimization_result = run_layer2_service(
-            parking_json=test_data["parking"],
-            readiness_json=test_data["readiness"],
-            ads_json=test_data.get("ads", []),
-            service_day=test_data.get("service_day", "weekday")
+            service_day="weekday",
+            use_layer1_output=True,
         )
-        
+
         # Initialize analyzer and get all scenarios
         analyzer = WhatIfAnalyzer()
-        scenarios = analyzer.get_all_swap_scenarios(optimization_result, test_data["readiness"])
-        
+        scenarios = analyzer.get_all_swap_scenarios(optimization_result, converted["readiness"])
+
         # Limit to first 20 scenarios to avoid overwhelming response
         limited_scenarios = scenarios[:20]
-        
+
         return {
             "swap_scenarios": limited_scenarios,
             "total_possible_scenarios": len(scenarios),
             "showing_first": len(limited_scenarios),
             "scheduled_trains": len(optimization_result.get("optimized_assignments", [])),
-            "standby_trains": len(analyzer.get_standby_trains(optimization_result, test_data["readiness"])),
+            "standby_trains": len(analyzer.get_standby_trains(optimization_result, converted["readiness"])),
             "generated_at": datetime.now().isoformat()
         }
-        
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get swap scenarios: {str(e)}")
 
 @app.post("/whatif/analyze")
 def analyze_swap(request: SwapAnalysisRequest):
-    """Analyze a specific train swap scenario"""
+    """Analyze a specific train swap scenario using Layer 1 output."""
     try:
-        test_data = load_test_data()
-        
+        layer1_output = load_layer1_output()
+        converted = convert_layer1_to_layer2_format(layer1_output)
+
         # Run optimization to get current schedule
         optimization_result = run_layer2_service(
-            parking_json=test_data["parking"],
-            readiness_json=test_data["readiness"],
-            ads_json=test_data.get("ads", []),
-            service_day=test_data.get("service_day", "weekday")
+            service_day="weekday",
+            use_layer1_output=True,
         )
-        
+
         # Validate that trains exist
         scheduled_trains = [train["train_id"] for train in optimization_result.get("optimized_assignments", [])]
-        all_readiness_trains = [train["train_id"] for train in test_data["readiness"]]
-        
+        all_readiness_trains = [train["train_id"] for train in converted["readiness"]]
+
         if request.scheduled_train_id not in scheduled_trains:
             raise HTTPException(
                 status_code=400, 
                 detail=f"Train {request.scheduled_train_id} is not currently scheduled"
             )
-        
+
         if request.standby_train_id not in all_readiness_trains:
             raise HTTPException(
                 status_code=400, 
                 detail=f"Train {request.standby_train_id} not found in readiness data"
             )
-        
+
         if request.standby_train_id in scheduled_trains:
             raise HTTPException(
                 status_code=400, 
                 detail=f"Train {request.standby_train_id} is already scheduled"
             )
-        
+
         # Perform the swap analysis
         analysis = analyze_train_swap(
             optimization_result=optimization_result,
             scheduled_train_id=request.scheduled_train_id,
             standby_train_id=request.standby_train_id,
-            original_readiness_data=test_data["readiness"],
+            original_readiness_data=converted["readiness"],
             gemini_api_key=request.gemini_api_key
         )
-        
+
         return analysis
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -526,46 +533,44 @@ def validate_data(payload: ScheduleRequest):
 @app.get("/schedule/auto")
 def schedule_auto(service_date: Optional[str] = None, include_debug: bool = False):
     """
-    Automatic schedule generation with test data and optional debug information
+    Automatic schedule generation using Layer 1 output and optional debug information
     """
     try:
-        test_data = load_test_data()
-        
         target_date = None
         if service_date:
             target_date = validate_date_format(service_date)
-        
+
         result = run_layer2_service(
-            parking_json=test_data["parking"],
-            readiness_json=test_data["readiness"],
-            ads_json=test_data.get("ads", []),
-            service_day=test_data.get("service_day", "weekday"),
-            service_date=target_date
+            service_day="weekday",
+            service_date=target_date,
+            use_layer1_output=True,
         )
-        
+
         if include_debug:
             # Add debug information
+            layer1_output = load_layer1_output()
+            converted = convert_layer1_to_layer2_format(layer1_output)
             result["debug_info"] = {
                 "input_data_stats": validate_input_data(
-                    test_data["parking"], 
-                    test_data["readiness"], 
-                    test_data.get("ads", [])
+                    converted["parking"], 
+                    converted["readiness"], 
+                    []
                 ),
                 "timetable_used": get_timetable_config(target_date),
                 "processing_timestamp": datetime.now().isoformat(),
                 "optimization_factors": {
                     "readiness_weighted": True,
-                    "ad_revenue_optimized": False,  # Updated
-                    "demographic_targeting": False,  # Updated
+                    "ad_revenue_optimized": False,
+                    "demographic_targeting": False,
                     "parking_position_optimized": True,
                     "shunting_penalties_applied": True,
                     "shunting_minimization": "Heavy penalty applied"
                 }
             }
-        
+
         result["optimization_focus"] = "Readiness scores and minimal shunting operations"
         return result
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -622,11 +627,12 @@ def health_check():
 def get_optimization_stats():
     """Get statistics about optimization capabilities"""
     try:
-        test_data = load_test_data()
+        layer1_output = load_layer1_output()
+        converted = convert_layer1_to_layer2_format(layer1_output)
         validation = validate_input_data(
-            test_data["parking"], 
-            test_data["readiness"], 
-            test_data.get("ads", [])
+            converted["parking"], 
+            converted["readiness"], 
+            []
         )
         
         # Get timetable info for today and public holiday
@@ -690,6 +696,99 @@ def get_optimization_stats():
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Stats generation failed: {str(e)}")
+
+@app.post("/overrides/submit")
+def submit_override(payload: Dict[str, Any]):
+    """Append an override decision with reasons to overrides.json"""
+    try:
+        overrides = []
+        if OVERRIDES_PATH.exists():
+            with OVERRIDES_PATH.open("r", encoding="utf-8") as f:
+                overrides = json.load(f)
+        # Persist only the two train configurations and reason
+        record = {
+            "timestamp": datetime.now().isoformat(),
+            "from_train": payload.get("scheduled_train_config") or payload.get("scheduled_train_id"),
+            "to_train": payload.get("standby_train_config") or payload.get("standby_train_id"),
+            "reason": payload.get("reason", "")
+        }
+        overrides.append(record)
+        OVERRIDES_PATH.parent.mkdir(parents=True, exist_ok=True)
+        with OVERRIDES_PATH.open("w", encoding="utf-8") as f:
+            json.dump(overrides, f, indent=2)
+        return {"status": "ok", "count": len(overrides)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to save override: {str(e)}")
+
+@app.get("/overrides/suggestions")
+def get_override_suggestions():
+    """Generate suggested overrides using Gemini based on current schedule and past overrides"""
+    try:
+        layer1_output = load_layer1_output()
+        converted = convert_layer1_to_layer2_format(layer1_output)
+        optimization_result = run_layer2_service(
+            service_day="weekday",
+            use_layer1_output=True,
+        )
+        overrides = []
+        if OVERRIDES_PATH.exists():
+            with OVERRIDES_PATH.open("r", encoding="utf-8") as f:
+                overrides = json.load(f)
+        analyzer = WhatIfAnalyzer()
+        model = analyzer.model
+        # Fallback if no model
+        if not model:
+            # Persist empty suggestions
+            SUGGESTIONS_PATH.parent.mkdir(parents=True, exist_ok=True)
+            with SUGGESTIONS_PATH.open("w", encoding="utf-8") as f:
+                json.dump({"suggestions": []}, f, indent=2)
+            return {
+                "status": "fallback",
+                "suggestions": [],
+                "note": "Gemini not configured; cannot generate AI suggestions"
+            }
+        prompt = {
+            "current_schedule": optimization_result.get("optimized_assignments", []),
+            "standby": optimization_result.get("standby_trains", []),
+            "readiness": converted["readiness"],
+            "overrides_history": overrides,
+            "instructions": "Given current schedule and past overrides, suggest up to 3 swaps (scheduled->standby) that improve readiness without excessive shunting, while respecting branding urgency. Provide reasons. Output JSON: {suggestions: [{from_train, to_train, reason, confidence}]}"
+        }
+        resp = model.generate_content(json.dumps(prompt))
+        text = resp.text
+        try:
+            data = json.loads(text)
+            suggestions = data.get("suggestions", [])
+        except Exception:
+            suggestions = []
+
+        # Save/overwrite suggestions to file for frontend consumption
+        try:
+            SUGGESTIONS_PATH.parent.mkdir(parents=True, exist_ok=True)
+            with SUGGESTIONS_PATH.open("w", encoding="utf-8") as f:
+                json.dump({"suggestions": suggestions, "generated_at": datetime.now().isoformat()}, f, indent=2)
+        except Exception as e:
+            logger.warning(f"Failed to persist suggestions: {e}")
+
+        return {
+            "status": "ok",
+            "suggestions": suggestions,
+            "generated_at": datetime.now().isoformat()
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to generate suggestions: {str(e)}")
+
+@app.get("/overrides/suggestions/latest")
+def get_latest_override_suggestions():
+    """Return last generated override suggestions from suggestions.json"""
+    try:
+        if not SUGGESTIONS_PATH.exists():
+            return {"status": "empty", "suggestions": []}
+        with SUGGESTIONS_PATH.open("r", encoding="utf-8") as f:
+            data = json.load(f)
+        return {"status": "ok", "suggestions": data.get("suggestions", []), "generated_at": data.get("generated_at")}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to read suggestions: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn
