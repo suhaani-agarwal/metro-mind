@@ -6,12 +6,10 @@ import axios from "axios";
 interface DepotMetadata {
   name: string;
   location: string;
-  cleaning_bays: string;
   maintenance_bays: string;
   stabling_tracks: string;
   inspection_lines: string;
   washing_lines: string;
-  lifting_bays: string;
   max_capacity_trains: string;
   operational_hours: string;
 }
@@ -28,12 +26,10 @@ interface FilesState {
 const fieldLabels: { [key: string]: string } = {
   name: "Depot Name",
   location: "Depot Location",
-  cleaning_bays: "Number of Cleaning Bays",
   maintenance_bays: "Number of Maintenance Bays",
   stabling_tracks: "Number of Stabling Tracks",
   inspection_lines: "Number of Inspection Lines",
   washing_lines: "Number of Washing Lines",
-  lifting_bays: "Number of Lifting Bays",
   max_capacity_trains: "Maximum Train Capacity",
   operational_hours: "Operational Hours"
 };
@@ -51,12 +47,10 @@ export default function OnboardingPage() {
   const [depot, setDepot] = useState<DepotMetadata>({
     name: "",
     location: "",
-    cleaning_bays: "",
     maintenance_bays: "",
     stabling_tracks: "",
     inspection_lines: "",
     washing_lines: "",
-    lifting_bays: "",
     max_capacity_trains: "",
     operational_hours: "",
   });
@@ -222,18 +216,6 @@ export default function OnboardingPage() {
                 </h3>
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                   <div className="space-y-2">
-                    <label className="block text-sm font-medium text-slate-300">Number of Cleaning Bays</label>
-                    <input
-                      type="text"
-                      name="cleaning_bays"
-                      value={depot.cleaning_bays}
-                      onChange={handleDepotChange}
-                      placeholder="e.g., 4"
-                      className="w-full p-4 rounded-xl border border-slate-600/50 text-slate-50 placeholder:text-slate-400 transition-all duration-300 hover:border-sky-400/50 focus:border-sky-400 focus:ring-2 focus:ring-sky-400/20 outline-none backdrop-blur-sm"
-                      style={{ backgroundColor: "rgba(30, 41, 59, 0.6)" }}
-                    />
-                  </div>
-                  <div className="space-y-2">
                     <label className="block text-sm font-medium text-slate-300">Number of Maintenance Bays</label>
                     <input
                       type="text"
@@ -277,18 +259,6 @@ export default function OnboardingPage() {
                       value={depot.washing_lines}
                       onChange={handleDepotChange}
                       placeholder="e.g., 3"
-                      className="w-full p-4 rounded-xl border border-slate-600/50 text-slate-50 placeholder:text-slate-400 transition-all duration-300 hover:border-sky-400/50 focus:border-sky-400 focus:ring-2 focus:ring-sky-400/20 outline-none backdrop-blur-sm"
-                      style={{ backgroundColor: "rgba(30, 41, 59, 0.6)" }}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-slate-300">Number of Lifting Bays</label>
-                    <input
-                      type="text"
-                      name="lifting_bays"
-                      value={depot.lifting_bays}
-                      onChange={handleDepotChange}
-                      placeholder="e.g., 2"
                       className="w-full p-4 rounded-xl border border-slate-600/50 text-slate-50 placeholder:text-slate-400 transition-all duration-300 hover:border-sky-400/50 focus:border-sky-400 focus:ring-2 focus:ring-sky-400/20 outline-none backdrop-blur-sm"
                       style={{ backgroundColor: "rgba(30, 41, 59, 0.6)" }}
                     />

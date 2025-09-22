@@ -1,8 +1,8 @@
 from fastapi import APIRouter, UploadFile, File
-from backend.services.file_parser import parse_uploaded_files
-from backend.schemas import DepotMetadata
-from backend.utils import save_uploaded_files, build_final_unified_schema, save_depot_data
-from backend.config import UNIFIED_JSON_PATH, HISTORICAL_JSON_PATH
+from services.file_parser import parse_uploaded_files
+from schemas import DepotMetadata
+from utils import save_uploaded_files, build_final_unified_schema, save_depot_data
+from config import UNIFIED_JSON_PATH, HISTORICAL_JSON_PATH
 import json
 from datetime import datetime
 

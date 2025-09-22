@@ -9,19 +9,19 @@ interface NightlyForm {
     valid_until: string;
     status: string;
   };
-  branding: {
+  brandings?: {
     advertiser: string;
     priority: string;
     exposure_hours_needed: number;
-  };
-  cleaning: {
+  }[];
+  cleaning?: {
     status: string;
     type: string;
     scheduled_at: string;
     manual_labour_count: number;
     bay_assigned: string;
   };
-  stabling: {
+  stabling?: {
     bay: string;
     position: string;
     reception: boolean;
@@ -33,11 +33,10 @@ export default function NightlyPage() {
   const [selectedTrain, setSelectedTrain] = useState<string>("");
   const [showFitness, setShowFitness] = useState<boolean>(false);
 
-  const [form, setForm] = useState<NightlyForm>({
-    branding: { advertiser: "", priority: "", exposure_hours_needed: 0 },
-    cleaning: { status: "", type: "", scheduled_at: "", manual_labour_count: 0, bay_assigned: "" },
-    stabling: { bay: "", position: "", reception: false },
-  });
+  const [form, setForm] = useState<NightlyForm>({ brandings: [] });
+  const [deepCleaningLabour, setDeepCleaningLabour] = useState<number>(0);
+  const [showAddBranding, setShowAddBranding] = useState<boolean>(false);
+  const [brandingDraft, setBrandingDraft] = useState<{ advertiser: string; priority: string; exposure_hours_needed: number }>({ advertiser: "", priority: "", exposure_hours_needed: 0 });
 
   // Load trains and check fitness expiry
   useEffect(() => {
@@ -81,12 +80,28 @@ export default function NightlyPage() {
   const handleSubmit = async () => {
     if (!selectedTrain) return alert("Select a train first!");
     try {
-      const payload = { train_id: selectedTrain, ...form };
-      await axios.post(
-        "http://localhost:8000/api/nightly/update/train",
-        payload
-      );
+      // 1) Save depot deep cleaning labour (independent of train)
+      await axios.post("http://localhost:8000/api/nightly/depot/deep-cleaning", {
+        manual_labour_available_today: Number(deepCleaningLabour) || 0,
+      });
+
+      // 2) Append all queued branding entries for the selected train
+      if (form.brandings && form.brandings.length > 0) {
+        for (const b of form.brandings) {
+          if (!b.advertiser) continue;
+          await axios.post("http://localhost:8000/api/nightly/branding/add", {
+            train_id: selectedTrain,
+            branding: b,
+          });
+        }
+      }
+
+      // 3) Update the train data (currently only fitness is collected here)
+      const payload = { train_id: selectedTrain, fitness_certificates: form.fitness_certificates };
+      await axios.post("http://localhost:8000/api/nightly/update/train", payload);
       alert(`Train ${selectedTrain} updated successfully ✅`);
+      setForm((prev) => ({ ...prev, brandings: [] }));
+      setShowAddBranding(false);
     } catch (err) {
       console.error(err);
       alert("Failed to update train data");
@@ -107,6 +122,31 @@ export default function NightlyPage() {
             Operational Log 
           </h1>
           <div className="w-24 h-1 mx-auto rounded-full bg-gradient-to-r from-sky-400 to-emerald-400"></div>
+        </div>
+
+        {/* Depot Deep Cleaning (top-level, not per-train) */}
+        <div 
+          className="backdrop-blur-md rounded-2xl p-6 border border-slate-600/30 shadow-2xl"
+          style={{ backgroundColor: "rgba(15, 23, 42, 0.8)" }}
+        >
+          <div className="space-y-4">
+            <h2 className="text-xl font-semibold text-slate-50 flex items-center gap-3">
+              <div className="w-2 h-8 rounded-full bg-gradient-to-b from-sky-400 to-blue-400"></div>
+              Depot Deep Cleaning Labour (Today)
+            </h2>
+            <div className="grid md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-slate-300">Manual Labour Available</label>
+                <input
+                  type="number"
+                  value={deepCleaningLabour}
+                  onChange={(e) => setDeepCleaningLabour(Number(e.target.value))}
+                  className="w-full p-4 rounded-xl border border-slate-600/50 text-slate-50 placeholder:text-slate-400 transition-all duration-300 hover:border-sky-400/50 focus:border-sky-400 focus:ring-2 focus:ring-sky-400/20 outline-none backdrop-blur-sm"
+                  style={{ backgroundColor: "rgba(30, 41, 59, 0.6)" }}
+                />
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Train Selector Card */}
@@ -224,203 +264,98 @@ export default function NightlyPage() {
           </div>
         )}
 
-        {/* Branding Section */}
+        {/* Optional Add Branding Section */}
         <div 
           className="backdrop-blur-md rounded-2xl p-6 border border-slate-600/30 shadow-2xl"
           style={{ backgroundColor: "rgba(15, 23, 42, 0.8)" }}
         >
           <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-slate-50 flex items-center gap-3">
-              <div className="w-2 h-8 rounded-full bg-gradient-to-b from-emerald-400 to-teal-400"></div>
-              Branding Configuration
-            </h2>
-            <div className="grid md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-slate-300">Advertiser Name</label>
-                <input
-                  type="text"
-                  placeholder="Enter advertiser name"
-                  value={form.branding.advertiser}
-                  onChange={(e) => handleChange("branding", "advertiser", e.target.value)}
-                  className="w-full p-4 rounded-xl border border-slate-600/50 text-slate-50 placeholder:text-slate-400 transition-all duration-300 hover:border-emerald-400/50 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 outline-none backdrop-blur-sm"
-                  style={{ backgroundColor: "rgba(30, 41, 59, 0.6)" }}
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-slate-300">Priority Level</label>
-                <select
-                  value={form.branding.priority}
-                  onChange={(e) => handleChange("branding", "priority", e.target.value)}
-                  className="w-full p-4 rounded-xl border border-slate-600/50 text-slate-50 transition-all duration-300 hover:border-emerald-400/50 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 outline-none backdrop-blur-sm"
-                  style={{ backgroundColor: "rgba(30, 41, 59, 0.6)" }}
-                >
-                  <option value="" className="bg-slate-800">Select Priority</option>
-                  <option value="high" className="bg-slate-800">High</option>
-                  <option value="medium" className="bg-slate-800">Medium</option>
-                  <option value="low" className="bg-slate-800">Low</option>
-                </select>
-              </div>
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-slate-300">Exposure Hours Needed</label>
-                <input
-                  type="number"
-                  placeholder="0"
-                  value={form.branding.exposure_hours_needed}
-                  onChange={(e) =>
-                    handleChange(
-                      "branding",
-                      "exposure_hours_needed",
-                      Number(e.target.value)
-                    )
-                  }
-                  className="w-full p-4 rounded-xl border border-slate-600/50 text-slate-50 placeholder:text-slate-400 transition-all duration-300 hover:border-emerald-400/50 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 outline-none backdrop-blur-sm"
-                  style={{ backgroundColor: "rgba(30, 41, 59, 0.6)" }}
-                />
-              </div>
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-slate-50 flex items-center gap-3">
+                <div className="w-2 h-8 rounded-full bg-gradient-to-b from-emerald-400 to-teal-400"></div>
+                Branding
+              </h2>
+              <button
+                onClick={() => setShowAddBranding((s) => !s)}
+                className="px-4 py-2 text-slate-50 rounded-xl border border-slate-600/50"
+                style={{ background: showAddBranding ? "rgba(56, 189, 248, 0.2)" : "rgba(56, 189, 248, 0.1)" }}
+              >
+                {showAddBranding ? "Cancel" : "Add Branding Configuration"}
+              </button>
             </div>
-          </div>
-        </div>
-
-        {/* Cleaning Section */}
-        <div 
-          className="backdrop-blur-md rounded-2xl p-6 border border-slate-600/30 shadow-2xl"
-          style={{ backgroundColor: "rgba(15, 23, 42, 0.8)" }}
-        >
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-slate-50 flex items-center gap-3">
-              <div className="w-2 h-8 rounded-full bg-gradient-to-b from-sky-400 to-blue-400"></div>
-              Cleaning Operations
-            </h2>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-slate-300">Cleaning Status</label>
-                <select
-                  value={form.cleaning.status}
-                  onChange={(e) => handleChange("cleaning", "status", e.target.value)}
-                  className="w-full p-4 rounded-xl border border-slate-600/50 text-slate-50 transition-all duration-300 hover:border-sky-400/50 focus:border-sky-400 focus:ring-2 focus:ring-sky-400/20 outline-none backdrop-blur-sm"
-                  style={{ backgroundColor: "rgba(30, 41, 59, 0.6)" }}
-                >
-                  <option value="" className="bg-slate-800">Select Status</option>
-                  <option value="scheduled" className="bg-slate-800">Scheduled</option>
-                  <option value="in_progress" className="bg-slate-800">In Progress</option>
-                  <option value="completed" className="bg-slate-800">Completed</option>
-                </select>
+            {showAddBranding && (
+              <div className="space-y-6">
+                <div className="grid md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-slate-300">Advertiser Name</label>
+                    <input
+                      type="text"
+                      placeholder="Enter advertiser name"
+                      value={brandingDraft.advertiser}
+                      onChange={(e) => setBrandingDraft((d) => ({ ...d, advertiser: e.target.value }))}
+                      className="w-full p-4 rounded-xl border border-slate-600/50 text-slate-50 placeholder:text-slate-400 transition-all duration-300 hover:border-emerald-400/50 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 outline-none backdrop-blur-sm"
+                      style={{ backgroundColor: "rgba(30, 41, 59, 0.6)" }}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-slate-300">Priority Level</label>
+                    <select
+                      value={brandingDraft.priority}
+                      onChange={(e) => setBrandingDraft((d) => ({ ...d, priority: e.target.value }))}
+                      className="w-full p-4 rounded-xl border border-slate-600/50 text-slate-50 transition-all duration-300 hover:border-emerald-400/50 focus;border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 outline-none backdrop-blur-sm"
+                      style={{ backgroundColor: "rgba(30, 41, 59, 0.6)" }}
+                    >
+                      <option value="" className="bg-slate-800">Select Priority</option>
+                      <option value="high" className="bg-slate-800">High</option>
+                      <option value="medium" className="bg-slate-800">Medium</option>
+                      <option value="low" className="bg-slate-800">Low</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-slate-300">Exposure Hours Needed</label>
+                    <input
+                      type="number"
+                      placeholder="0"
+                      value={brandingDraft.exposure_hours_needed}
+                      onChange={(e) => setBrandingDraft((d) => ({ ...d, exposure_hours_needed: Number(e.target.value) }))}
+                      className="w-full p-4 rounded-xl border border-slate-600/50 text-slate-50 placeholder:text-slate-400 transition-all duration-300 hover;border-emerald-400/50 focus;border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 outline-none backdrop-blur-sm"
+                      style={{ backgroundColor: "rgba(30, 41, 59, 0.6)" }}
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      if (!brandingDraft.advertiser) return alert("Enter advertiser");
+                      setForm((prev) => ({ ...prev, brandings: [...(prev.brandings || []), brandingDraft] }));
+                      setBrandingDraft({ advertiser: "", priority: "", exposure_hours_needed: 0 });
+                    }}
+                    className="px-4 py-2 text-slate-50 rounded-xl border border-transparent"
+                    style={{ background: "rgba(56, 189, 248, 0.2)" }}
+                  >
+                    Add to List
+                  </button>
+                </div>
+                {(form.brandings && form.brandings.length > 0) && (
+                  <div className="space-y-2">
+                    <h3 className="text-slate-200 font-semibold">Queued Brandings</h3>
+                    <ul className="space-y-2">
+                      {form.brandings.map((b, idx) => (
+                        <li key={idx} className="flex items-center justify-between p-3 rounded-lg border border-slate-600/50 text-slate-200">
+                          <span>{b.advertiser} • {b.priority} • {b.exposure_hours_needed}h</span>
+                          <button
+                            onClick={() => setForm((prev) => ({ ...prev, brandings: (prev.brandings || []).filter((_, i) => i !== idx) }))}
+                            className="px-3 py-1 text-sm rounded border border-red-500/40 text-red-300"
+                          >
+                            Remove
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-slate-300">Cleaning Type</label>
-                <select
-                  value={form.cleaning.type}
-                  onChange={(e) => handleChange("cleaning", "type", e.target.value)}
-                  className="w-full p-4 rounded-xl border border-slate-600/50 text-slate-50 transition-all duration-300 hover:border-sky-400/50 focus:border-sky-400 focus:ring-2 focus:ring-sky-400/20 outline-none backdrop-blur-sm"
-                  style={{ backgroundColor: "rgba(30, 41, 59, 0.6)" }}
-                >
-                  <option value="" className="bg-slate-800">Select Cleaning Type</option>
-                  <option value="interior" className="bg-slate-800">Interior</option>
-                  <option value="exterior" className="bg-slate-800">Exterior</option>
-                </select>
-              </div>
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-slate-300">Scheduled At</label>
-                <input
-                  type="datetime-local"
-                  value={form.cleaning.scheduled_at}
-                  onChange={(e) => handleChange("cleaning", "scheduled_at", e.target.value)}
-                  className="w-full p-4 rounded-xl border border-slate-600/50 text-slate-50 transition-all duration-300 hover:border-sky-400/50 focus:border-sky-400 focus:ring-2 focus:ring-sky-400/20 outline-none backdrop-blur-sm"
-                  style={{ backgroundColor: "rgba(30, 41, 59, 0.6)" }}
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-slate-300">Manual Labour Count</label>
-                <input
-                  type="number"
-                  placeholder="0"
-                  value={form.cleaning.manual_labour_count}
-                  onChange={(e) =>
-                    handleChange(
-                      "cleaning",
-                      "manual_labour_count",
-                      Number(e.target.value)
-                    )
-                  }
-                  className="w-full p-4 rounded-xl border border-slate-600/50 text-slate-50 placeholder:text-slate-400 transition-all duration-300 hover:border-sky-400/50 focus:border-sky-400 focus:ring-2 focus:ring-sky-400/20 outline-none backdrop-blur-sm"
-                  style={{ backgroundColor: "rgba(30, 41, 59, 0.6)" }}
-                />
-              </div>
-              <div className="space-y-2 md:col-span-2 lg:col-span-1">
-                <label className="block text-sm font-medium text-slate-300">Bay Assigned</label>
-                <input
-                  type="text"
-                  placeholder="Enter bay number"
-                  value={form.cleaning.bay_assigned}
-                  onChange={(e) => handleChange("cleaning", "bay_assigned", e.target.value)}
-                  className="w-full p-4 rounded-xl border border-slate-600/50 text-slate-50 placeholder:text-slate-400 transition-all duration-300 hover:border-sky-400/50 focus:border-sky-400 focus:ring-2 focus:ring-sky-400/20 outline-none backdrop-blur-sm"
-                  style={{ backgroundColor: "rgba(30, 41, 59, 0.6)" }}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Stabling Section */}
-        <div 
-          className="backdrop-blur-md rounded-2xl p-6 border border-slate-600/30 shadow-2xl"
-          style={{ backgroundColor: "rgba(15, 23, 42, 0.8)" }}
-        >
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-slate-50 flex items-center gap-3">
-              <div className="w-2 h-8 rounded-full bg-gradient-to-b from-pink-400 to-rose-400"></div>
-              Stabling Information
-            </h2>
-            <div className="grid md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-slate-300">Bay Number</label>
-                <input
-                  type="text"
-                  placeholder="Enter bay number"
-                  value={form.stabling.bay}
-                  disabled={form.stabling.reception}
-                  onChange={(e) => handleChange("stabling", "bay", e.target.value)}
-                  className={`w-full p-4 rounded-xl border border-slate-600/50 text-slate-50 placeholder:text-slate-400 transition-all duration-300 outline-none backdrop-blur-sm ${
-                    form.stabling.reception 
-                      ? 'opacity-50 cursor-not-allowed bg-slate-700/50' 
-                      : 'hover:border-pink-400/50 focus:border-pink-400 focus:ring-2 focus:ring-pink-400/20'
-                  }`}
-                  style={{ backgroundColor: form.stabling.reception ? undefined : "rgba(30, 41, 59, 0.6)" }}
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-slate-300">Position</label>
-                <input
-                  type="text"
-                  placeholder="Enter position"
-                  value={form.stabling.position}
-                  onChange={(e) => handleChange("stabling", "position", e.target.value)}
-                  className="w-full p-4 rounded-xl border border-slate-600/50 text-slate-50 placeholder:text-slate-400 transition-all duration-300 hover:border-pink-400/50 focus:border-pink-400 focus:ring-2 focus:ring-pink-400/20 outline-none backdrop-blur-sm"
-                  style={{ backgroundColor: "rgba(30, 41, 59, 0.6)" }}
-                />
-              </div>
-              <div className="space-y-2 flex flex-col justify-end">
-                <label className="flex items-center space-x-3 p-4 rounded-xl border border-slate-600/50 transition-all duration-300 hover:border-pink-400/50 cursor-pointer backdrop-blur-sm"
-                  style={{ backgroundColor: "rgba(30, 41, 59, 0.6)" }}>
-                  <input
-                    type="checkbox"
-                    checked={form.stabling.reception}
-                    onChange={(e) =>
-                      setForm((prev) => ({
-                        ...prev,
-                        stabling: {
-                          ...prev.stabling,
-                          reception: e.target.checked,
-                          bay: e.target.checked ? "" : prev.stabling.bay, // clear bay if reception is checked
-                        },
-                      }))
-                    }
-                    className="w-5 h-5 rounded border-slate-400 text-pink-400 focus:ring-pink-400/20"
-                  />
-                  <span className="text-slate-300 font-medium">At Reception</span>
-                </label>
-              </div>
-            </div>
+            )}
           </div>
         </div>
 

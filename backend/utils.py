@@ -2,7 +2,7 @@ import json
 import shutil
 import os
 from datetime import datetime
-from backend.config import UPLOAD_DIR, UNIFIED_JSON_PATH, DEPOT_JSON_PATH
+from config import UPLOAD_DIR, UNIFIED_JSON_PATH, DEPOT_JSON_PATH
 
 # Ensure the upload directory exists
 os.makedirs(UPLOAD_DIR, exist_ok=True)
