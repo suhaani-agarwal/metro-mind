@@ -1,0 +1,265 @@
+{
+  "parking": {
+    "bays": [
+      {"id": "B1",  "capacity": 2},
+      {"id": "B2",  "capacity": 2},
+      {"id": "B3",  "capacity": 2},
+      {"id": "B4",  "capacity": 2},
+      {"id": "B5",  "capacity": 2},
+      {"id": "B6",  "capacity": 2},
+      {"id": "B7",  "capacity": 2},
+      {"id": "B8",  "capacity": 2},
+      {"id": "B9",  "capacity": 2},
+      {"id": "B10", "capacity": 2},
+      {"id": "B11", "capacity": 2},
+      {"id": "B12", "capacity": 2}
+    ],
+    "assignments": [
+      {"train_id": "TM005", "bay": "B1", "position": 1},
+      {"train_id": "TM001", "bay": "B1", "position": 2},
+      {"train_id": "TM003", "bay": "B2", "position": 1},
+      {"train_id": "TM007", "bay": "B2", "position": 2},
+      {"train_id": "TM002", "bay": "B3", "position": 1},
+      {"train_id": "TM006", "bay": "B3", "position": 2},
+      {"train_id": "TM004", "bay": "B4", "position": 1},
+      {"train_id": "TM008", "bay": "B4", "position": 2},
+      {"train_id": "TM009", "bay": "B5"},
+      {"train_id": "TM010", "bay": "B6"},
+      {"train_id": "TM011", "bay": "B7"},
+      {"train_id": "TM012", "bay": "B8"},
+      {"train_id": "TM013", "bay": "B9"},
+      {"train_id": "TM014", "bay": "B10"},
+      {"train_id": "TM015", "bay": "B11"}
+    ]
+  },
+
+  "readiness": [
+    {
+      "train_id": "TM001",
+      "score": 97.8,
+      "summary": "✅ Excellent condition | ✅ Optimal performance",
+      "details": {
+        "mechanical": "Excellent",
+        "electrical": "Good", 
+        "safety": "Passed",
+        "cleanliness": "Clean",
+        "last_maintenance": "2024-01-15"
+      }
+    },
+    {
+      "train_id": "TM002",
+      "score": 53.3,
+      "summary": "❌ Expired certificates | 🔶 Needs attention",
+      "details": {
+        "mechanical": "Fair",
+        "electrical": "Poor", 
+        "safety": "Expired",
+        "cleanliness": "Needs cleaning",
+        "last_maintenance": "2023-11-20"
+      }
+    },
+    {
+      "train_id": "TM003",
+      "score": 88.5,
+      "summary": "⚠️ Minor maintenance needed | ✅ Good condition",
+      "details": {
+        "mechanical": "Good",
+        "electrical": "Good", 
+        "safety": "Passed",
+        "cleanliness": "Clean",
+        "last_maintenance": "2024-01-08"
+      }
+    },
+    {
+      "train_id": "TM004",
+      "score": 42.1,
+      "summary": "❌ Multiple system failures | 🚨 Requires urgent repair",
+      "details": {
+        "mechanical": "Poor",
+        "electrical": "Failed", 
+        "safety": "Failed",
+        "cleanliness": "Dirty",
+        "last_maintenance": "2023-10-30"
+      }
+    },
+    {
+      "train_id": "TM005",
+      "score": 95.2,
+      "summary": "✅ Optimal performance | ✅ All systems green",
+      "details": {
+        "mechanical": "Excellent",
+        "electrical": "Excellent", 
+        "safety": "Passed",
+        "cleanliness": "Clean",
+        "last_maintenance": "2024-01-18"
+      }
+    },
+    {
+      "train_id": "TM006",
+      "score": 76.4,
+      "summary": "⚠️ Cleaning overdue | 🔷 Needs attention",
+      "details": {
+        "mechanical": "Good",
+        "electrical": "Fair", 
+        "safety": "Passed",
+        "cleanliness": "Needs cleaning",
+        "last_maintenance": "2023-12-15"
+      }
+    },
+    {
+      "train_id": "TM007",
+      "score": 100.0,
+      "summary": "✅ Perfect condition | ✅ All certificates valid",
+      "details": {
+        "mechanical": "Excellent",
+        "electrical": "Excellent", 
+        "safety": "Passed",
+        "cleanliness": "Clean",
+        "last_maintenance": "2024-01-20"
+      }
+    },
+    {
+      "train_id": "TM008",
+      "score": 61.8,
+      "summary": "🔶 Maintenance overdue | ⚠️ Requires inspection",
+      "details": {
+        "mechanical": "Fair",
+        "electrical": "Fair", 
+        "safety": "Passed",
+        "cleanliness": "Fair",
+        "last_maintenance": "2023-11-25"
+      }
+    },
+    {
+      "train_id": "TM009",
+      "score": 89.7,
+      "summary": "✅ Good condition | ⚠️ Minor paperwork pending",
+      "details": {
+        "mechanical": "Good",
+        "electrical": "Good", 
+        "safety": "Passed",
+        "cleanliness": "Clean",
+        "last_maintenance": "2024-01-05"
+      }
+    },
+    {
+      "train_id": "TM010",
+      "score": 34.5,
+      "summary": "❌ Critical failures | 🚨 Out of service",
+      "details": {
+        "mechanical": "Failed",
+        "electrical": "Failed", 
+        "safety": "Failed",
+        "cleanliness": "Dirty",
+        "last_maintenance": "2023-09-15"
+      }
+    },
+    {
+      "train_id": "TM011",
+      "score": 92.3,
+      "summary": "✅ Excellent condition | ✅ Ready for service",
+      "details": {
+        "mechanical": "Excellent",
+        "electrical": "Good", 
+        "safety": "Passed",
+        "cleanliness": "Clean",
+        "last_maintenance": "2024-01-12"
+      }
+    },
+    {
+      "train_id": "TM012",
+      "score": 67.9,
+      "summary": "🔶 Parts replacement needed | ⚠️ Limited operation",
+      "details": {
+        "mechanical": "Fair",
+        "electrical": "Fair", 
+        "safety": "Passed",
+        "cleanliness": "Fair",
+        "last_maintenance": "2023-12-01"
+      }
+    },
+    {
+      "train_id": "TM013",
+      "score": 98.6,
+      "summary": "✅ Optimal performance | ✅ All systems operational",
+      "details": {
+        "mechanical": "Excellent",
+        "electrical": "Excellent", 
+        "safety": "Passed",
+        "cleanliness": "Clean",
+        "last_maintenance": "2024-01-17"
+      }
+    },
+    {
+      "train_id": "TM014",
+      "score": 71.2,
+      "summary": "⚠️ Software update required | 🔷 Needs maintenance",
+      "details": {
+        "mechanical": "Good",
+        "electrical": "Fair", 
+        "safety": "Passed",
+        "cleanliness": "Fair",
+        "last_maintenance": "2023-12-10"
+      }
+    },
+    {
+      "train_id": "TM015",
+      "score": 84.9,
+      "summary": "✅ Good condition | ⚠️ Minor sensor issues",
+      "details": {
+        "mechanical": "Good",
+        "electrical": "Good", 
+        "safety": "Passed",
+        "cleanliness": "Clean",
+        "last_maintenance": "2024-01-02"
+      }
+    }
+  ],
+
+  "ads": [
+    {
+      "ad_id": "A1", 
+      "category": "tech", 
+      "target_age": [18,35],
+      "revenue": 150,
+      "assigned_trains": ["TM001", "TM003", "TM009", "TM015"]
+    },
+    {
+      "ad_id": "A2", 
+      "category": "entertainment", 
+      "target_age": [15,45],
+      "revenue": 120,
+      "assigned_trains": ["TM002", "TM007", "TM013"]
+    },
+    {
+      "ad_id": "A3", 
+      "category": "banking", 
+      "target_age": [25,60],
+      "revenue": 180,
+      "assigned_trains": ["TM001", "TM005", "TM007", "TM011"]
+    },
+    {
+      "ad_id": "A4", 
+      "category": "retail", 
+      "target_age": [20,50],
+      "revenue": 100,
+      "assigned_trains": ["TM004", "TM009", "TM012"]
+    },
+    {
+      "ad_id": "A5", 
+      "category": "automotive", 
+      "target_age": [30,65],
+      "revenue": 200,
+      "assigned_trains": ["TM005", "TM008", "TM014"]
+    },
+    {
+      "ad_id": "A6", 
+      "category": "food", 
+      "target_age": [15,35],
+      "revenue": 90,
+      "assigned_trains": ["TM003", "TM006", "TM012", "TM014"]
+    }
+  ],
+
+  "service_day": "weekday"
+}
