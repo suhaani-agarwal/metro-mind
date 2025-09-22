@@ -31,16 +31,34 @@ const fieldLabels: { [key: string]: string } = {
   inspection_lines: "Number of Inspection Lines",
   washing_lines: "Number of Washing Lines",
   max_capacity_trains: "Maximum Train Capacity",
-  operational_hours: "Operational Hours"
+  operational_hours: "Operational Hours",
 };
 
 const fileLabels: { [key: string]: { label: string; description: string } } = {
-  fitness: { label: "Fitness Certificates", description: "Upload train fitness certificate data" },
-  jobcards: { label: "Job Cards", description: "Upload maintenance job card records" },
-  branding: { label: "Branding Data", description: "Upload train branding information" },
-  mileage: { label: "Mileage Records", description: "Upload train mileage tracking data" },
-  cleaning: { label: "Cleaning Schedules", description: "Upload cleaning operation schedules" },
-  stabling: { label: "Stabling Information", description: "Upload train stabling arrangements" }
+  fitness: {
+    label: "Fitness Certificates",
+    description: "Upload train fitness certificate data",
+  },
+  jobcards: {
+    label: "Job Cards",
+    description: "Upload maintenance job card records",
+  },
+  branding: {
+    label: "Branding Data",
+    description: "Upload train branding information",
+  },
+  mileage: {
+    label: "Mileage Records",
+    description: "Upload train mileage tracking data",
+  },
+  cleaning: {
+    label: "Cleaning Schedules",
+    description: "Upload cleaning operation schedules",
+  },
+  stabling: {
+    label: "Stabling Information",
+    description: "Upload train stabling arrangements",
+  },
 };
 
 export default function OnboardingPage() {
@@ -71,7 +89,10 @@ export default function OnboardingPage() {
     setDepot({ ...depot, [e.target.name]: e.target.value });
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, key: keyof FilesState) => {
+  const handleFileChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    key: keyof FilesState
+  ) => {
     if (e.target.files) {
       setFiles({ ...files, [key]: e.target.files[0] });
     }
@@ -107,9 +128,13 @@ export default function OnboardingPage() {
 
     setLoading(true);
     try {
-      await axios.post("http://localhost:8000/api/onboarding/upload", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      await axios.post(
+        "http://localhost:8000/api/onboarding/upload",
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        }
+      );
       alert("Files uploaded successfully!");
     } catch (error) {
       console.error(error);
@@ -120,40 +145,49 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div 
+    <div
       className="min-h-screen w-full"
       style={{
-        background: "linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)"
+        background:
+          "linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)",
       }}
     >
       <div className="max-w-6xl mx-auto p-8 space-y-8">
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-slate-50 mb-2 drop-shadow-lg">
-             MetroMind Onboarding
+            MetroMind Onboarding
           </h1>
           <div className="w-24 h-1 mx-auto rounded-full bg-gradient-to-r from-sky-400 to-emerald-400"></div>
-          <p className="text-slate-300 mt-4">Configure your depot and upload initial data to get started</p>
+          <p className="text-slate-300 mt-4">
+            Configure your depot and upload initial data to get started
+          </p>
         </div>
 
         {/* Progress Indicator */}
         <div className="flex items-center justify-center mb-8">
           <div className="flex items-center space-x-4">
-            <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all duration-300 ${
-              step >= 1 
-                ? 'border-emerald-400 bg-emerald-400/20 text-emerald-400' 
-                : 'border-slate-600 text-slate-400'
-            }`}>
+            <div
+              className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all duration-300 ${
+                step >= 1
+                  ? "border-emerald-400 bg-emerald-400/20 text-emerald-400"
+                  : "border-slate-600 text-slate-400"
+              }`}
+            >
               <span className="font-semibold">1</span>
             </div>
-            <div className={`w-16 h-1 rounded-full transition-all duration-300 ${
-              step >= 2 ? 'bg-emerald-400' : 'bg-slate-600'
-            }`}></div>
-            <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all duration-300 ${
-              step >= 2 
-                ? 'border-sky-400 bg-sky-400/20 text-sky-400' 
-                : 'border-slate-600 text-slate-400'
-            }`}>
+            <div
+              className={`w-16 h-1 rounded-full transition-all duration-300 ${
+                step >= 2 ? "bg-emerald-400" : "bg-slate-600"
+              }`}
+            ></div>
+            <div
+              className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all duration-300 ${
+                step >= 2
+                  ? "border-sky-400 bg-sky-400/20 text-sky-400"
+                  : "border-slate-600 text-slate-400"
+              }`}
+            >
               <span className="font-semibold">2</span>
             </div>
           </div>
@@ -161,7 +195,7 @@ export default function OnboardingPage() {
 
         {/* Step 1: Depot Metadata */}
         {step === 1 && (
-          <div 
+          <div
             className="backdrop-blur-md rounded-2xl p-8 border border-slate-600/30 shadow-2xl"
             style={{ backgroundColor: "rgba(15, 23, 42, 0.8)" }}
           >
@@ -170,9 +204,12 @@ export default function OnboardingPage() {
                 <div className="w-3 h-10 rounded-full bg-gradient-to-b from-emerald-400 to-teal-400"></div>
                 <div>
                   <h2 className="text-2xl font-semibold text-slate-50">
-                     Depot Configuration
+                    Depot Configuration
                   </h2>
-                  <p className="text-slate-300 mt-1">Enter your depot's basic information and operational capacity</p>
+                  <p className="text-slate-300 mt-1">
+                    Enter your depot's basic information and operational
+                    capacity
+                  </p>
                 </div>
               </div>
 
@@ -183,7 +220,9 @@ export default function OnboardingPage() {
                 </h3>
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <label className="block text-sm font-medium text-slate-300">Depot Name</label>
+                    <label className="block text-sm font-medium text-slate-300">
+                      Depot Name
+                    </label>
                     <input
                       type="text"
                       name="name"
@@ -195,7 +234,9 @@ export default function OnboardingPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="block text-sm font-medium text-slate-300">Depot Location</label>
+                    <label className="block text-sm font-medium text-slate-300">
+                      Depot Location
+                    </label>
                     <input
                       type="text"
                       name="location"
@@ -216,7 +257,9 @@ export default function OnboardingPage() {
                 </h3>
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                   <div className="space-y-2">
-                    <label className="block text-sm font-medium text-slate-300">Number of Maintenance Bays</label>
+                    <label className="block text-sm font-medium text-slate-300">
+                      Number of Maintenance Bays
+                    </label>
                     <input
                       type="text"
                       name="maintenance_bays"
@@ -228,7 +271,9 @@ export default function OnboardingPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="block text-sm font-medium text-slate-300">Number of Stabling Tracks</label>
+                    <label className="block text-sm font-medium text-slate-300">
+                      Number of Stabling Tracks
+                    </label>
                     <input
                       type="text"
                       name="stabling_tracks"
@@ -240,7 +285,9 @@ export default function OnboardingPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="block text-sm font-medium text-slate-300">Number of Inspection Lines</label>
+                    <label className="block text-sm font-medium text-slate-300">
+                      Number of Inspection Lines
+                    </label>
                     <input
                       type="text"
                       name="inspection_lines"
@@ -252,7 +299,9 @@ export default function OnboardingPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="block text-sm font-medium text-slate-300">Number of Washing Lines</label>
+                    <label className="block text-sm font-medium text-slate-300">
+                      Number of Washing Lines
+                    </label>
                     <input
                       type="text"
                       name="washing_lines"
@@ -273,7 +322,9 @@ export default function OnboardingPage() {
                 </h3>
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <label className="block text-sm font-medium text-slate-300">Maximum Train Capacity</label>
+                    <label className="block text-sm font-medium text-slate-300">
+                      Maximum Train Capacity
+                    </label>
                     <input
                       type="text"
                       name="max_capacity_trains"
@@ -285,7 +336,9 @@ export default function OnboardingPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="block text-sm font-medium text-slate-300">Operational Hours</label>
+                    <label className="block text-sm font-medium text-slate-300">
+                      Operational Hours
+                    </label>
                     <input
                       type="text"
                       name="operational_hours"
@@ -305,17 +358,19 @@ export default function OnboardingPage() {
                   disabled={loading || !isDepotValid()}
                   onClick={submitDepot}
                   className={`px-8 py-4 text-lg font-semibold text-slate-50 rounded-2xl border border-transparent transition-all duration-300 hover:transform hover:-translate-y-1 hover:shadow-2xl focus:outline-none focus:ring-4 focus:ring-emerald-400/20 backdrop-blur-sm ${
-                    loading || !isDepotValid() 
-                      ? 'opacity-50 cursor-not-allowed' 
-                      : ''
+                    loading || !isDepotValid()
+                      ? "opacity-50 cursor-not-allowed"
+                      : ""
                   }`}
                   style={{
-                    background: loading || !isDepotValid() 
-                      ? "rgba(100, 116, 139, 0.5)"
-                      : "linear-gradient(135deg, #38bdf8 0%, #06d6a0 100%)",
-                    boxShadow: loading || !isDepotValid()
-                      ? "none"
-                      : "0 10px 25px -5px rgba(56, 189, 248, 0.3)"
+                    background:
+                      loading || !isDepotValid()
+                        ? "rgba(100, 116, 139, 0.5)"
+                        : "linear-gradient(135deg, #38bdf8 0%, #06d6a0 100%)",
+                    boxShadow:
+                      loading || !isDepotValid()
+                        ? "none"
+                        : "0 10px 25px -5px rgba(56, 189, 248, 0.3)",
                   }}
                 >
                   {loading ? "Saving..." : "Save Depot Metadata →"}
@@ -327,7 +382,7 @@ export default function OnboardingPage() {
 
         {/* Step 2: File Upload */}
         {step === 2 && (
-          <div 
+          <div
             className="backdrop-blur-md rounded-2xl p-8 border border-slate-600/30 shadow-2xl"
             style={{ backgroundColor: "rgba(15, 23, 42, 0.8)" }}
           >
@@ -336,52 +391,67 @@ export default function OnboardingPage() {
                 <div className="w-3 h-10 rounded-full bg-gradient-to-b from-sky-400 to-blue-400"></div>
                 <div>
                   <h2 className="text-2xl font-semibold text-slate-50">
-                     Data Upload Center
+                    Data Upload Center
                   </h2>
-                  <p className="text-slate-300 mt-1">Upload your existing data files to import into the system</p>
+                  <p className="text-slate-300 mt-1">
+                    Upload your existing data files to import into the system
+                  </p>
                 </div>
               </div>
 
               <div className="grid md:grid-cols-2 gap-6">
-                {Object.entries(fileLabels).map(([key, { label, description }]) => (
-                  <div 
-                    key={key} 
-                    className="space-y-3 p-6 rounded-xl border border-slate-600/50 transition-all duration-300 hover:border-sky-400/50 backdrop-blur-sm"
-                    style={{ backgroundColor: "rgba(30, 41, 59, 0.6)" }}
-                  >
-                    <div className="space-y-2">
-                      <label className="block text-lg font-semibold text-slate-50">{label}</label>
-                      <p className="text-sm text-slate-400">{description}</p>
+                {Object.entries(fileLabels).map(
+                  ([key, { label, description }]) => (
+                    <div
+                      key={key}
+                      className="space-y-3 p-6 rounded-xl border border-slate-600/50 transition-all duration-300 hover:border-sky-400/50 backdrop-blur-sm"
+                      style={{ backgroundColor: "rgba(30, 41, 59, 0.6)" }}
+                    >
+                      <div className="space-y-2">
+                        <label className="block text-lg font-semibold text-slate-50">
+                          {label}
+                        </label>
+                        <p className="text-sm text-slate-400">{description}</p>
+                      </div>
+                      <div className="space-y-2">
+                        <input
+                          type="file"
+                          accept=".csv,.xlsx"
+                          onChange={(e) =>
+                            handleFileChange(e, key as keyof FilesState)
+                          }
+                          className="w-full text-slate-300 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-sky-400/20 file:text-sky-400 hover:file:bg-sky-400/30 file:transition-colors file:cursor-pointer cursor-pointer"
+                        />
+                        {files[key as keyof FilesState] && (
+                          <div className="flex items-center gap-2 p-3 rounded-lg border border-emerald-400/30 bg-emerald-400/10">
+                            <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
+                            <p className="text-sm text-emerald-300">
+                              Selected: {files[key as keyof FilesState]?.name}
+                            </p>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <input
-                        type="file"
-                        accept=".csv,.xlsx"
-                        onChange={(e) => handleFileChange(e, key as keyof FilesState)}
-                        className="w-full text-slate-300 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-sky-400/20 file:text-sky-400 hover:file:bg-sky-400/30 file:transition-colors file:cursor-pointer cursor-pointer"
-                      />
-                      {files[key as keyof FilesState] && (
-                        <div className="flex items-center gap-2 p-3 rounded-lg border border-emerald-400/30 bg-emerald-400/10">
-                          <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
-                          <p className="text-sm text-emerald-300">
-                            Selected: {files[key as keyof FilesState]?.name}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                  )
+                )}
               </div>
 
               {/* Upload Summary */}
-              <div 
+              <div
                 className="p-4 rounded-xl border border-slate-600/50 backdrop-blur-sm"
                 style={{ backgroundColor: "rgba(30, 41, 59, 0.6)" }}
               >
-                <h3 className="text-lg font-semibold text-slate-50 mb-2">Upload Summary</h3>
+                <h3 className="text-lg font-semibold text-slate-50 mb-2">
+                  Upload Summary
+                </h3>
                 <p className="text-slate-300">
-                  Files selected: <span className="text-sky-400 font-medium">
-                    {Object.values(files).filter(file => file !== null).length} of {Object.keys(files).length}
+                  Files selected:{" "}
+                  <span className="text-sky-400 font-medium">
+                    {
+                      Object.values(files).filter((file) => file !== null)
+                        .length
+                    }{" "}
+                    of {Object.keys(files).length}
                   </span>
                 </p>
                 <p className="text-sm text-slate-400 mt-1">
@@ -395,15 +465,15 @@ export default function OnboardingPage() {
                   disabled={loading}
                   onClick={submitFiles}
                   className={`px-8 py-4 text-lg font-semibold text-slate-50 rounded-2xl border border-transparent transition-all duration-300 hover:transform hover:-translate-y-1 hover:shadow-2xl focus:outline-none focus:ring-4 focus:ring-sky-400/20 backdrop-blur-sm ${
-                    loading ? 'opacity-50 cursor-not-allowed' : ''
+                    loading ? "opacity-50 cursor-not-allowed" : ""
                   }`}
                   style={{
-                    background: loading 
+                    background: loading
                       ? "rgba(100, 116, 139, 0.5)"
                       : "linear-gradient(135deg, #38bdf8 0%, #06d6a0 100%)",
                     boxShadow: loading
                       ? "none"
-                      : "0 10px 25px -5px rgba(56, 189, 248, 0.3)"
+                      : "0 10px 25px -5px rgba(56, 189, 248, 0.3)",
                   }}
                 >
                   {loading ? " Uploading..." : " Upload Files"}
