@@ -723,8 +723,9 @@ def submit_override(payload: Dict[str, Any]):
 # In your main.py, update the get_override_suggestions function:
 
 @app.get("/overrides/suggestions")
+@app.get("/overrides/suggestions")
 def get_override_suggestions():
-    """Generate suggested overrides using Gemini based on current schedule and past overrides"""
+    """Generate suggested overrides using Gemini by learning from historical override patterns"""
     try:
         # Load current schedule data
         layer1_output = load_layer1_output()
@@ -734,56 +735,98 @@ def get_override_suggestions():
             use_layer1_output=True,
         )
         
-        # Load past overrides
+        # Load past overrides - this is the key learning data
         overrides = []
         if OVERRIDES_PATH.exists():
             with OVERRIDES_PATH.open("r", encoding="utf-8") as f:
                 overrides = json.load(f)
         
-        # Create a fallback suggestion if Gemini fails
-        fallback_suggestions = []
+        # If no historical overrides, return empty suggestions (nothing to learn from)
+        if not overrides:
+            return {
+                "status": "no_history",
+                "suggestions": [],
+                "message": "No historical overrides found. AI needs past decisions to learn patterns.",
+                "generated_at": datetime.now().isoformat()
+            }
         
-        # Try to get suggestions from Gemini
+        # Prepare current operational data
+        current_trains = optimization_result.get("optimized_assignments", [])
+        standby_trains = optimization_result.get("standby_trains", [])
+        
+        # Analyze historical override patterns
+        recent_overrides = overrides[-10:]  # Last 10 overrides for pattern analysis
+        
+        # Try to get AI suggestions based on historical patterns
         try:
             analyzer = WhatIfAnalyzer()
             model = analyzer.model
             
             if model:
-                # Prepare data for Gemini
-                current_trains = optimization_result.get("optimized_assignments", [])
-                standby_trains = optimization_result.get("standby_trains", [])
-                
-                # Find trains that might need swapping (low readiness, need shunting, etc.)
-                problematic_trains = [t for t in current_trains if t.get('readiness', 0) < 80 or t.get('needs_shunting', False)]
-                good_standby_trains = [t for t in standby_trains if t.get('readiness', 0) > 85]
-                
-                # Create a simple prompt for Gemini
                 prompt = f"""
-                As a train operations expert, suggest train swaps to improve service reliability.
-                
-                Current scheduled trains with issues:
-                {json.dumps([{'train_id': t['train_id'], 'readiness': t.get('readiness', 0), 'issues': 'low readiness' if t.get('readiness', 0) < 80 else 'needs shunting'} for t in problematic_trains[:3]], indent=2)}
-                
-                Available standby trains:
-                {json.dumps([{'train_id': t['train_id'], 'readiness': t.get('readiness', 0), 'bay': t.get('bay', '')} for t in good_standby_trains[:5]], indent=2)}
-                
-                Past override decisions: {len(overrides)}
-                
-                Suggest 2-3 specific train swaps (scheduled_train_id -> standby_train_id) with clear reasons.
-                Focus on improving readiness scores and reducing operational issues.
-                Return ONLY valid JSON in this format:
-                {{
-                    "suggestions": [
-                        {{
-                            "from_train": "TR001",
-                            "to_train": "ST001", 
-                            "reason": "Improve readiness from 75% to 92% and avoid shunting operation",
-                            "confidence": "high"
-                        }}
-                    ]
-                }}
-                """
-                
+You are an AI assistant for Kochi Metro operations. Your task is to analyze the station master's historical override decisions and suggest similar overrides they might want to apply today based on their past reasoning patterns.
+
+CONTEXT:
+The current schedule is already optimized by CP-SAT considering all operational constraints. However, station masters sometimes apply manual overrides based on their experience and situational awareness.
+
+HISTORICAL OVERRIDE PATTERNS (last {len(recent_overrides)} decisions):
+{json.dumps(recent_overrides, indent=2)}
+
+CURRENT OPERATIONAL SITUATION:
+- Scheduled Trains: {len(current_trains)} trains
+- Standby Trains: {len(standby_trains)} trains
+- Service Type: {optimization_result.get('timetable_info', {}).get('service_type', 'weekday')}
+
+DETAILED CURRENT TRAIN STATUS:
+Scheduled Trains (first 8):
+{json.dumps([{
+    'train_id': t['train_id'],
+    'readiness': t.get('readiness', 0),
+    'bay': t.get('bay', ''),
+    'slot': t.get('departure_slot', 0),
+    'needs_shunting': t.get('needs_shunting', False),
+    'readiness_summary': t.get('readiness_summary', '')[:100] + '...' if t.get('readiness_summary') else 'No issues'
+} for t in current_trains[:8]], indent=2)}
+
+Available Standby Trains:
+{json.dumps([{
+    'train_id': t['train_id'],
+    'readiness': t.get('readiness', 0),
+    'bay': t.get('bay', ''),
+    'position': t.get('bay_position', 0),
+    'readiness_summary': t.get('readiness_summary', '')[:100] + '...' if t.get('readiness_summary') else 'Ready'
+} for t in standby_trains[:6]], indent=2)}
+
+YOUR TASK:
+Based on the station master's historical override patterns and reasoning, suggest 2-3 overrides (not less than 2) they might want to apply today. Focus on:
+1. Similar reasoning patterns from their history
+2. Operational situations that mirror past override scenarios
+3. Their preferred types of swaps (readiness issues, maintenance concerns, operational efficiency, etc.)
+
+IMPORTANT: Do NOT try to optimize the schedule. The CP-SAT optimization is already perfect. Instead, suggest overrides that align with the human station master's historical decision-making patterns.
+
+Return ONLY valid JSON in this exact format:
+{{
+    "suggestions": [
+        {{
+            "from_train": "TR001",
+            "to_train": "ST001", 
+            "reason": "Similar to your override on 2024-01-15 where you swapped due to critical maintenance alerts. Train TR001 has pending job cards that match your historical concern patterns.",
+            "confidence": "high",
+            "historical_pattern": "Maintenance urgency",
+            "pattern_match": "Similar to override #3 from 2024-01-15"
+        }}
+    ],
+    "analysis": "Brief summary of observed patterns"
+}}
+
+Key elements to include in reasons:
+- Reference specific historical overrides and their reasoning
+- Match the station master's typical concern patterns
+- Consider operational context similarities
+- Maintain their preferred phrasing and priority areas
+"""
+
                 response = model.generate_content(prompt)
                 text = response.text
                 
@@ -797,13 +840,17 @@ def get_override_suggestions():
                 data = json.loads(text)
                 suggestions = data.get("suggestions", [])
                 
+                # Add historical context to each suggestion
+                for suggestion in suggestions:
+                    suggestion['learning_source'] = 'historical_patterns'
+                    suggestion['historical_basis'] = f"Based on analysis of {len(recent_overrides)} past overrides"
+                
             else:
-                suggestions = fallback_suggestions
+                suggestions = create_pattern_based_suggestions(recent_overrides, current_trains, standby_trains)
                 
         except Exception as e:
-            logger.warning(f"Gemini suggestion failed: {e}")
-            # Create fallback suggestions based on logic
-            suggestions = create_fallback_suggestions(optimization_result)
+            logger.warning(f"Gemini pattern analysis failed: {e}")
+            suggestions = create_pattern_based_suggestions(recent_overrides, current_trains, standby_trains)
         
         # Save suggestions
         SUGGESTIONS_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -811,19 +858,21 @@ def get_override_suggestions():
             json.dump({
                 "suggestions": suggestions, 
                 "generated_at": datetime.now().isoformat(),
-                "source": "ai" if suggestions else "fallback"
+                "source": "ai_pattern_analysis",
+                "historical_basis": f"Analyzed {len(recent_overrides)} past overrides",
+                "total_overrides_history": len(overrides)
             }, f, indent=2)
         
         return {
             "status": "ok",
             "suggestions": suggestions,
             "generated_at": datetime.now().isoformat(),
-            "count": len(suggestions)
+            "historical_basis": f"Based on {len(overrides)} historical overrides",
+            "pattern_analysis": True
         }
         
     except Exception as e:
         logger.error(f"Override suggestions error: {e}")
-        # Return empty suggestions but don't fail completely
         return {
             "status": "error",
             "suggestions": [],

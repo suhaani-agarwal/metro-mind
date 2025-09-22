@@ -661,13 +661,62 @@ const Layer2Dashboard: React.FC = () => {
           <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-2xl shadow-xl p-6 mt-6">
             <h2 className="text-xl font-bold text-white mb-4">AI learned Suggested Overrides</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {suggestedOverrides.map((sug, idx) => (
+              {/* {suggestedOverrides.map((sug, idx) => (
                 <div key={idx} className="p-4 bg-gray-900/50 border border-gray-700 rounded-lg">
                   <div className="font-semibold text-gray-200">{sug.from_train} → {sug.to_train}</div>
                   <div className="text-sm text-gray-400 mt-1">{sug.reason}</div>
                   {sug.confidence && (
                     <div className="text-xs text-teal-300 mt-2">Confidence: {sug.confidence}</div>
                   )}
+                </div>
+              ))} */}
+
+              {suggestedOverrides.map((suggestion, index) => (
+                <div key={index} className="bg-gradient-to-br from-gray-900/60 to-gray-800/60 border border-gray-600 rounded-xl p-4 hover:border-emerald-500/50 transition-all duration-200">
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <div className="font-bold text-lg text-gray-100">
+                        {suggestion.from_train} → {suggestion.to_train}
+                      </div>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${
+                          suggestion.confidence === 'high' ? 'bg-emerald-500/20 text-emerald-300' :
+                          suggestion.confidence === 'medium' ? 'bg-yellow-500/20 text-yellow-300' :
+                          'bg-gray-500/20 text-gray-300'
+                        }`}>
+                          {suggestion.confidence || 'medium'} confidence
+                        </span>
+                        {suggestion.historical_pattern && (
+                          <span className="px-2 py-1 rounded text-xs font-medium bg-purple-500/20 text-purple-300">
+                            {suggestion.historical_pattern}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setSelectedScheduledTrain(suggestion.from_train);
+                        setSelectedStandbyTrain(suggestion.to_train);
+                        setShowOverride(true);
+                      }}
+                      className="px-3 py-1 bg-teal-600 hover:bg-teal-700 text-white text-xs rounded transition-colors"
+                    >
+                      Apply
+                    </button>
+                  </div>
+                  
+                  <p className="text-sm text-gray-300 mb-3">{suggestion.reason}</p>
+                  
+                  {suggestion.pattern_match && (
+                    <div className="text-xs text-purple-400 mb-2">
+                      📊 {suggestion.pattern_match}
+                    </div>
+                  )}
+                  
+                  <div className="flex justify-between items-center text-xs text-gray-400">
+                    <span>AI Learning from Historical Patterns</span>
+                    <span>🧠</span>
+                  </div>
                 </div>
               ))}
             </div>
