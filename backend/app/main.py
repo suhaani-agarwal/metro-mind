@@ -720,63 +720,142 @@ def submit_override(payload: Dict[str, Any]):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to save override: {str(e)}")
 
+# In your main.py, update the get_override_suggestions function:
+
 @app.get("/overrides/suggestions")
 def get_override_suggestions():
     """Generate suggested overrides using Gemini based on current schedule and past overrides"""
     try:
+        # Load current schedule data
         layer1_output = load_layer1_output()
         converted = convert_layer1_to_layer2_format(layer1_output)
         optimization_result = run_layer2_service(
             service_day="weekday",
             use_layer1_output=True,
         )
+        
+        # Load past overrides
         overrides = []
         if OVERRIDES_PATH.exists():
             with OVERRIDES_PATH.open("r", encoding="utf-8") as f:
                 overrides = json.load(f)
-        analyzer = WhatIfAnalyzer()
-        model = analyzer.model
-        # Fallback if no model
-        if not model:
-            # Persist empty suggestions
-            SUGGESTIONS_PATH.parent.mkdir(parents=True, exist_ok=True)
-            with SUGGESTIONS_PATH.open("w", encoding="utf-8") as f:
-                json.dump({"suggestions": []}, f, indent=2)
-            return {
-                "status": "fallback",
-                "suggestions": [],
-                "note": "Gemini not configured; cannot generate AI suggestions"
-            }
-        prompt = {
-            "current_schedule": optimization_result.get("optimized_assignments", []),
-            "standby": optimization_result.get("standby_trains", []),
-            "readiness": converted["readiness"],
-            "overrides_history": overrides,
-            "instructions": "Given current schedule and past overrides, suggest up to 3 swaps (scheduled->standby) that improve readiness without excessive shunting, while respecting branding urgency. Provide reasons. Output JSON: {suggestions: [{from_train, to_train, reason, confidence}]}"
-        }
-        resp = model.generate_content(json.dumps(prompt))
-        text = resp.text
+        
+        # Create a fallback suggestion if Gemini fails
+        fallback_suggestions = []
+        
+        # Try to get suggestions from Gemini
         try:
-            data = json.loads(text)
-            suggestions = data.get("suggestions", [])
-        except Exception:
-            suggestions = []
-
-        # Save/overwrite suggestions to file for frontend consumption
-        try:
-            SUGGESTIONS_PATH.parent.mkdir(parents=True, exist_ok=True)
-            with SUGGESTIONS_PATH.open("w", encoding="utf-8") as f:
-                json.dump({"suggestions": suggestions, "generated_at": datetime.now().isoformat()}, f, indent=2)
+            analyzer = WhatIfAnalyzer()
+            model = analyzer.model
+            
+            if model:
+                # Prepare data for Gemini
+                current_trains = optimization_result.get("optimized_assignments", [])
+                standby_trains = optimization_result.get("standby_trains", [])
+                
+                # Find trains that might need swapping (low readiness, need shunting, etc.)
+                problematic_trains = [t for t in current_trains if t.get('readiness', 0) < 80 or t.get('needs_shunting', False)]
+                good_standby_trains = [t for t in standby_trains if t.get('readiness', 0) > 85]
+                
+                # Create a simple prompt for Gemini
+                prompt = f"""
+                As a train operations expert, suggest train swaps to improve service reliability.
+                
+                Current scheduled trains with issues:
+                {json.dumps([{'train_id': t['train_id'], 'readiness': t.get('readiness', 0), 'issues': 'low readiness' if t.get('readiness', 0) < 80 else 'needs shunting'} for t in problematic_trains[:3]], indent=2)}
+                
+                Available standby trains:
+                {json.dumps([{'train_id': t['train_id'], 'readiness': t.get('readiness', 0), 'bay': t.get('bay', '')} for t in good_standby_trains[:5]], indent=2)}
+                
+                Past override decisions: {len(overrides)}
+                
+                Suggest 2-3 specific train swaps (scheduled_train_id -> standby_train_id) with clear reasons.
+                Focus on improving readiness scores and reducing operational issues.
+                Return ONLY valid JSON in this format:
+                {{
+                    "suggestions": [
+                        {{
+                            "from_train": "TR001",
+                            "to_train": "ST001", 
+                            "reason": "Improve readiness from 75% to 92% and avoid shunting operation",
+                            "confidence": "high"
+                        }}
+                    ]
+                }}
+                """
+                
+                response = model.generate_content(prompt)
+                text = response.text
+                
+                # Clean the response text
+                text = text.strip()
+                if '```json' in text:
+                    text = text.split('```json')[1].split('```')[0]
+                elif '```' in text:
+                    text = text.split('```')[1].split('```')[0]
+                
+                data = json.loads(text)
+                suggestions = data.get("suggestions", [])
+                
+            else:
+                suggestions = fallback_suggestions
+                
         except Exception as e:
-            logger.warning(f"Failed to persist suggestions: {e}")
-
+            logger.warning(f"Gemini suggestion failed: {e}")
+            # Create fallback suggestions based on logic
+            suggestions = create_fallback_suggestions(optimization_result)
+        
+        # Save suggestions
+        SUGGESTIONS_PATH.parent.mkdir(parents=True, exist_ok=True)
+        with SUGGESTIONS_PATH.open("w", encoding="utf-8") as f:
+            json.dump({
+                "suggestions": suggestions, 
+                "generated_at": datetime.now().isoformat(),
+                "source": "ai" if suggestions else "fallback"
+            }, f, indent=2)
+        
         return {
             "status": "ok",
             "suggestions": suggestions,
+            "generated_at": datetime.now().isoformat(),
+            "count": len(suggestions)
+        }
+        
+    except Exception as e:
+        logger.error(f"Override suggestions error: {e}")
+        # Return empty suggestions but don't fail completely
+        return {
+            "status": "error",
+            "suggestions": [],
+            "error": str(e),
             "generated_at": datetime.now().isoformat()
         }
+
+def create_fallback_suggestions(optimization_result):
+    """Create basic suggestions when AI fails"""
+    suggestions = []
+    
+    try:
+        current_trains = optimization_result.get("optimized_assignments", [])
+        standby_trains = optimization_result.get("standby_trains", [])
+        
+        # Simple logic: suggest swapping low-readiness trains with high-readiness standby
+        low_readiness_trains = [t for t in current_trains if t.get('readiness', 0) < 80]
+        high_readiness_standby = [t for t in standby_trains if t.get('readiness', 0) > 90]
+        
+        for i in range(min(2, len(low_readiness_trains), len(high_readiness_standby))):
+            if i < len(high_readiness_standby):
+                suggestions.append({
+                    "from_train": low_readiness_trains[i]['train_id'],
+                    "to_train": high_readiness_standby[i]['train_id'],
+                    "reason": f"Improve readiness from {low_readiness_trains[i].get('readiness', 0)}% to {high_readiness_standby[i].get('readiness', 0)}%",
+                    "confidence": "medium"
+                })
+                
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to generate suggestions: {str(e)}")
+        logger.warning(f"Fallback suggestions failed: {e}")
+    
+    return suggestions
 
 @app.get("/overrides/suggestions/latest")
 def get_latest_override_suggestions():

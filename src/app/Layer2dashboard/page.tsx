@@ -419,7 +419,7 @@ const Layer2Dashboard: React.FC = () => {
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-slate-800 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-teal-400 mx-auto mb-4"></div>
-          <h2 className="text-xl font-semibold text-gray-100">Loading Schedule Data</h2>
+          <h2 className="text-xl font-semibold text-white">Loading Schedule Data</h2>
           <p className="text-gray-400 mt-2">Optimizing trains with readiness & minimal shunting focus...</p>
         </div>
       </div>
@@ -431,7 +431,7 @@ const Layer2Dashboard: React.FC = () => {
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-slate-800 flex items-center justify-center p-4">
         <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-2xl shadow-2xl p-8 max-w-md text-center">
           <div className="text-6xl mb-4">⚠️</div>
-          <h2 className="text-2xl font-bold text-gray-100 mb-2">Error Loading Data</h2>
+          <h2 className="text-2xl font-bold text-white mb-2">Error Loading Data</h2>
           <p className="text-gray-400 mb-4">{error}</p>
           <div className="space-y-2">
             <button
@@ -456,7 +456,7 @@ const Layer2Dashboard: React.FC = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-slate-800 flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-100 mb-4">No Schedule Data</h2>
+          <h2 className="text-2xl font-bold text-white mb-4">No Schedule Data</h2>
           <button
             onClick={fetchScheduleData}
             className="bg-teal-600 hover:bg-teal-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200"
@@ -480,7 +480,7 @@ const Layer2Dashboard: React.FC = () => {
         <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-2xl shadow-xl p-6 mb-6">
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-100">Kochi Metro - Layer 2 Optimization</h1>
+              <h1 className="text-3xl font-bold text-white">Kochi Metro - Layer 2 Optimization</h1>
               <p className="text-gray-400 mt-2">
                 Readiness-focused departure scheduling with minimal shunting optimization
               </p>
@@ -506,7 +506,7 @@ const Layer2Dashboard: React.FC = () => {
                   type="date"
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
-                  className="bg-gray-700 border border-gray-600 text-gray-100 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                  className="bg-gray-700 border border-gray-600 text-white rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                 />
               </div>
               
@@ -568,7 +568,7 @@ const Layer2Dashboard: React.FC = () => {
         {data.timetable_info && (
           <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-2xl shadow-xl p-6 mb-6">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-gray-100">Timetable Configuration</h2>
+              <h2 className="text-xl font-bold text-white">Timetable Configuration</h2>
               <button
                 onClick={fetchTimetableData}
                 className="px-3 py-1 text-sm bg-teal-800 hover:bg-teal-700 text-teal-200 rounded-md transition-colors"
@@ -654,47 +654,38 @@ const Layer2Dashboard: React.FC = () => {
         )}
 
         {/* Input Validation Warnings */}
-        {currentValidation && (currentValidation.warnings.length > 0 || currentValidation.errors.length > 0) && (
-          <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-2xl shadow-xl p-6 mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-100">Data Validation</h2>
-              <button
-                onClick={fetchSuggestedOverrides}
-                className="px-3 py-1 text-sm bg-emerald-700 hover:bg-emerald-600 text-white rounded-md"
-              >
-                View Override Suggestions (AI)
-              </button>
+        
+
+        {/* Suggested Overrides */}
+        {suggestedOverrides.length > 0 && (
+          <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-2xl shadow-xl p-6 mt-6">
+            <h2 className="text-xl font-bold text-white mb-4">AI learned Suggested Overrides</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {suggestedOverrides.map((sug, idx) => (
+                <div key={idx} className="p-4 bg-gray-900/50 border border-gray-700 rounded-lg">
+                  <div className="font-semibold text-gray-200">{sug.from_train} → {sug.to_train}</div>
+                  <div className="text-sm text-gray-400 mt-1">{sug.reason}</div>
+                  {sug.confidence && (
+                    <div className="text-xs text-teal-300 mt-2">Confidence: {sug.confidence}</div>
+                  )}
+                </div>
+              ))}
             </div>
-            
-            {currentValidation.errors.length > 0 && (
-              <div className="mb-4">
-                <h3 className="font-semibold text-red-400 mb-2">Errors:</h3>
-                <ul className="list-disc list-inside space-y-1">
-                  {currentValidation.errors.map((error, index) => (
-                    <li key={index} className="text-red-300 text-sm">{error}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            
-            {currentValidation.warnings.length > 0 && (
-              <div>
-                <h3 className="font-semibold text-yellow-400 mb-2">Warnings:</h3>
-                <ul className="list-disc list-inside space-y-1">
-                  {currentValidation.warnings.map((warning, index) => (
-                    <li key={index} className="text-yellow-300 text-sm">{warning}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
           </div>
         )}
 
         {/* Main Schedule Table */}
         <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-2xl shadow-xl p-6">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-bold text-gray-100">Optimized Train Schedule</h2>
+            <h2 className="text-xl font-bold text-white">Optimized Train Schedule</h2>
             <div className="flex gap-2">
+              
+              <button
+                onClick={fetchSuggestedOverrides}
+                className="px-3 py-1 text-sm bg-emerald-700 hover:bg-emerald-600 text-white rounded-md"
+              >
+                View Override Suggestions (AI)
+              </button>
               <button
                 onClick={openWhatIfPanel}
                 className="px-4 py-2 text-sm bg-purple-700 hover:bg-purple-600 text-white rounded-md transition-colors font-medium"
@@ -707,12 +698,7 @@ const Layer2Dashboard: React.FC = () => {
               >
                 ✍️ Override Schedule
               </button>
-              <button
-                onClick={() => setShowDebug(!showDebug)}
-                className="px-3 py-1 text-sm bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-md transition-colors"
-              >
-                {showDebug ? 'Hide' : 'Show'} Debug
-              </button>
+              
             </div>
           </div>
           
@@ -747,7 +733,7 @@ const Layer2Dashboard: React.FC = () => {
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      <div className="font-bold text-gray-100">{train.train_id}</div>
+                      <div className="font-bold text-white">{train.train_id}</div>
                       {train.readiness_summary && (
                         <div className="text-xs text-gray-400 mt-1 max-w-xs truncate" title={train.readiness_summary}>
                           {train.readiness_summary}
@@ -821,32 +807,17 @@ const Layer2Dashboard: React.FC = () => {
         </div>
 
         {/* Suggested Overrides */}
-        {suggestedOverrides.length > 0 && (
-          <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-2xl shadow-xl p-6 mt-6">
-            <h2 className="text-xl font-bold text-gray-100 mb-4">Suggested Overrides</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {suggestedOverrides.map((sug, idx) => (
-                <div key={idx} className="p-4 bg-gray-900/50 border border-gray-700 rounded-lg">
-                  <div className="font-semibold text-gray-200">{sug.from_train} → {sug.to_train}</div>
-                  <div className="text-sm text-gray-400 mt-1">{sug.reason}</div>
-                  {sug.confidence && (
-                    <div className="text-xs text-teal-300 mt-2">Confidence: {sug.confidence}</div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        
 
         {/* Standby Trains Summary */}
         {data.standby_trains && data.standby_trains.length > 0 && (
           <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-2xl shadow-xl p-6 mt-6">
-            <h2 className="text-xl font-bold text-gray-100 mb-4">Standby Trains ({data.standby_trains.length})</h2>
+            <h2 className="text-xl font-bold text-white mb-4">Standby Trains ({data.standby_trains.length})</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {data.standby_trains.slice(0, 6).map((train) => (
                 <div key={train.train_id} className="bg-gray-900/50 border border-gray-600 rounded-lg p-4">
                   <div className="flex justify-between items-start mb-2">
-                    <div className="font-bold text-gray-100">{train.train_id}</div>
+                    <div className="font-bold text-white">{train.train_id}</div>
                     <span className={`px-2 py-1 rounded text-xs font-medium border ${getReadinessColor(train.readiness)}`}>
                       {train.readiness}%
                     </span>
@@ -884,12 +855,6 @@ const Layer2Dashboard: React.FC = () => {
             What-If Analysis
           </button>
           
-          <button
-            onClick={fetchValidationData}
-            className="bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-semibold py-3 px-8 rounded-lg shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
-          >
-            Validate Data
-          </button>
           
           <button
             onClick={fetchTimetableData}
@@ -906,7 +871,7 @@ const Layer2Dashboard: React.FC = () => {
       <div className="p-6">
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h3 className="text-2xl font-bold text-gray-100">What-If Train Swap Analysis</h3>
+            <h3 className="text-2xl font-bold text-white">What-If Train Swap Analysis</h3>
             <p className="text-gray-400 mt-1">AI-powered impact analysis for swapping scheduled trains with standby trains</p>
           </div>
           <button
@@ -955,7 +920,7 @@ const Layer2Dashboard: React.FC = () => {
                              readinessScore >= 70 ? '🟠' : '🔴'}
                           </div>
                           <div>
-                            <div className="font-bold text-lg text-gray-100">{train.train_id}</div>
+                            <div className="font-bold text-lg text-white">{train.train_id}</div>
                             <div className="text-sm text-gray-400">
                               {train.bay} • Position {train.bay_position}
                             </div>
@@ -1040,7 +1005,7 @@ const Layer2Dashboard: React.FC = () => {
                     <div className="flex items-center gap-3">
                       <div className="text-xl">🚄</div>
                       <div>
-                        <div className="font-bold text-lg text-gray-100">{train.train_id}</div>
+                        <div className="font-bold text-lg text-white">{train.train_id}</div>
                         <div className="text-sm text-gray-400">
                           Slot {train.departure_slot} • Bay {train.bay}
                           {train.needs_shunting && (
@@ -1110,7 +1075,7 @@ const Layer2Dashboard: React.FC = () => {
               <div className="p-6">
                 <div className="flex justify-between items-center mb-6">
                   <div>
-                    <h3 className="text-2xl font-bold text-gray-100">Swap Analysis Results</h3>
+                    <h3 className="text-2xl font-bold text-white">Swap Analysis Results</h3>
                     <p className="text-gray-400 mt-1">
                       {swapAnalysis.swap_scenario.from_train} → {swapAnalysis.swap_scenario.to_train}
                     </p>
@@ -1305,7 +1270,7 @@ const Layer2Dashboard: React.FC = () => {
             <div className="bg-gray-800 border border-gray-700 rounded-2xl shadow-2xl max-w-2xl w-full max-h-96 overflow-y-auto">
               <div className="p-6">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-xl font-bold text-gray-100">Data Validation Results</h3>
+                  <h3 className="text-xl font-bold text-white">Data Validation Results</h3>
                   <button
                     onClick={() => setShowValidation(false)}
                     className="text-gray-400 hover:text-gray-200"
@@ -1361,7 +1326,7 @@ const Layer2Dashboard: React.FC = () => {
             <div className="bg-gray-800 border border-gray-700 rounded-2xl shadow-2xl max-w-4xl w-full max-h-96 overflow-y-auto">
               <div className="p-6">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-xl font-bold text-gray-100">Detailed Timetable Information</h3>
+                  <h3 className="text-xl font-bold text-white">Detailed Timetable Information</h3>
                   <button
                     onClick={() => setShowTimetable(false)}
                     className="text-gray-400 hover:text-gray-200"
@@ -1475,7 +1440,7 @@ const Layer2Dashboard: React.FC = () => {
           <div className="bg-gray-800 border border-gray-700 rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-2xl font-bold text-gray-100">Override Schedule</h3>
+                <h3 className="text-2xl font-bold text-white">Override Schedule</h3>
                 <button onClick={() => setShowOverride(false)} className="text-gray-400 hover:text-gray-200 text-2xl">✕</button>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1486,7 +1451,7 @@ const Layer2Dashboard: React.FC = () => {
                       <div key={t.train_id} onClick={() => setSelectedScheduledTrain(t.train_id)}
                         className={`p-3 border rounded cursor-pointer ${selectedScheduledTrain===t.train_id? 'border-emerald-500 bg-emerald-900/30':'border-gray-600 hover:border-gray-500 bg-gray-900/30'}`}>
                         <div className="flex justify-between">
-                          <div className="text-gray-100 font-medium">{t.train_id}</div>
+                          <div className="text-white font-medium">{t.train_id}</div>
                           <div className="text-xs text-gray-400">Readiness {t.readiness}%</div>
                         </div>
                         <div className="text-xs text-gray-500">Bay {t.bay} • Slot {t.departure_slot}</div>
@@ -1501,7 +1466,7 @@ const Layer2Dashboard: React.FC = () => {
                       <div key={t.train_id} onClick={() => setSelectedStandbyTrain(t.train_id)}
                         className={`p-3 border rounded cursor-pointer ${selectedStandbyTrain===t.train_id? 'border-emerald-500 bg-emerald-900/30':'border-gray-600 hover:border-gray-500 bg-gray-900/30'}`}>
                         <div className="flex justify-between">
-                          <div className="text-gray-100 font-medium">{t.train_id}</div>
+                          <div className="text-white font-medium">{t.train_id}</div>
                           <div className="text-xs text-gray-400">Readiness {t.readiness}%</div>
                         </div>
                         <div className="text-xs text-gray-500">Bay {t.bay} • Pos {t.bay_position}</div>
@@ -1513,7 +1478,7 @@ const Layer2Dashboard: React.FC = () => {
               <div className="mt-6">
                 <label className="block text-sm font-medium text-gray-300 mb-1">Reason</label>
                 <textarea value={overrideReason} onChange={(e)=>setOverrideReason(e.target.value)}
-                  className="w-full bg-gray-900 border border-gray-700 rounded-md text-gray-100 p-3 min-h-[100px] focus:outline-none focus:ring-2 focus:ring-emerald-600"></textarea>
+                  className="w-full bg-gray-900 border border-gray-700 rounded-md text-white p-3 min-h-[100px] focus:outline-none focus:ring-2 focus:ring-emerald-600"></textarea>
               </div>
               <div className="mt-4 flex justify-end">
                 <button onClick={submitOverride} disabled={overrideSubmitting}
