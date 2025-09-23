@@ -44,7 +44,7 @@ export default function NightlyPage() {
 
   // Load trains and check fitness expiry
   useEffect(() => {
-    axios.get("http://localhost:8000/api/nightly/trains").then(async (res) => {
+    axios.get("http://localhost:5005/api/nightly/trains").then(async (res) => {
       setTrains(res.data.trains);
       if (res.data.trains.length) {
         const trainId = res.data.trains[0];
@@ -52,7 +52,7 @@ export default function NightlyPage() {
 
         // Fetch current fitness for first train
         const fitnessRes = await axios.get(
-          `http://localhost:8000/api/nightly/train/${trainId}/fitness`
+          `http://localhost:5005/api/nightly/train/${trainId}/fitness`
         );
         const { valid_until } = fitnessRes.data || {};
         if (valid_until && new Date(valid_until) < new Date()) {
@@ -86,7 +86,7 @@ export default function NightlyPage() {
     try {
       // 1) Save depot deep cleaning labour (independent of train)
       await axios.post(
-        "http://localhost:8000/api/nightly/depot/deep-cleaning",
+        "http://localhost:5005/api/nightly/depot/deep-cleaning",
         {
           manual_labour_available_today: Number(deepCleaningLabour) || 0,
         }
@@ -96,7 +96,7 @@ export default function NightlyPage() {
       if (form.brandings && form.brandings.length > 0) {
         for (const b of form.brandings) {
           if (!b.advertiser) continue;
-          await axios.post("http://localhost:8000/api/nightly/branding/add", {
+          await axios.post("http://localhost:5005/api/nightly/branding/add", {
             train_id: selectedTrain,
             branding: b,
           });
@@ -109,7 +109,7 @@ export default function NightlyPage() {
         fitness_certificates: form.fitness_certificates,
       };
       await axios.post(
-        "http://localhost:8000/api/nightly/update/train",
+        "http://localhost:5005/api/nightly/update/train",
         payload
       );
       alert(`Train ${selectedTrain} updated successfully ✅`);
@@ -191,7 +191,7 @@ export default function NightlyPage() {
 
                   // Check fitness expiry when train changes
                   const fitnessRes = await axios.get(
-                    `http://localhost:8000/api/nightly/train/${trainId}/fitness`
+                    `http://localhost:5005/api/nightly/train/${trainId}/fitness`
                   );
                   const { valid_until } = fitnessRes.data || {};
                   const isExpired =

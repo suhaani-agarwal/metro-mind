@@ -74,7 +74,7 @@ export default function TrainParkingPage() {
   const fetchTrains = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:8000/api/nightly/trains"
+        "http://localhost:5005/api/nightly/trains"
       );
       // Convert all train IDs to TM format for display
       const tmTrains = response.data.trains.map((train: string) =>
@@ -89,7 +89,7 @@ export default function TrainParkingPage() {
   const fetchParkingData = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:8000/api/nightly/parking/assignments"
+        "http://localhost:5005/api/nightly/parking/assignments"
       );
       // Convert all train IDs in parking data to TM format
       const tmParkingData =
@@ -212,13 +212,13 @@ export default function TrainParkingPage() {
 
       if (isEditing) {
         await axios.put(
-          `http://localhost:8000/api/nightly/parking/assignment/${editingTrain}`,
+          `http://localhost:5005/api/nightly/parking/assignment/${editingTrain}`,
           payload
         );
         alert(`Parking assignment updated for Train ${selectedTrain} ✅`);
       } else {
         await axios.post(
-          "http://localhost:8000/api/nightly/parking/assignment",
+          "http://localhost:5005/api/nightly/parking/assignment",
           payload
         );
         alert(
@@ -260,7 +260,7 @@ export default function TrainParkingPage() {
     if (confirm(`Remove parking assignment for Train ${trainId}?`)) {
       try {
         await axios.delete(
-          `http://localhost:8000/api/nightly/parking/assignment/${trainId}`
+          `http://localhost:5005/api/nightly/parking/assignment/${trainId}`
         );
         alert(`Parking assignment removed for Train ${trainId} ✅`);
         fetchParkingData();
@@ -278,7 +278,7 @@ export default function TrainParkingPage() {
       );
       if (assignment) {
         await axios.put(
-          `http://localhost:8000/api/nightly/parking/assignment/${trainId}`,
+          `http://localhost:5005/api/nightly/parking/assignment/${trainId}`,
           {
             ...assignment,
             departure_time: new Date().toISOString(),

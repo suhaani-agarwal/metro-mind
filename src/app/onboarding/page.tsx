@@ -106,7 +106,7 @@ export default function OnboardingPage() {
 
     setLoading(true);
     try {
-      await axios.post("http://localhost:8000/api/onboarding/depot", depot);
+      await axios.post("http://localhost:5005/api/onboarding/depot", depot);
       setStep(2);
     } catch (error) {
       console.error(error);
@@ -129,7 +129,7 @@ export default function OnboardingPage() {
     setLoading(true);
     try {
       await axios.post(
-        "http://localhost:8000/api/onboarding/upload",
+        "http://localhost:5005/api/onboarding/upload",
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
