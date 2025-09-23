@@ -1013,14 +1013,23 @@ def get_rotation_predictions(service_date: str = None):
         weather_by_station["Edappally"] = "foggy"
         weather_by_station["M.G Road"] = "storm"
 
-        # Run predictor
+        # First, build the baseline rotation using the existing non-ML function for full-day rotations
+        weather_data = get_weather_forecast(service_date)
+        baseline_rotation = generate_rotation_schedule(
+            scheduled_trains=scheduled_trains,
+            train_configs=train_configs,
+            station_timings=station_timings,
+            weather_data=weather_data,
+            service_date=service_date,
+        )
+
+        # Run predictor on the baseline to only adjust delays/expectations, preserving rotations
         models_dir = str(Path(__file__).resolve().parents[2])  # project root where pkl files exist
         predictor = DelayPredictor(models_dir=models_dir)
-        prediction = predictor.predict_for_day(
-            scheduled_trains=scheduled_trains,
-            station_timings=station_timings,
-            weather_by_station=weather_by_station,
+        prediction = predictor.predict_on_schedule(
+            baseline_rotation=baseline_rotation,
             train_configs=train_configs,
+            weather_by_station=weather_by_station,
         )
 
         # Wrap with metadata to match frontend expectations

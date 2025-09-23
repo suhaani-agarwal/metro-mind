@@ -102,6 +102,17 @@ const RotationPage: React.FC = () => {
       if (!response.ok) throw new Error('Failed to fetch rotation data');
       const data: RotationData = await response.json();
       setRotationData(data);
+      try {
+        (window as any).__rotationData = data;
+        const map = new Map<string, string>();
+        data.train_schedules.forEach(ts => {
+          ts.station_events.forEach(ev => {
+            const key = `${ev.expected_arrival}|${ev.station}|${ev.direction}|${ev.rotation}`;
+            map.set(key, ts.train_id);
+          });
+        });
+        (window as any).__rotationDataTrainMap = map;
+      } catch {}
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load data');
     } finally {
@@ -606,9 +617,9 @@ const TimelineView: React.FC<{
               </div>
               <div className="flex items-center space-x-3">
                 <div className={`px-3 py-2 rounded-lg ${getDelayBgColor(delayAnalysis.total_delay)}`}>
-                  <span className={`font-bold ${getDelayColor(delayAnalysis.total_delay)}`}>
+                  {/* <span className={`font-bold ${getDelayColor(delayAnalysis.total_delay)}`}>
                     +{delayAnalysis.total_delay.toFixed(1)}m total delay
-                  </span>
+                  </span> */}
                 </div>
                 <span className="text-slate-400 text-2xl">
                   {expandedTrains.has(trainId) ? '▲' : '▼'}
@@ -723,6 +734,7 @@ const TableView: React.FC<{ events: StationEvent[] }> = ({ events }) => {
           <tbody className="divide-y divide-slate-700">
             {events.map((event, index) => {
               const isDelayed = event.delay_minutes > 0;
+              const trainId = (window as any).__rotationDataTrainMap?.get?.(event.expected_arrival + '|' + event.station + '|' + event.direction + '|' + event.rotation) || findTrainIdForEvent(event);
               return (
                 <tr key={index} className="hover:bg-slate-700/30 transition-colors">
                   <td className="px-6 py-4">
@@ -732,7 +744,7 @@ const TableView: React.FC<{ events: StationEvent[] }> = ({ events }) => {
                     <div className="font-mono text-cyan-300">{event.expected_arrival}</div>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="font-semibold text-slate-200">{findTrainIdForEvent(event)}</div>
+                    <div className="font-semibold text-slate-200">{trainId}</div>
                   </td>
                   <td className="px-6 py-4">
                     <div className="text-slate-200">{event.station}</div>

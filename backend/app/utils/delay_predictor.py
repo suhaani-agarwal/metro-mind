@@ -283,3 +283,118 @@ class DelayPredictor:
             "stations": stations,
             "station_timings": station_timings
         }
+
+    def predict_on_schedule(self,
+                            baseline_rotation: Dict[str, Any],
+                            train_configs: Dict[str, Any],
+                            weather_by_station: Dict[str, str]) -> Dict[str, Any]:
+        """Augment an existing baseline rotation schedule by predicting delays per event using ML.
+        Keeps the original rotation timing (scheduled arrivals, number of rotations, first/last times)."""
+        stations = [s for s in baseline_rotation.get("stations", [])]
+        # Station timings list of dicts
+        station_timings = baseline_rotation.get("station_timings", [])
+        self._init_encoders([s if isinstance(s, str) else s.get("station", "") for s in (stations if stations and isinstance(stations[0], str) else [st.get("station", "") for st in station_timings])], list(set(weather_by_station.values())))
+
+        updated_trains = []
+        for train in baseline_rotation.get("train_schedules", []):
+            train_id = train.get("train_id")
+            config = next((t for t in train_configs.get("trains", []) if t.get("id") == train_id), {})
+            job_cards = config.get("job_cards", [])
+            base_trip_time = 0
+            if station_timings:
+                base_trip_time = station_timings[-1].get("cumulative_time", 46)
+
+            station_events = []
+            for ev in train.get("station_events", []):
+                station_name = ev.get("station")
+                sched_time = ev.get("scheduled_arrival")
+                time_bucket = self._time_bucket(sched_time)
+                weather = weather_by_station.get(station_name, "clear")
+
+                features = [
+                    self.station_map.get(station_name, 0),
+                    self.weather_map.get(weather, 0),
+                    self.time_map.get(time_bucket, 0),
+                    1 if self._is_delay_relevant_jobcard(job_cards) else 0
+                ]
+
+                proba = getattr(self.classifier, "predict_proba", None)
+                if proba:
+                    p_delay = float(self.classifier.predict_proba([features])[0][1])
+                    risk = 1 if p_delay >= 0.4 else 0
+                else:
+                    p_delay = None
+                    risk = int(self.classifier.predict([features])[0])
+
+                delay_pred = 0.0
+                causes = []
+                fatigue_mult = self._compute_fatigue_factor(config)
+                # Add fatigue reason detail if high
+                fatigue_reason = None
+                if fatigue_mult > 1.15:
+                    fatigue_reason = "fatigue: high utilization"
+
+                if risk == 1:
+                    delay_pred = float(self.regressor.predict([features])[0]) * fatigue_mult
+                    causes = self._extract_delay_causes(job_cards, weather)
+                    if fatigue_reason:
+                        causes.append(fatigue_reason)
+                else:
+                    # small delay if strong fatigue and maintenance relevant
+                    if self._is_delay_relevant_jobcard(job_cards) and fatigue_mult > 1.15:
+                        delay_pred = 0.8 * (fatigue_mult - 1.0) * 5.0
+                        causes = self._extract_delay_causes(job_cards, weather)
+                        if fatigue_reason:
+                            causes.append(fatigue_reason)
+
+                # Progressive accumulation based on baseline cumulative
+                cum = ev.get("cumulative_time", 0)
+                progress_ratio = 0.1 if cum == 0 else (float(cum) / float(base_trip_time)) if base_trip_time else 1.0
+                effective_delay = delay_pred * progress_ratio
+
+                # Compute expected arrival from scheduled
+                try:
+                    sched_dt = datetime.strptime(sched_time, "%H:%M")
+                except:
+                    sched_dt = datetime.strptime("06:00", "%H:%M")
+                expected_dt = sched_dt + timedelta(minutes=effective_delay)
+                expected_str = expected_dt.strftime("%H:%M")
+
+                ev_updated = dict(ev)
+                ev_updated["expected_arrival"] = expected_str
+                ev_updated["delay_minutes"] = round(effective_delay, 1)
+                ev_updated["delay_reasons"] = causes
+                ev_updated["delay_probability"] = round(p_delay, 2) if p_delay is not None else None
+                station_events.append(ev_updated)
+
+            # Recompute totals
+            updated_trains.append({
+                **{k: v for k, v in train.items() if k not in ["station_events", "delay_analysis"]},
+                "station_events": station_events,
+                "delay_analysis": {
+                    "base_trip_time": base_trip_time,
+                    "total_trip_time": base_trip_time * 2,
+                    "total_delay": round(sum(e.get("delay_minutes", 0) for e in station_events), 1),
+                    "delay_breakdown": {
+                        "job_cards": round(sum(e.get("delay_minutes", 0) for e in station_events if any(r.startswith("job_card:") for r in e.get("delay_reasons", []))), 1),
+                        "maintenance": round(sum(e.get("delay_minutes", 0) for e in station_events if any(r.startswith("fatigue:") for r in e.get("delay_reasons", []))), 1),
+                        "weather": round(sum(e.get("delay_minutes", 0) for e in station_events if any(r.startswith("weather:") for r in e.get("delay_reasons", []))), 1),
+                    },
+                    "delay_reasons": list({reason for e in station_events for reason in e.get("delay_reasons", [])})
+                }
+            })
+
+        all_events = [ev for tr in updated_trains for ev in tr.get("station_events", [])]
+        summary = {
+            "total_events": len(all_events),
+            "delayed_events": len([e for e in all_events if e.get("delay_minutes", 0) > 1.0]),
+            "significant_delays": len([e for e in all_events if e.get("significant_delay")]),
+            "max_delay": max([e.get("delay_minutes", 0) for e in all_events]) if all_events else 0,
+            "avg_delay": round(sum([e.get("delay_minutes", 0) for e in all_events]) / len(all_events), 1) if all_events else 0,
+        }
+
+        return {
+            **{k: v for k, v in baseline_rotation.items() if k not in ["train_schedules", "summary"]},
+            "train_schedules": updated_trains,
+            "summary": summary
+        }
