@@ -21,6 +21,8 @@ from app.services.layer2_service import (
     load_layer1_output,
 )
 from app.services.what_if_service import WhatIfAnalyzer, analyze_train_swap
+from app.utils.forecast import get_station_timings, get_weather_forecast, generate_rotation_schedule
+from app.utils.delay_predictor import DelayPredictor
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -917,6 +919,121 @@ def get_latest_override_suggestions():
         return {"status": "ok", "suggestions": data.get("suggestions", []), "generated_at": data.get("generated_at")}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to read suggestions: {str(e)}")
+
+# for rotation scheduling
+
+@app.get("/rotation/schedule")
+def get_rotation_schedule(service_date: str = None):
+    """Get the complete rotation schedule with station arrival times and delay forecasts"""
+    try:
+        if not service_date:
+            service_date = date.today().isoformat()
+        
+        # Load the current optimized schedule
+        optimization_result = run_layer2_service(service_day="weekday", use_layer1_output=True)
+        scheduled_trains = optimization_result.get("optimized_assignments", [])
+        
+        # Load train configuration data
+        with open(os.path.join(DATA_DIR, "input_data.json"), "r") as f:
+            train_configs = json.load(f)
+        
+        # Load station timing data
+        station_timings = get_station_timings()
+        
+        # Get weather forecast
+        weather_data = get_weather_forecast(service_date)
+        
+        # Generate rotation schedule
+        rotation_schedule = generate_rotation_schedule(
+            scheduled_trains, 
+            train_configs, 
+            station_timings, 
+            weather_data,
+            service_date
+        )
+        
+        return rotation_schedule
+        
+    except Exception as e:
+        logger.error(f"Error generating rotation schedule: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/rotation/station/{station_name}")
+def get_station_schedule(station_name: str, service_date: str = None):
+    """Get schedule for a specific station"""
+    try:
+        rotation_schedule = get_rotation_schedule(service_date)
+        station_schedule = []
+        
+        for train_schedule in rotation_schedule.get("train_schedules", []):
+            for station_event in train_schedule.get("station_events", []):
+                if station_event["station"].lower() == station_name.lower():
+                    station_schedule.append({
+                        "train_id": train_schedule["train_id"],
+                        "scheduled_arrival": station_event["scheduled_arrival"],
+                        "expected_arrival": station_event["expected_arrival"],
+                        "delay_minutes": station_event["delay_minutes"],
+                        "delay_reasons": station_event["delay_reasons"],
+                        "direction": station_event["direction"]
+                    })
+        
+        return {
+            "station": station_name,
+            "date": service_date or date.today().isoformat(),
+            "schedule": sorted(station_schedule, key=lambda x: x["scheduled_arrival"])
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/rotation/predictions")
+def get_rotation_predictions(service_date: str = None):
+    """ML-based delay predictions per train and station using history-trained models"""
+    try:
+        if not service_date:
+            service_date = date.today().isoformat()
+
+        # Get optimized schedule from Layer 2
+        optimization_result = run_layer2_service(service_day="weekday", use_layer1_output=True)
+        scheduled_trains = optimization_result.get("optimized_assignments", [])
+
+        # Load train configuration data
+        with open(os.path.join(DATA_DIR, "input_data.json"), "r") as f:
+            train_configs = json.load(f)
+
+        # Station timings
+        station_timings = get_station_timings()
+
+        # Hardcoded weather map for realism (can be replaced by live feed)
+        weather_by_station = {
+            s["station"]: ("rain" if s["station"] in ["Vytilla", "Thaikoodam", "Pettah"] else "clear")
+            for s in station_timings
+        }
+        # Add a couple of stormy/foggy hotspots to showcase variety
+        weather_by_station["Edappally"] = "foggy"
+        weather_by_station["M.G Road"] = "storm"
+
+        # Run predictor
+        models_dir = str(Path(__file__).resolve().parents[2])  # project root where pkl files exist
+        predictor = DelayPredictor(models_dir=models_dir)
+        prediction = predictor.predict_for_day(
+            scheduled_trains=scheduled_trains,
+            station_timings=station_timings,
+            weather_by_station=weather_by_station,
+            train_configs=train_configs,
+        )
+
+        # Wrap with metadata to match frontend expectations
+        result = {
+            "service_date": service_date,
+            "weather_conditions": {"overall_condition": "variable"},
+            "total_trains": len(prediction.get("train_schedules", [])),
+            **prediction
+        }
+        return result
+    except Exception as e:
+        logger.error(f"Error generating ML predictions: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
     import uvicorn
