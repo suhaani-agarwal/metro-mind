@@ -5,409 +5,44 @@
       "fitness_certificates": {
         "rolling_stock": {
           "department": "rolling_stock",
-          "issue_date": "2024-10-02",
-          "expiry_date": "2026-04-06",
+          "issue_date": "2024-09-14",
+          "expiry_date": "2025-12-17",
           "status": "valid"
         },
         "signalling": {
           "department": "signalling",
-          "issue_date": "2025-05-17",
-          "expiry_date": "2025-11-15",
+          "issue_date": "2024-06-30",
+          "expiry_date": "2026-06-12",
           "status": "valid"
         },
         "telecom": {
           "department": "telecom",
-          "issue_date": "2024-08-07",
-          "expiry_date": "2025-12-29",
-          "status": "valid"
-        }
-      },
-      "job_cards": [],
-      "branding_contracts": [],
-      "current_mileage": {
-        "bogie": 8291.09818813618,
-        "brake_pad": 10693.791910103044,
-        "hvac": 10819.32996172207
-      },
-      "maintenance_thresholds": {
-        "bogie": 15000,
-        "brake_pad": 13000,
-        "hvac": 15000
-      },
-      "last_deep_cleaning": "2025-09-15",
-      "cleaning_duration": 2,
-      "status": "in_service",
-      "current_position": "PT02-1"
-    },
-    {
-      "id": "TM002",
-      "fitness_certificates": {
-        "rolling_stock": {
-          "department": "rolling_stock",
-          "issue_date": "2024-08-13",
-          "expiry_date": "2025-12-29",
-          "status": "valid"
-        },
-        "signalling": {
-          "department": "signalling",
-          "issue_date": "2025-01-04",
-          "expiry_date": "2025-12-09",
-          "status": "valid"
-        },
-        "telecom": {
-          "department": "telecom",
-          "issue_date": "2025-06-08",
-          "expiry_date": "2025-11-29",
+          "issue_date": "2024-11-18",
+          "expiry_date": "2026-07-12",
           "status": "valid"
         }
       },
       "job_cards": [
         {
-          "id": "JC2095",
-          "description": "Exterior washing",
-          "open_date": "2025-09-10",
+          "id": "JC5139",
+          "description": "Dashboard polishing",
+          "open_date": "2025-08-27",
           "criticality": "low",
-          "estimated_hours": 2.057071274499541
-        }
-      ],
-      "branding_contracts": [
-        {
-          "brand": "Pepsi",
-          "total_exposure_hours": 51,
-          "completed_hours": 34,
-          "deadline": "2025-11-21",
-          "priority": 9
-        }
-      ],
-      "current_mileage": {
-        "bogie": 10776.09708786945,
-        "brake_pad": 10202.528036923217,
-        "hvac": 11792.962597080843
-      },
-      "maintenance_thresholds": {
-        "bogie": 15000,
-        "brake_pad": 13000,
-        "hvac": 15000
-      },
-      "last_deep_cleaning": "2025-09-13",
-      "cleaning_duration": 4,
-      "status": "in_service",
-      "current_position": "PT12-2"
-    },
-    {
-      "id": "TM003",
-      "fitness_certificates": {
-        "rolling_stock": {
-          "department": "rolling_stock",
-          "issue_date": "2024-06-22",
-          "expiry_date": "2026-05-02",
-          "status": "valid"
-        },
-        "signalling": {
-          "department": "signalling",
-          "issue_date": "2024-12-18",
-          "expiry_date": "2025-09-20",
-          "status": "expired"
-        },
-        "telecom": {
-          "department": "telecom",
-          "issue_date": "2024-12-18",
-          "expiry_date": "2026-07-19",
-          "status": "valid"
-        }
-      },
-      "job_cards": [
-        {
-          "id": "JC4651",
-          "description": "Window seal replacement",
-          "open_date": "2025-09-03",
-          "criticality": "high",
-          "estimated_hours": 1.0782438871210034
+          "estimated_hours": 2.7977077859981883
         },
         {
-          "id": "JC4290",
-          "description": "Seat upholstery repair",
-          "open_date": "2025-09-06",
-          "criticality": "medium",
-          "estimated_hours": 6.247154065197377
-        }
-      ],
-      "branding_contracts": [],
-      "current_mileage": {
-        "bogie": 12104.545805639209,
-        "brake_pad": 7124.496594278737,
-        "hvac": 14575.871411168158
-      },
-      "maintenance_thresholds": {
-        "bogie": 15000,
-        "brake_pad": 13000,
-        "hvac": 15000
-      },
-      "last_deep_cleaning": "2025-09-21",
-      "cleaning_duration": 3,
-      "status": "ibl",
-      "current_position": "PT08-1"
-    },
-    {
-      "id": "TM004",
-      "fitness_certificates": {
-        "rolling_stock": {
-          "department": "rolling_stock",
-          "issue_date": "2024-08-15",
-          "expiry_date": "2025-09-08",
-          "status": "expired"
-        },
-        "signalling": {
-          "department": "signalling",
-          "issue_date": "2025-01-19",
-          "expiry_date": "2025-11-25",
-          "status": "valid"
-        },
-        "telecom": {
-          "department": "telecom",
-          "issue_date": "2024-06-10",
-          "expiry_date": "2026-07-13",
-          "status": "valid"
-        }
-      },
-      "job_cards": [
-        {
-          "id": "JC3539",
-          "description": "Door mechanism adjustment",
-          "open_date": "2025-09-13",
-          "criticality": "high",
-          "estimated_hours": 1.7279469754797971
-        },
-        {
-          "id": "JC3864",
-          "description": "Exterior washing",
-          "open_date": "2025-09-18",
+          "id": "JC3819",
+          "description": "Interior cleaning",
+          "open_date": "2025-08-28",
           "criticality": "low",
-          "estimated_hours": 6.727080807550925
+          "estimated_hours": 4.679603334496471
         }
       ],
       "branding_contracts": [],
       "current_mileage": {
-        "bogie": 14234.71133722538,
-        "brake_pad": 7314.411955401547,
-        "hvac": 9570.836540933244
-      },
-      "maintenance_thresholds": {
-        "bogie": 15000,
-        "brake_pad": 13000,
-        "hvac": 15000
-      },
-      "last_deep_cleaning": "2025-09-21",
-      "cleaning_duration": 2,
-      "status": "ibl",
-      "current_position": "PT12-1"
-    },
-    {
-      "id": "TM005",
-      "fitness_certificates": {
-        "rolling_stock": {
-          "department": "rolling_stock",
-          "issue_date": "2025-03-23",
-          "expiry_date": "2026-06-18",
-          "status": "valid"
-        },
-        "signalling": {
-          "department": "signalling",
-          "issue_date": "2025-02-09",
-          "expiry_date": "2025-09-15",
-          "status": "expired"
-        },
-        "telecom": {
-          "department": "telecom",
-          "issue_date": "2024-07-28",
-          "expiry_date": "2026-02-01",
-          "status": "valid"
-        }
-      },
-      "job_cards": [
-        {
-          "id": "JC6180",
-          "description": "Minor cosmetic fixes",
-          "open_date": "2025-08-31",
-          "criticality": "low",
-          "estimated_hours": 1.061208754523057
-        },
-        {
-          "id": "JC9017",
-          "description": "Flooring replacement",
-          "open_date": "2025-09-09",
-          "criticality": "medium",
-          "estimated_hours": 4.851015058535555
-        }
-      ],
-      "branding_contracts": [],
-      "current_mileage": {
-        "bogie": 12443.273264934469,
-        "brake_pad": 11186.295359538435,
-        "hvac": 14062.168706478638
-      },
-      "maintenance_thresholds": {
-        "bogie": 15000,
-        "brake_pad": 13000,
-        "hvac": 15000
-      },
-      "last_deep_cleaning": "2025-09-15",
-      "cleaning_duration": 2,
-      "status": "ibl",
-      "current_position": "PT10-1"
-    },
-    {
-      "id": "TM006",
-      "fitness_certificates": {
-        "rolling_stock": {
-          "department": "rolling_stock",
-          "issue_date": "2024-08-08",
-          "expiry_date": "2026-01-24",
-          "status": "valid"
-        },
-        "signalling": {
-          "department": "signalling",
-          "issue_date": "2024-10-19",
-          "expiry_date": "2025-09-20",
-          "status": "expired"
-        },
-        "telecom": {
-          "department": "telecom",
-          "issue_date": "2024-10-11",
-          "expiry_date": "2026-05-22",
-          "status": "valid"
-        }
-      },
-      "job_cards": [
-        {
-          "id": "JC4838",
-          "description": "Lubrication of moving parts",
-          "open_date": "2025-08-30",
-          "criticality": "low",
-          "estimated_hours": 2.0690813032355075
-        }
-      ],
-      "branding_contracts": [],
-      "current_mileage": {
-        "bogie": 14059.94498802904,
-        "brake_pad": 11926.071932451085,
-        "hvac": 14066.059427343524
-      },
-      "maintenance_thresholds": {
-        "bogie": 15000,
-        "brake_pad": 13000,
-        "hvac": 15000
-      },
-      "last_deep_cleaning": "2025-09-22",
-      "cleaning_duration": 2,
-      "status": "ibl",
-      "current_position": "PT12-2"
-    },
-    {
-      "id": "TM007",
-      "fitness_certificates": {
-        "rolling_stock": {
-          "department": "rolling_stock",
-          "issue_date": "2024-06-05",
-          "expiry_date": "2026-02-26",
-          "status": "valid"
-        },
-        "signalling": {
-          "department": "signalling",
-          "issue_date": "2025-04-11",
-          "expiry_date": "2026-06-10",
-          "status": "valid"
-        },
-        "telecom": {
-          "department": "telecom",
-          "issue_date": "2025-02-04",
-          "expiry_date": "2026-02-23",
-          "status": "valid"
-        }
-      },
-      "job_cards": [
-        {
-          "id": "JC9754",
-          "description": "AC unit maintenance",
-          "open_date": "2025-09-22",
-          "criticality": "high",
-          "estimated_hours": 5.953098760023156
-        }
-      ],
-      "branding_contracts": [
-        {
-          "brand": "Coca-Cola",
-          "total_exposure_hours": 193,
-          "completed_hours": 64,
-          "deadline": "2025-10-16",
-          "priority": 7
-        }
-      ],
-      "current_mileage": {
-        "bogie": 10009.329569698342,
-        "brake_pad": 11509.184976897552,
-        "hvac": 9175.510086220002
-      },
-      "maintenance_thresholds": {
-        "bogie": 15000,
-        "brake_pad": 13000,
-        "hvac": 15000
-      },
-      "last_deep_cleaning": "2025-09-13",
-      "cleaning_duration": 3,
-      "status": "parking",
-      "current_position": "PT03-2"
-    },
-    {
-      "id": "TM008",
-      "fitness_certificates": {
-        "rolling_stock": {
-          "department": "rolling_stock",
-          "issue_date": "2025-04-08",
-          "expiry_date": "2026-04-01",
-          "status": "valid"
-        },
-        "signalling": {
-          "department": "signalling",
-          "issue_date": "2024-05-28",
-          "expiry_date": "2026-04-12",
-          "status": "valid"
-        },
-        "telecom": {
-          "department": "telecom",
-          "issue_date": "2024-11-16",
-          "expiry_date": "2026-05-28",
-          "status": "valid"
-        }
-      },
-      "job_cards": [
-        {
-          "id": "JC3232",
-          "description": "Door mechanism adjustment",
-          "open_date": "2025-08-26",
-          "criticality": "high",
-          "estimated_hours": 4.275415948424317
-        },
-        {
-          "id": "JC4501",
-          "description": "Handrail maintenance",
-          "open_date": "2025-09-02",
-          "criticality": "medium",
-          "estimated_hours": 2.2300306738087556
-        },
-        {
-          "id": "JC3224",
-          "description": "Lighting system repair",
-          "open_date": "2025-09-13",
-          "criticality": "high",
-          "estimated_hours": 6.1694634360003295
-        }
-      ],
-      "branding_contracts": [],
-      "current_mileage": {
-        "bogie": 10058.70221546965,
-        "brake_pad": 8130.482908685832,
-        "hvac": 14844.115936890004
+        "bogie": 12113.583751768088,
+        "brake_pad": 6205.685517071858,
+        "hvac": 11200.785259340117
       },
       "maintenance_thresholds": {
         "bogie": 15000,
@@ -417,231 +52,363 @@
       "last_deep_cleaning": "2025-09-16",
       "cleaning_duration": 3,
       "status": "parking",
-      "current_position": "PT03-2"
-    },
-    {
-      "id": "TM009",
-      "fitness_certificates": {
-        "rolling_stock": {
-          "department": "rolling_stock",
-          "issue_date": "2024-09-26",
-          "expiry_date": "2026-08-15",
-          "status": "valid"
-        },
-        "signalling": {
-          "department": "signalling",
-          "issue_date": "2025-05-11",
-          "expiry_date": "2026-05-22",
-          "status": "valid"
-        },
-        "telecom": {
-          "department": "telecom",
-          "issue_date": "2025-05-22",
-          "expiry_date": "2026-06-23",
-          "status": "valid"
-        }
-      },
-      "job_cards": [
-        {
-          "id": "JC3483",
-          "description": "Flooring replacement",
-          "open_date": "2025-09-21",
-          "criticality": "medium",
-          "estimated_hours": 4.0812296865924536
-        }
-      ],
-      "branding_contracts": [],
-      "current_mileage": {
-        "bogie": 12113.477203710765,
-        "brake_pad": 9925.691694976216,
-        "hvac": 14736.807638190436
-      },
-      "maintenance_thresholds": {
-        "bogie": 15000,
-        "brake_pad": 13000,
-        "hvac": 15000
-      },
-      "last_deep_cleaning": "2025-09-23",
-      "cleaning_duration": 2,
-      "status": "parking",
-      "current_position": "PT11-1"
-    },
-    {
-      "id": "TM010",
-      "fitness_certificates": {
-        "rolling_stock": {
-          "department": "rolling_stock",
-          "issue_date": "2024-07-13",
-          "expiry_date": "2026-03-24",
-          "status": "valid"
-        },
-        "signalling": {
-          "department": "signalling",
-          "issue_date": "2024-07-23",
-          "expiry_date": "2026-02-12",
-          "status": "valid"
-        },
-        "telecom": {
-          "department": "telecom",
-          "issue_date": "2024-11-23",
-          "expiry_date": "2025-12-06",
-          "status": "valid"
-        }
-      },
-      "job_cards": [
-        {
-          "id": "JC1036",
-          "description": "HVAC compressor replacement",
-          "open_date": "2025-09-04",
-          "criticality": "critical",
-          "estimated_hours": 2.644195484988808
-        },
-        {
-          "id": "JC1987",
-          "description": "Exterior washing",
-          "open_date": "2025-09-08",
-          "criticality": "low",
-          "estimated_hours": 5.456823946422578
-        }
-      ],
-      "branding_contracts": [],
-      "current_mileage": {
-        "bogie": 8468.586529252105,
-        "brake_pad": 6406.116083942536,
-        "hvac": 11359.659285199337
-      },
-      "maintenance_thresholds": {
-        "bogie": 15000,
-        "brake_pad": 13000,
-        "hvac": 15000
-      },
-      "last_deep_cleaning": "2025-09-15",
-      "cleaning_duration": 3,
-      "status": "ibl",
       "current_position": "PT05-2"
     },
     {
-      "id": "TM011",
+      "id": "TM002",
       "fitness_certificates": {
         "rolling_stock": {
           "department": "rolling_stock",
-          "issue_date": "2024-11-15",
+          "issue_date": "2025-05-08",
           "expiry_date": "2026-02-05",
           "status": "valid"
         },
         "signalling": {
           "department": "signalling",
-          "issue_date": "2025-03-02",
-          "expiry_date": "2026-01-29",
+          "issue_date": "2025-01-18",
+          "expiry_date": "2026-03-15",
           "status": "valid"
         },
         "telecom": {
           "department": "telecom",
-          "issue_date": "2025-05-03",
-          "expiry_date": "2026-07-14",
+          "issue_date": "2024-11-09",
+          "expiry_date": "2026-01-05",
+          "status": "valid"
+        }
+      },
+      "job_cards": [],
+      "branding_contracts": [
+        {
+          "brand": "Pepsi",
+          "total_exposure_hours": 192,
+          "completed_hours": 131,
+          "deadline": "2025-10-03",
+          "priority": 7
+        }
+      ],
+      "current_mileage": {
+        "bogie": 10847.150432386828,
+        "brake_pad": 10099.498813432872,
+        "hvac": 9219.113185457156
+      },
+      "maintenance_thresholds": {
+        "bogie": 15000,
+        "brake_pad": 13000,
+        "hvac": 15000
+      },
+      "last_deep_cleaning": "2025-09-18",
+      "cleaning_duration": 4,
+      "status": "standby",
+      "current_position": "PT12-1"
+    },
+    {
+      "id": "TM003",
+      "fitness_certificates": {
+        "rolling_stock": {
+          "department": "rolling_stock",
+          "issue_date": "2024-07-26",
+          "expiry_date": "2026-03-12",
+          "status": "valid"
+        },
+        "signalling": {
+          "department": "signalling",
+          "issue_date": "2024-07-08",
+          "expiry_date": "2025-09-18",
+          "status": "expired"
+        },
+        "telecom": {
+          "department": "telecom",
+          "issue_date": "2025-02-09",
+          "expiry_date": "2026-04-19",
           "status": "valid"
         }
       },
       "job_cards": [],
       "branding_contracts": [],
       "current_mileage": {
-        "bogie": 8784.368634734305,
-        "brake_pad": 8339.535622508074,
-        "hvac": 11430.025992215786
+        "bogie": 8592.95321833192,
+        "brake_pad": 11068.641811941576,
+        "hvac": 11738.631466698567
       },
       "maintenance_thresholds": {
         "bogie": 15000,
         "brake_pad": 13000,
         "hvac": 15000
       },
-      "last_deep_cleaning": "2025-09-22",
-      "cleaning_duration": 4,
-      "status": "standby",
+      "last_deep_cleaning": "2025-09-20",
+      "cleaning_duration": 3,
+      "status": "ibl",
+      "current_position": "PT06-1"
+    },
+    {
+      "id": "TM004",
+      "fitness_certificates": {
+        "rolling_stock": {
+          "department": "rolling_stock",
+          "issue_date": "2024-11-05",
+          "expiry_date": "2025-11-22",
+          "status": "valid"
+        },
+        "signalling": {
+          "department": "signalling",
+          "issue_date": "2025-06-03",
+          "expiry_date": "2026-07-03",
+          "status": "valid"
+        },
+        "telecom": {
+          "department": "telecom",
+          "issue_date": "2024-06-06",
+          "expiry_date": "2025-12-23",
+          "status": "valid"
+        }
+      },
+      "job_cards": [],
+      "branding_contracts": [
+        {
+          "brand": "Pepsi",
+          "total_exposure_hours": 185,
+          "completed_hours": 156,
+          "deadline": "2025-10-17",
+          "priority": 10
+        }
+      ],
+      "current_mileage": {
+        "bogie": 12209.1937831404,
+        "brake_pad": 6324.125600271669,
+        "hvac": 14479.608433523154
+      },
+      "maintenance_thresholds": {
+        "bogie": 15000,
+        "brake_pad": 13000,
+        "hvac": 15000
+      },
+      "last_deep_cleaning": "2025-09-17",
+      "cleaning_duration": 3,
+      "status": "parking",
+      "current_position": "PT04-1"
+    },
+    {
+      "id": "TM005",
+      "fitness_certificates": {
+        "rolling_stock": {
+          "department": "rolling_stock",
+          "issue_date": "2025-01-14",
+          "expiry_date": "2026-08-16",
+          "status": "valid"
+        },
+        "signalling": {
+          "department": "signalling",
+          "issue_date": "2024-12-09",
+          "expiry_date": "2026-07-07",
+          "status": "valid"
+        },
+        "telecom": {
+          "department": "telecom",
+          "issue_date": "2024-07-12",
+          "expiry_date": "2026-08-22",
+          "status": "valid"
+        }
+      },
+      "job_cards": [],
+      "branding_contracts": [
+        {
+          "brand": "Apple",
+          "total_exposure_hours": 155,
+          "completed_hours": 60,
+          "deadline": "2025-10-19",
+          "priority": 10
+        }
+      ],
+      "current_mileage": {
+        "bogie": 12914.86771963938,
+        "brake_pad": 6951.764865192319,
+        "hvac": 11950.08629074524
+      },
+      "maintenance_thresholds": {
+        "bogie": 15000,
+        "brake_pad": 13000,
+        "hvac": 15000
+      },
+      "last_deep_cleaning": "2025-09-19",
+      "cleaning_duration": 2,
+      "status": "in_service",
+      "current_position": "PT10-1"
+    },
+    {
+      "id": "TM006",
+      "fitness_certificates": {
+        "rolling_stock": {
+          "department": "rolling_stock",
+          "issue_date": "2024-11-23",
+          "expiry_date": "2026-05-09",
+          "status": "valid"
+        },
+        "signalling": {
+          "department": "signalling",
+          "issue_date": "2025-03-16",
+          "expiry_date": "2026-06-24",
+          "status": "valid"
+        },
+        "telecom": {
+          "department": "telecom",
+          "issue_date": "2025-03-10",
+          "expiry_date": "2026-03-25",
+          "status": "valid"
+        }
+      },
+      "job_cards": [
+        {
+          "id": "JC5095",
+          "description": "Control panel calibration",
+          "open_date": "2025-09-07",
+          "criticality": "high",
+          "estimated_hours": 5.958499458949329
+        },
+        {
+          "id": "JC6087",
+          "description": "AC unit maintenance",
+          "open_date": "2025-09-03",
+          "criticality": "high",
+          "estimated_hours": 7.319982405821223
+        }
+      ],
+      "branding_contracts": [
+        {
+          "brand": "Google",
+          "total_exposure_hours": 157,
+          "completed_hours": 140,
+          "deadline": "2025-11-10",
+          "priority": 6
+        }
+      ],
+      "current_mileage": {
+        "bogie": 9827.259499458878,
+        "brake_pad": 7208.581086729343,
+        "hvac": 9075.89867642685
+      },
+      "maintenance_thresholds": {
+        "bogie": 15000,
+        "brake_pad": 13000,
+        "hvac": 15000
+      },
+      "last_deep_cleaning": "2025-09-24",
+      "cleaning_duration": 3,
+      "status": "in_service",
+      "current_position": "PT11-1"
+    },
+    {
+      "id": "TM007",
+      "fitness_certificates": {
+        "rolling_stock": {
+          "department": "rolling_stock",
+          "issue_date": "2024-11-14",
+          "expiry_date": "2025-11-21",
+          "status": "valid"
+        },
+        "signalling": {
+          "department": "signalling",
+          "issue_date": "2024-07-05",
+          "expiry_date": "2026-03-05",
+          "status": "valid"
+        },
+        "telecom": {
+          "department": "telecom",
+          "issue_date": "2024-06-19",
+          "expiry_date": "2026-09-21",
+          "status": "valid"
+        }
+      },
+      "job_cards": [
+        {
+          "id": "JC6208",
+          "description": "Handrail maintenance",
+          "open_date": "2025-09-16",
+          "criticality": "medium",
+          "estimated_hours": 4.404820901174055
+        },
+        {
+          "id": "JC1031",
+          "description": "Flooring replacement",
+          "open_date": "2025-09-16",
+          "criticality": "medium",
+          "estimated_hours": 2.1521461487914233
+        }
+      ],
+      "branding_contracts": [
+        {
+          "brand": "Apple",
+          "total_exposure_hours": 182,
+          "completed_hours": 61,
+          "deadline": "2025-10-24",
+          "priority": 7
+        }
+      ],
+      "current_mileage": {
+        "bogie": 12703.618310514397,
+        "brake_pad": 6750.094703827656,
+        "hvac": 10306.358044146458
+      },
+      "maintenance_thresholds": {
+        "bogie": 15000,
+        "brake_pad": 13000,
+        "hvac": 15000
+      },
+      "last_deep_cleaning": "2025-09-14",
+      "cleaning_duration": 2,
+      "status": "in_service",
       "current_position": "PT12-1"
     },
     {
-      "id": "TM012",
+      "id": "TM008",
       "fitness_certificates": {
         "rolling_stock": {
           "department": "rolling_stock",
-          "issue_date": "2024-08-07",
-          "expiry_date": "2026-03-09",
+          "issue_date": "2024-12-08",
+          "expiry_date": "2026-02-19",
           "status": "valid"
         },
         "signalling": {
           "department": "signalling",
-          "issue_date": "2024-06-26",
-          "expiry_date": "2026-04-19",
+          "issue_date": "2024-08-22",
+          "expiry_date": "2026-07-15",
           "status": "valid"
         },
         "telecom": {
           "department": "telecom",
-          "issue_date": "2025-05-31",
-          "expiry_date": "2026-07-28",
-          "status": "valid"
+          "issue_date": "2024-06-08",
+          "expiry_date": "2025-08-31",
+          "status": "expired"
         }
       },
       "job_cards": [
         {
-          "id": "JC5910",
-          "description": "Minor cosmetic fixes",
-          "open_date": "2025-08-24",
-          "criticality": "low",
-          "estimated_hours": 6.018725398093468
-        }
-      ],
-      "branding_contracts": [],
-      "current_mileage": {
-        "bogie": 11922.583205525236,
-        "brake_pad": 6134.558620046375,
-        "hvac": 14447.039635289973
-      },
-      "maintenance_thresholds": {
-        "bogie": 15000,
-        "brake_pad": 13000,
-        "hvac": 15000
-      },
-      "last_deep_cleaning": "2025-09-23",
-      "cleaning_duration": 4,
-      "status": "parking",
-      "current_position": "PT07-2"
-    },
-    {
-      "id": "TM013",
-      "fitness_certificates": {
-        "rolling_stock": {
-          "department": "rolling_stock",
-          "issue_date": "2024-11-20",
-          "expiry_date": "2025-11-09",
-          "status": "valid"
+          "id": "JC4605",
+          "description": "Lighting system repair",
+          "open_date": "2025-08-27",
+          "criticality": "high",
+          "estimated_hours": 4.645371428451119
         },
-        "signalling": {
-          "department": "signalling",
-          "issue_date": "2025-03-27",
-          "expiry_date": "2026-03-18",
-          "status": "valid"
-        },
-        "telecom": {
-          "department": "telecom",
-          "issue_date": "2024-11-05",
-          "expiry_date": "2026-04-08",
-          "status": "valid"
-        }
-      },
-      "job_cards": [
         {
-          "id": "JC9923",
-          "description": "Seat upholstery repair",
-          "open_date": "2025-09-07",
-          "criticality": "medium",
-          "estimated_hours": 3.0003999288761807
+          "id": "JC9980",
+          "description": "Door mechanism adjustment",
+          "open_date": "2025-08-26",
+          "criticality": "high",
+          "estimated_hours": 3.187657012958865
         }
       ],
-      "branding_contracts": [],
+      "branding_contracts": [
+        {
+          "brand": "Google",
+          "total_exposure_hours": 82,
+          "completed_hours": 59,
+          "deadline": "2025-11-10",
+          "priority": 9
+        }
+      ],
       "current_mileage": {
-        "bogie": 9904.92230036639,
-        "brake_pad": 6494.940549482847,
-        "hvac": 12904.103872744978
+        "bogie": 8520.914820150869,
+        "brake_pad": 7821.568405540252,
+        "hvac": 12353.18134295364
       },
       "maintenance_thresholds": {
         "bogie": 15000,
@@ -650,37 +417,675 @@
       },
       "last_deep_cleaning": "2025-09-19",
       "cleaning_duration": 3,
-      "status": "parking",
-      "current_position": "PT09-2"
+      "status": "ibl",
+      "current_position": "PT01-2"
     },
     {
-      "id": "TM014",
+      "id": "TM009",
       "fitness_certificates": {
         "rolling_stock": {
           "department": "rolling_stock",
-          "issue_date": "2025-01-17",
-          "expiry_date": "2026-08-19",
+          "issue_date": "2024-06-10",
+          "expiry_date": "2026-07-22",
           "status": "valid"
         },
         "signalling": {
           "department": "signalling",
-          "issue_date": "2025-05-15",
-          "expiry_date": "2025-09-10",
-          "status": "expired"
+          "issue_date": "2025-04-12",
+          "expiry_date": "2026-08-20",
+          "status": "valid"
         },
         "telecom": {
           "department": "telecom",
-          "issue_date": "2024-06-19",
-          "expiry_date": "2026-07-08",
+          "issue_date": "2024-07-02",
+          "expiry_date": "2026-05-27",
+          "status": "valid"
+        }
+      },
+      "job_cards": [
+        {
+          "id": "JC6245",
+          "description": "Interior panel fixing",
+          "open_date": "2025-09-09",
+          "criticality": "medium",
+          "estimated_hours": 1.8744348548957908
+        }
+      ],
+      "branding_contracts": [
+        {
+          "brand": "Microsoft",
+          "total_exposure_hours": 128,
+          "completed_hours": 25,
+          "deadline": "2025-11-21",
+          "priority": 5
+        }
+      ],
+      "current_mileage": {
+        "bogie": 12836.034909005426,
+        "brake_pad": 6722.8548475048765,
+        "hvac": 10044.366001098586
+      },
+      "maintenance_thresholds": {
+        "bogie": 15000,
+        "brake_pad": 13000,
+        "hvac": 15000
+      },
+      "last_deep_cleaning": "2025-09-22",
+      "cleaning_duration": 3,
+      "status": "standby",
+      "current_position": "PT09-2"
+    },
+    {
+      "id": "TM010",
+      "fitness_certificates": {
+        "rolling_stock": {
+          "department": "rolling_stock",
+          "issue_date": "2024-08-23",
+          "expiry_date": "2026-03-14",
+          "status": "valid"
+        },
+        "signalling": {
+          "department": "signalling",
+          "issue_date": "2025-02-26",
+          "expiry_date": "2026-05-23",
+          "status": "valid"
+        },
+        "telecom": {
+          "department": "telecom",
+          "issue_date": "2025-06-02",
+          "expiry_date": "2026-05-22",
+          "status": "valid"
+        }
+      },
+      "job_cards": [
+        {
+          "id": "JC8090",
+          "description": "Handrail maintenance",
+          "open_date": "2025-08-29",
+          "criticality": "medium",
+          "estimated_hours": 5.751406243208593
+        },
+        {
+          "id": "JC1400",
+          "description": "Lubrication of moving parts",
+          "open_date": "2025-09-13",
+          "criticality": "low",
+          "estimated_hours": 7.769537149889257
+        }
+      ],
+      "branding_contracts": [],
+      "current_mileage": {
+        "bogie": 13207.641272362722,
+        "brake_pad": 9104.735123861856,
+        "hvac": 9058.456176225487
+      },
+      "maintenance_thresholds": {
+        "bogie": 15000,
+        "brake_pad": 13000,
+        "hvac": 15000
+      },
+      "last_deep_cleaning": "2025-09-19",
+      "cleaning_duration": 4,
+      "status": "in_service",
+      "current_position": "PT02-2"
+    },
+    {
+      "id": "TM011",
+      "fitness_certificates": {
+        "rolling_stock": {
+          "department": "rolling_stock",
+          "issue_date": "2025-03-12",
+          "expiry_date": "2026-01-27",
+          "status": "valid"
+        },
+        "signalling": {
+          "department": "signalling",
+          "issue_date": "2025-06-16",
+          "expiry_date": "2026-07-13",
+          "status": "valid"
+        },
+        "telecom": {
+          "department": "telecom",
+          "issue_date": "2025-02-26",
+          "expiry_date": "2025-11-19",
+          "status": "valid"
+        }
+      },
+      "job_cards": [
+        {
+          "id": "JC4887",
+          "description": "Flooring replacement",
+          "open_date": "2025-09-22",
+          "criticality": "medium",
+          "estimated_hours": 5.2896432891153005
+        }
+      ],
+      "branding_contracts": [],
+      "current_mileage": {
+        "bogie": 12917.739844318054,
+        "brake_pad": 8467.093996647201,
+        "hvac": 10714.532110254633
+      },
+      "maintenance_thresholds": {
+        "bogie": 15000,
+        "brake_pad": 13000,
+        "hvac": 15000
+      },
+      "last_deep_cleaning": "2025-09-23",
+      "cleaning_duration": 2,
+      "status": "standby",
+      "current_position": "PT07-2"
+    },
+    {
+      "id": "TM012",
+      "fitness_certificates": {
+        "rolling_stock": {
+          "department": "rolling_stock",
+          "issue_date": "2024-06-29",
+          "expiry_date": "2026-07-28",
+          "status": "valid"
+        },
+        "signalling": {
+          "department": "signalling",
+          "issue_date": "2024-12-26",
+          "expiry_date": "2026-02-13",
+          "status": "valid"
+        },
+        "telecom": {
+          "department": "telecom",
+          "issue_date": "2025-04-04",
+          "expiry_date": "2026-01-27",
+          "status": "valid"
+        }
+      },
+      "job_cards": [
+        {
+          "id": "JC5155",
+          "description": "Emergency brake repair",
+          "open_date": "2025-08-28",
+          "criticality": "critical",
+          "estimated_hours": 5.770451884817638
+        },
+        {
+          "id": "JC7457",
+          "description": "Bogie alignment",
+          "open_date": "2025-09-04",
+          "criticality": "critical",
+          "estimated_hours": 6.049489223951156
+        }
+      ],
+      "branding_contracts": [],
+      "current_mileage": {
+        "bogie": 8879.43373407894,
+        "brake_pad": 7871.583032209795,
+        "hvac": 13696.790261818322
+      },
+      "maintenance_thresholds": {
+        "bogie": 15000,
+        "brake_pad": 13000,
+        "hvac": 15000
+      },
+      "last_deep_cleaning": "2025-09-17",
+      "cleaning_duration": 2,
+      "status": "ibl",
+      "current_position": "PT08-1"
+    },
+    {
+      "id": "TM013",
+      "fitness_certificates": {
+        "rolling_stock": {
+          "department": "rolling_stock",
+          "issue_date": "2024-12-08",
+          "expiry_date": "2026-05-31",
+          "status": "valid"
+        },
+        "signalling": {
+          "department": "signalling",
+          "issue_date": "2025-05-01",
+          "expiry_date": "2026-08-03",
+          "status": "valid"
+        },
+        "telecom": {
+          "department": "telecom",
+          "issue_date": "2025-05-23",
+          "expiry_date": "2025-11-18",
           "status": "valid"
         }
       },
       "job_cards": [],
       "branding_contracts": [],
       "current_mileage": {
-        "bogie": 14265.006683888818,
-        "brake_pad": 7707.226923138553,
-        "hvac": 9777.319237583717
+        "bogie": 10957.802856615857,
+        "brake_pad": 11982.47080021927,
+        "hvac": 14840.599904299066
+      },
+      "maintenance_thresholds": {
+        "bogie": 15000,
+        "brake_pad": 13000,
+        "hvac": 15000
+      },
+      "last_deep_cleaning": "2025-09-16",
+      "cleaning_duration": 3,
+      "status": "standby",
+      "current_position": "PT08-2"
+    },
+    {
+      "id": "TM014",
+      "fitness_certificates": {
+        "rolling_stock": {
+          "department": "rolling_stock",
+          "issue_date": "2024-12-18",
+          "expiry_date": "2026-07-02",
+          "status": "valid"
+        },
+        "signalling": {
+          "department": "signalling",
+          "issue_date": "2024-05-23",
+          "expiry_date": "2025-09-23",
+          "status": "expired"
+        },
+        "telecom": {
+          "department": "telecom",
+          "issue_date": "2025-04-28",
+          "expiry_date": "2026-07-31",
+          "status": "valid"
+        }
+      },
+      "job_cards": [
+        {
+          "id": "JC9219",
+          "description": "Paint touch-up",
+          "open_date": "2025-08-28",
+          "criticality": "medium",
+          "estimated_hours": 2.035550799809214
+        }
+      ],
+      "branding_contracts": [
+        {
+          "brand": "Pepsi",
+          "total_exposure_hours": 100,
+          "completed_hours": 72,
+          "deadline": "2025-11-17",
+          "priority": 9
+        }
+      ],
+      "current_mileage": {
+        "bogie": 8621.761315259473,
+        "brake_pad": 9005.009713785794,
+        "hvac": 11344.105494699072
+      },
+      "maintenance_thresholds": {
+        "bogie": 15000,
+        "brake_pad": 13000,
+        "hvac": 15000
+      },
+      "last_deep_cleaning": "2025-09-20",
+      "cleaning_duration": 2,
+      "status": "ibl",
+      "current_position": "PT01-2"
+    },
+    {
+      "id": "TM015",
+      "fitness_certificates": {
+        "rolling_stock": {
+          "department": "rolling_stock",
+          "issue_date": "2024-08-14",
+          "expiry_date": "2026-07-07",
+          "status": "valid"
+        },
+        "signalling": {
+          "department": "signalling",
+          "issue_date": "2025-01-04",
+          "expiry_date": "2025-12-19",
+          "status": "valid"
+        },
+        "telecom": {
+          "department": "telecom",
+          "issue_date": "2024-05-29",
+          "expiry_date": "2026-01-04",
+          "status": "valid"
+        }
+      },
+      "job_cards": [
+        {
+          "id": "JC9128",
+          "description": "Seat upholstery repair",
+          "open_date": "2025-09-14",
+          "criticality": "medium",
+          "estimated_hours": 5.80630036231696
+        }
+      ],
+      "branding_contracts": [
+        {
+          "brand": "Samsung",
+          "total_exposure_hours": 43,
+          "completed_hours": 24,
+          "deadline": "2025-10-28",
+          "priority": 2
+        }
+      ],
+      "current_mileage": {
+        "bogie": 11105.025343971714,
+        "brake_pad": 6947.657396036129,
+        "hvac": 10738.080692903743
+      },
+      "maintenance_thresholds": {
+        "bogie": 15000,
+        "brake_pad": 13000,
+        "hvac": 15000
+      },
+      "last_deep_cleaning": "2025-09-14",
+      "cleaning_duration": 2,
+      "status": "in_service",
+      "current_position": "PT09-1"
+    },
+    {
+      "id": "TM016",
+      "fitness_certificates": {
+        "rolling_stock": {
+          "department": "rolling_stock",
+          "issue_date": "2024-12-25",
+          "expiry_date": "2026-02-07",
+          "status": "valid"
+        },
+        "signalling": {
+          "department": "signalling",
+          "issue_date": "2024-07-03",
+          "expiry_date": "2025-11-02",
+          "status": "valid"
+        },
+        "telecom": {
+          "department": "telecom",
+          "issue_date": "2025-03-28",
+          "expiry_date": "2026-08-25",
+          "status": "valid"
+        }
+      },
+      "job_cards": [
+        {
+          "id": "JC2104",
+          "description": "Seat upholstery repair",
+          "open_date": "2025-09-01",
+          "criticality": "medium",
+          "estimated_hours": 4.82163536613302
+        },
+        {
+          "id": "JC4145",
+          "description": "Exterior washing",
+          "open_date": "2025-08-29",
+          "criticality": "low",
+          "estimated_hours": 3.771145900871808
+        },
+        {
+          "id": "JC8718",
+          "description": "Dashboard polishing",
+          "open_date": "2025-09-06",
+          "criticality": "low",
+          "estimated_hours": 3.4421250241590284
+        }
+      ],
+      "branding_contracts": [],
+      "current_mileage": {
+        "bogie": 9585.462546492636,
+        "brake_pad": 11243.445047007011,
+        "hvac": 11685.899900407128
+      },
+      "maintenance_thresholds": {
+        "bogie": 15000,
+        "brake_pad": 13000,
+        "hvac": 15000
+      },
+      "last_deep_cleaning": "2025-09-23",
+      "cleaning_duration": 2,
+      "status": "in_service",
+      "current_position": "PT12-1"
+    },
+    {
+      "id": "TM017",
+      "fitness_certificates": {
+        "rolling_stock": {
+          "department": "rolling_stock",
+          "issue_date": "2025-05-15",
+          "expiry_date": "2026-01-05",
+          "status": "valid"
+        },
+        "signalling": {
+          "department": "signalling",
+          "issue_date": "2024-10-14",
+          "expiry_date": "2026-09-24",
+          "status": "valid"
+        },
+        "telecom": {
+          "department": "telecom",
+          "issue_date": "2024-11-16",
+          "expiry_date": "2025-09-20",
+          "status": "expired"
+        }
+      },
+      "job_cards": [],
+      "branding_contracts": [
+        {
+          "brand": "Samsung",
+          "total_exposure_hours": 90,
+          "completed_hours": 33,
+          "deadline": "2025-10-30",
+          "priority": 1
+        }
+      ],
+      "current_mileage": {
+        "bogie": 8427.899058910882,
+        "brake_pad": 9088.822086416985,
+        "hvac": 14882.836097603284
+      },
+      "maintenance_thresholds": {
+        "bogie": 15000,
+        "brake_pad": 13000,
+        "hvac": 15000
+      },
+      "last_deep_cleaning": "2025-09-19",
+      "cleaning_duration": 2,
+      "status": "ibl",
+      "current_position": "PT10-2"
+    },
+    {
+      "id": "TM018",
+      "fitness_certificates": {
+        "rolling_stock": {
+          "department": "rolling_stock",
+          "issue_date": "2025-06-08",
+          "expiry_date": "2025-12-19",
+          "status": "valid"
+        },
+        "signalling": {
+          "department": "signalling",
+          "issue_date": "2024-10-09",
+          "expiry_date": "2026-02-02",
+          "status": "valid"
+        },
+        "telecom": {
+          "department": "telecom",
+          "issue_date": "2025-03-08",
+          "expiry_date": "2025-12-31",
+          "status": "valid"
+        }
+      },
+      "job_cards": [
+        {
+          "id": "JC8551",
+          "description": "HVAC compressor replacement",
+          "open_date": "2025-09-08",
+          "criticality": "critical",
+          "estimated_hours": 1.6651043105714751
+        },
+        {
+          "id": "JC8480",
+          "description": "Lighting system repair",
+          "open_date": "2025-09-20",
+          "criticality": "high",
+          "estimated_hours": 6.658832037775599
+        }
+      ],
+      "branding_contracts": [
+        {
+          "brand": "Microsoft",
+          "total_exposure_hours": 139,
+          "completed_hours": 49,
+          "deadline": "2025-10-14",
+          "priority": 2
+        }
+      ],
+      "current_mileage": {
+        "bogie": 10229.828922070448,
+        "brake_pad": 10497.797824994817,
+        "hvac": 13645.62862865884
+      },
+      "maintenance_thresholds": {
+        "bogie": 15000,
+        "brake_pad": 13000,
+        "hvac": 15000
+      },
+      "last_deep_cleaning": "2025-09-23",
+      "cleaning_duration": 2,
+      "status": "ibl",
+      "current_position": "PT07-1"
+    },
+    {
+      "id": "TM019",
+      "fitness_certificates": {
+        "rolling_stock": {
+          "department": "rolling_stock",
+          "issue_date": "2024-08-28",
+          "expiry_date": "2025-09-23",
+          "status": "expired"
+        },
+        "signalling": {
+          "department": "signalling",
+          "issue_date": "2025-03-20",
+          "expiry_date": "2026-01-20",
+          "status": "valid"
+        },
+        "telecom": {
+          "department": "telecom",
+          "issue_date": "2024-08-09",
+          "expiry_date": "2026-02-02",
+          "status": "valid"
+        }
+      },
+      "job_cards": [
+        {
+          "id": "JC6917",
+          "description": "Minor cosmetic fixes",
+          "open_date": "2025-09-17",
+          "criticality": "low",
+          "estimated_hours": 7.156261067345161
+        },
+        {
+          "id": "JC7366",
+          "description": "Paint touch-up",
+          "open_date": "2025-08-26",
+          "criticality": "medium",
+          "estimated_hours": 6.379808975790754
+        }
+      ],
+      "branding_contracts": [
+        {
+          "brand": "Samsung",
+          "total_exposure_hours": 81,
+          "completed_hours": 68,
+          "deadline": "2025-10-19",
+          "priority": 3
+        }
+      ],
+      "current_mileage": {
+        "bogie": 12711.789281151716,
+        "brake_pad": 6771.584839286267,
+        "hvac": 14284.771418531327
+      },
+      "maintenance_thresholds": {
+        "bogie": 15000,
+        "brake_pad": 13000,
+        "hvac": 15000
+      },
+      "last_deep_cleaning": "2025-09-22",
+      "cleaning_duration": 4,
+      "status": "ibl",
+      "current_position": "PT06-2"
+    },
+    {
+      "id": "TM020",
+      "fitness_certificates": {
+        "rolling_stock": {
+          "department": "rolling_stock",
+          "issue_date": "2025-02-23",
+          "expiry_date": "2026-05-12",
+          "status": "valid"
+        },
+        "signalling": {
+          "department": "signalling",
+          "issue_date": "2025-05-24",
+          "expiry_date": "2026-01-06",
+          "status": "valid"
+        },
+        "telecom": {
+          "department": "telecom",
+          "issue_date": "2025-01-21",
+          "expiry_date": "2026-07-28",
+          "status": "valid"
+        }
+      },
+      "job_cards": [],
+      "branding_contracts": [],
+      "current_mileage": {
+        "bogie": 10292.974830558396,
+        "brake_pad": 6228.560455516473,
+        "hvac": 9600.749445152504
+      },
+      "maintenance_thresholds": {
+        "bogie": 15000,
+        "brake_pad": 13000,
+        "hvac": 15000
+      },
+      "last_deep_cleaning": "2025-09-24",
+      "cleaning_duration": 2,
+      "status": "parking",
+      "current_position": "PT04-1"
+    },
+    {
+      "id": "TM021",
+      "fitness_certificates": {
+        "rolling_stock": {
+          "department": "rolling_stock",
+          "issue_date": "2024-06-19",
+          "expiry_date": "2025-12-12",
+          "status": "valid"
+        },
+        "signalling": {
+          "department": "signalling",
+          "issue_date": "2024-09-06",
+          "expiry_date": "2025-11-05",
+          "status": "valid"
+        },
+        "telecom": {
+          "department": "telecom",
+          "issue_date": "2024-08-03",
+          "expiry_date": "2026-08-23",
+          "status": "valid"
+        }
+      },
+      "job_cards": [],
+      "branding_contracts": [
+        {
+          "brand": "Amazon",
+          "total_exposure_hours": 86,
+          "completed_hours": 15,
+          "deadline": "2025-10-26",
+          "priority": 1
+        }
+      ],
+      "current_mileage": {
+        "bogie": 12688.64727255262,
+        "brake_pad": 9781.099307306771,
+        "hvac": 10787.103840509995
       },
       "maintenance_thresholds": {
         "bogie": 15000,
@@ -689,215 +1094,53 @@
       },
       "last_deep_cleaning": "2025-09-16",
       "cleaning_duration": 2,
-      "status": "ibl",
-      "current_position": "PT09-2"
-    },
-    {
-      "id": "TM015",
-      "fitness_certificates": {
-        "rolling_stock": {
-          "department": "rolling_stock",
-          "issue_date": "2024-09-10",
-          "expiry_date": "2025-09-18",
-          "status": "expired"
-        },
-        "signalling": {
-          "department": "signalling",
-          "issue_date": "2024-12-13",
-          "expiry_date": "2026-04-08",
-          "status": "valid"
-        },
-        "telecom": {
-          "department": "telecom",
-          "issue_date": "2024-06-03",
-          "expiry_date": "2026-09-19",
-          "status": "valid"
-        }
-      },
-      "job_cards": [
-        {
-          "id": "JC3221",
-          "description": "Interior cleaning",
-          "open_date": "2025-09-02",
-          "criticality": "low",
-          "estimated_hours": 4.493332611439612
-        }
-      ],
-      "branding_contracts": [],
-      "current_mileage": {
-        "bogie": 8713.297345950788,
-        "brake_pad": 8684.323982700398,
-        "hvac": 12721.918885021438
-      },
-      "maintenance_thresholds": {
-        "bogie": 15000,
-        "brake_pad": 13000,
-        "hvac": 15000
-      },
-      "last_deep_cleaning": "2025-09-23",
-      "cleaning_duration": 3,
-      "status": "ibl",
-      "current_position": "PT11-1"
-    },
-    {
-      "id": "TM016",
-      "fitness_certificates": {
-        "rolling_stock": {
-          "department": "rolling_stock",
-          "issue_date": "2025-01-09",
-          "expiry_date": "2026-02-02",
-          "status": "valid"
-        },
-        "signalling": {
-          "department": "signalling",
-          "issue_date": "2025-01-28",
-          "expiry_date": "2026-02-09",
-          "status": "valid"
-        },
-        "telecom": {
-          "department": "telecom",
-          "issue_date": "2024-08-15",
-          "expiry_date": "2026-04-15",
-          "status": "valid"
-        }
-      },
-      "job_cards": [
-        {
-          "id": "JC9985",
-          "description": "Paint touch-up",
-          "open_date": "2025-08-31",
-          "criticality": "medium",
-          "estimated_hours": 5.097041086032657
-        },
-        {
-          "id": "JC1622",
-          "description": "Lubrication of moving parts",
-          "open_date": "2025-09-14",
-          "criticality": "low",
-          "estimated_hours": 2.475953395842134
-        }
-      ],
-      "branding_contracts": [],
-      "current_mileage": {
-        "bogie": 11037.683756433682,
-        "brake_pad": 11936.144689679319,
-        "hvac": 14806.382411510225
-      },
-      "maintenance_thresholds": {
-        "bogie": 15000,
-        "brake_pad": 13000,
-        "hvac": 15000
-      },
-      "last_deep_cleaning": "2025-09-23",
-      "cleaning_duration": 3,
       "status": "in_service",
-      "current_position": "PT01-2"
+      "current_position": "PT08-1"
     },
     {
-      "id": "TM017",
+      "id": "TM022",
       "fitness_certificates": {
         "rolling_stock": {
           "department": "rolling_stock",
-          "issue_date": "2025-03-23",
-          "expiry_date": "2025-11-10",
+          "issue_date": "2024-10-14",
+          "expiry_date": "2025-12-04",
           "status": "valid"
         },
         "signalling": {
           "department": "signalling",
-          "issue_date": "2024-12-15",
-          "expiry_date": "2025-09-21",
-          "status": "expired"
+          "issue_date": "2025-01-25",
+          "expiry_date": "2026-01-29",
+          "status": "valid"
         },
         "telecom": {
           "department": "telecom",
-          "issue_date": "2024-11-19",
-          "expiry_date": "2026-06-15",
+          "issue_date": "2024-08-09",
+          "expiry_date": "2025-10-28",
           "status": "valid"
         }
       },
       "job_cards": [
         {
-          "id": "JC6190",
-          "description": "Paint touch-up",
-          "open_date": "2025-09-02",
-          "criticality": "medium",
-          "estimated_hours": 4.248874944222318
-        },
-        {
-          "id": "JC8768",
+          "id": "JC7603",
           "description": "Exterior washing",
-          "open_date": "2025-09-13",
+          "open_date": "2025-08-30",
           "criticality": "low",
-          "estimated_hours": 5.766701585729878
+          "estimated_hours": 1.102736617992102
         }
       ],
       "branding_contracts": [
         {
-          "brand": "Samsung",
-          "total_exposure_hours": 172,
-          "completed_hours": 49,
-          "deadline": "2025-11-20",
-          "priority": 8
+          "brand": "Microsoft",
+          "total_exposure_hours": 149,
+          "completed_hours": 143,
+          "deadline": "2025-10-05",
+          "priority": 3
         }
       ],
       "current_mileage": {
-        "bogie": 8709.82307750982,
-        "brake_pad": 10571.160646684912,
-        "hvac": 11692.447369159754
-      },
-      "maintenance_thresholds": {
-        "bogie": 15000,
-        "brake_pad": 13000,
-        "hvac": 15000
-      },
-      "last_deep_cleaning": "2025-09-17",
-      "cleaning_duration": 4,
-      "status": "ibl",
-      "current_position": "PT05-2"
-    },
-    {
-      "id": "TM018",
-      "fitness_certificates": {
-        "rolling_stock": {
-          "department": "rolling_stock",
-          "issue_date": "2025-06-07",
-          "expiry_date": "2026-08-22",
-          "status": "valid"
-        },
-        "signalling": {
-          "department": "signalling",
-          "issue_date": "2024-10-13",
-          "expiry_date": "2026-08-28",
-          "status": "valid"
-        },
-        "telecom": {
-          "department": "telecom",
-          "issue_date": "2024-11-28",
-          "expiry_date": "2026-01-01",
-          "status": "valid"
-        }
-      },
-      "job_cards": [
-        {
-          "id": "JC2342",
-          "description": "Exterior washing",
-          "open_date": "2025-09-05",
-          "criticality": "low",
-          "estimated_hours": 2.112980192981007
-        },
-        {
-          "id": "JC7192",
-          "description": "Exterior washing",
-          "open_date": "2025-09-07",
-          "criticality": "low",
-          "estimated_hours": 1.5236579671969945
-        }
-      ],
-      "branding_contracts": [],
-      "current_mileage": {
-        "bogie": 11139.73038389425,
-        "brake_pad": 6111.506204498336,
-        "hvac": 10770.202397665942
+        "bogie": 14281.439660100888,
+        "brake_pad": 8508.693306389947,
+        "hvac": 13675.602600319398
       },
       "maintenance_thresholds": {
         "bogie": 15000,
@@ -905,349 +1148,54 @@
         "hvac": 15000
       },
       "last_deep_cleaning": "2025-09-21",
-      "cleaning_duration": 2,
+      "cleaning_duration": 4,
       "status": "in_service",
-      "current_position": "PT06-1"
-    },
-    {
-      "id": "TM019",
-      "fitness_certificates": {
-        "rolling_stock": {
-          "department": "rolling_stock",
-          "issue_date": "2024-06-18",
-          "expiry_date": "2026-06-29",
-          "status": "valid"
-        },
-        "signalling": {
-          "department": "signalling",
-          "issue_date": "2025-05-22",
-          "expiry_date": "2025-11-28",
-          "status": "valid"
-        },
-        "telecom": {
-          "department": "telecom",
-          "issue_date": "2025-03-06",
-          "expiry_date": "2026-07-31",
-          "status": "valid"
-        }
-      },
-      "job_cards": [],
-      "branding_contracts": [],
-      "current_mileage": {
-        "bogie": 13585.630021013258,
-        "brake_pad": 9864.070085603396,
-        "hvac": 11097.501987118992
-      },
-      "maintenance_thresholds": {
-        "bogie": 15000,
-        "brake_pad": 13000,
-        "hvac": 15000
-      },
-      "last_deep_cleaning": "2025-09-22",
-      "cleaning_duration": 2,
-      "status": "in_service",
-      "current_position": "PT08-1"
-    },
-    {
-      "id": "TM020",
-      "fitness_certificates": {
-        "rolling_stock": {
-          "department": "rolling_stock",
-          "issue_date": "2024-09-21",
-          "expiry_date": "2026-07-09",
-          "status": "valid"
-        },
-        "signalling": {
-          "department": "signalling",
-          "issue_date": "2025-01-17",
-          "expiry_date": "2026-06-06",
-          "status": "valid"
-        },
-        "telecom": {
-          "department": "telecom",
-          "issue_date": "2025-02-16",
-          "expiry_date": "2026-08-05",
-          "status": "valid"
-        }
-      },
-      "job_cards": [],
-      "branding_contracts": [],
-      "current_mileage": {
-        "bogie": 8559.888989155033,
-        "brake_pad": 8823.86649624385,
-        "hvac": 10744.149510825857
-      },
-      "maintenance_thresholds": {
-        "bogie": 15000,
-        "brake_pad": 13000,
-        "hvac": 15000
-      },
-      "last_deep_cleaning": "2025-09-22",
-      "cleaning_duration": 2,
-      "status": "standby",
       "current_position": "PT04-1"
-    },
-    {
-      "id": "TM021",
-      "fitness_certificates": {
-        "rolling_stock": {
-          "department": "rolling_stock",
-          "issue_date": "2024-07-28",
-          "expiry_date": "2025-11-01",
-          "status": "valid"
-        },
-        "signalling": {
-          "department": "signalling",
-          "issue_date": "2025-05-26",
-          "expiry_date": "2026-03-27",
-          "status": "valid"
-        },
-        "telecom": {
-          "department": "telecom",
-          "issue_date": "2025-01-02",
-          "expiry_date": "2026-03-17",
-          "status": "valid"
-        }
-      },
-      "job_cards": [
-        {
-          "id": "JC2797",
-          "description": "Window seal replacement",
-          "open_date": "2025-08-27",
-          "criticality": "high",
-          "estimated_hours": 6.9384663727313765
-        },
-        {
-          "id": "JC8719",
-          "description": "Interior cleaning",
-          "open_date": "2025-09-05",
-          "criticality": "low",
-          "estimated_hours": 7.8370845420965916
-        },
-        {
-          "id": "JC8147",
-          "description": "Exterior washing",
-          "open_date": "2025-09-15",
-          "criticality": "low",
-          "estimated_hours": 2.8886380646148
-        }
-      ],
-      "branding_contracts": [],
-      "current_mileage": {
-        "bogie": 10113.063753793038,
-        "brake_pad": 8540.412592762885,
-        "hvac": 9147.101692776667
-      },
-      "maintenance_thresholds": {
-        "bogie": 15000,
-        "brake_pad": 13000,
-        "hvac": 15000
-      },
-      "last_deep_cleaning": "2025-09-13",
-      "cleaning_duration": 3,
-      "status": "in_service",
-      "current_position": "PT07-2"
-    },
-    {
-      "id": "TM022",
-      "fitness_certificates": {
-        "rolling_stock": {
-          "department": "rolling_stock",
-          "issue_date": "2024-12-22",
-          "expiry_date": "2025-08-24",
-          "status": "expired"
-        },
-        "signalling": {
-          "department": "signalling",
-          "issue_date": "2025-04-15",
-          "expiry_date": "2026-06-29",
-          "status": "valid"
-        },
-        "telecom": {
-          "department": "telecom",
-          "issue_date": "2024-07-22",
-          "expiry_date": "2026-02-13",
-          "status": "valid"
-        }
-      },
-      "job_cards": [
-        {
-          "id": "JC4284",
-          "description": "Bogie alignment",
-          "open_date": "2025-08-30",
-          "criticality": "critical",
-          "estimated_hours": 1.0510888614629654
-        },
-        {
-          "id": "JC5059",
-          "description": "Handrail maintenance",
-          "open_date": "2025-09-02",
-          "criticality": "medium",
-          "estimated_hours": 3.511315765396153
-        }
-      ],
-      "branding_contracts": [
-        {
-          "brand": "Samsung",
-          "total_exposure_hours": 46,
-          "completed_hours": 17,
-          "deadline": "2025-10-17",
-          "priority": 5
-        }
-      ],
-      "current_mileage": {
-        "bogie": 9621.904605690741,
-        "brake_pad": 7739.763751967004,
-        "hvac": 11415.280722274318
-      },
-      "maintenance_thresholds": {
-        "bogie": 15000,
-        "brake_pad": 13000,
-        "hvac": 15000
-      },
-      "last_deep_cleaning": "2025-09-15",
-      "cleaning_duration": 3,
-      "status": "ibl",
-      "current_position": "PT12-2"
     },
     {
       "id": "TM023",
       "fitness_certificates": {
         "rolling_stock": {
           "department": "rolling_stock",
-          "issue_date": "2024-12-04",
-          "expiry_date": "2026-06-10",
+          "issue_date": "2024-09-03",
+          "expiry_date": "2025-11-30",
           "status": "valid"
         },
         "signalling": {
           "department": "signalling",
-          "issue_date": "2024-11-26",
-          "expiry_date": "2026-08-25",
+          "issue_date": "2025-04-10",
+          "expiry_date": "2025-11-27",
           "status": "valid"
         },
         "telecom": {
           "department": "telecom",
-          "issue_date": "2024-12-09",
-          "expiry_date": "2026-09-15",
-          "status": "valid"
-        }
-      },
-      "job_cards": [],
-      "branding_contracts": [
-        {
-          "brand": "Microsoft",
-          "total_exposure_hours": 146,
-          "completed_hours": 139,
-          "deadline": "2025-10-23",
-          "priority": 2
-        }
-      ],
-      "current_mileage": {
-        "bogie": 11953.134396411111,
-        "brake_pad": 8216.992593351213,
-        "hvac": 10242.51248691696
-      },
-      "maintenance_thresholds": {
-        "bogie": 15000,
-        "brake_pad": 13000,
-        "hvac": 15000
-      },
-      "last_deep_cleaning": "2025-09-23",
-      "cleaning_duration": 3,
-      "status": "standby",
-      "current_position": "PT02-1"
-    },
-    {
-      "id": "TM024",
-      "fitness_certificates": {
-        "rolling_stock": {
-          "department": "rolling_stock",
-          "issue_date": "2025-05-04",
-          "expiry_date": "2026-01-07",
-          "status": "valid"
-        },
-        "signalling": {
-          "department": "signalling",
-          "issue_date": "2024-06-29",
-          "expiry_date": "2025-11-25",
-          "status": "valid"
-        },
-        "telecom": {
-          "department": "telecom",
-          "issue_date": "2025-04-21",
-          "expiry_date": "2025-12-15",
-          "status": "valid"
-        }
-      },
-      "job_cards": [],
-      "branding_contracts": [
-        {
-          "brand": "Pepsi",
-          "total_exposure_hours": 83,
-          "completed_hours": 45,
-          "deadline": "2025-10-01",
-          "priority": 9
-        }
-      ],
-      "current_mileage": {
-        "bogie": 14213.195874050747,
-        "brake_pad": 11654.178263456994,
-        "hvac": 14802.836080158737
-      },
-      "maintenance_thresholds": {
-        "bogie": 15000,
-        "brake_pad": 13000,
-        "hvac": 15000
-      },
-      "last_deep_cleaning": "2025-09-15",
-      "cleaning_duration": 3,
-      "status": "standby",
-      "current_position": "PT07-2"
-    },
-    {
-      "id": "TM025",
-      "fitness_certificates": {
-        "rolling_stock": {
-          "department": "rolling_stock",
-          "issue_date": "2024-11-07",
-          "expiry_date": "2025-09-01",
-          "status": "expired"
-        },
-        "signalling": {
-          "department": "signalling",
-          "issue_date": "2025-03-10",
-          "expiry_date": "2026-09-20",
-          "status": "valid"
-        },
-        "telecom": {
-          "department": "telecom",
-          "issue_date": "2024-06-26",
-          "expiry_date": "2026-09-11",
+          "issue_date": "2024-05-18",
+          "expiry_date": "2026-03-06",
           "status": "valid"
         }
       },
       "job_cards": [
         {
-          "id": "JC4783",
-          "description": "Flooring replacement",
-          "open_date": "2025-08-26",
-          "criticality": "medium",
-          "estimated_hours": 3.255800259873224
+          "id": "JC5262",
+          "description": "Door mechanism adjustment",
+          "open_date": "2025-09-15",
+          "criticality": "high",
+          "estimated_hours": 6.816299004939679
         }
       ],
       "branding_contracts": [
         {
           "brand": "Pepsi",
-          "total_exposure_hours": 145,
-          "completed_hours": 144,
-          "deadline": "2025-11-05",
-          "priority": 6
+          "total_exposure_hours": 194,
+          "completed_hours": 79,
+          "deadline": "2025-11-03",
+          "priority": 2
         }
       ],
       "current_mileage": {
-        "bogie": 12381.655295781835,
-        "brake_pad": 7035.937038570271,
-        "hvac": 9597.804832941525
+        "bogie": 11605.572835440265,
+        "brake_pad": 7289.647480365219,
+        "hvac": 12630.33957000221
       },
       "maintenance_thresholds": {
         "bogie": 15000,
@@ -1256,25 +1204,111 @@
       },
       "last_deep_cleaning": "2025-09-14",
       "cleaning_duration": 4,
+      "status": "standby",
+      "current_position": "PT05-2"
+    },
+    {
+      "id": "TM024",
+      "fitness_certificates": {
+        "rolling_stock": {
+          "department": "rolling_stock",
+          "issue_date": "2024-09-05",
+          "expiry_date": "2026-09-24",
+          "status": "valid"
+        },
+        "signalling": {
+          "department": "signalling",
+          "issue_date": "2024-11-19",
+          "expiry_date": "2026-03-18",
+          "status": "valid"
+        },
+        "telecom": {
+          "department": "telecom",
+          "issue_date": "2025-02-03",
+          "expiry_date": "2026-02-06",
+          "status": "valid"
+        }
+      },
+      "job_cards": [],
+      "branding_contracts": [],
+      "current_mileage": {
+        "bogie": 13080.874435984118,
+        "brake_pad": 10958.57370391762,
+        "hvac": 13720.492966739617
+      },
+      "maintenance_thresholds": {
+        "bogie": 15000,
+        "brake_pad": 13000,
+        "hvac": 15000
+      },
+      "last_deep_cleaning": "2025-09-24",
+      "cleaning_duration": 4,
+      "status": "parking",
+      "current_position": "PT06-1"
+    },
+    {
+      "id": "TM025",
+      "fitness_certificates": {
+        "rolling_stock": {
+          "department": "rolling_stock",
+          "issue_date": "2025-03-16",
+          "expiry_date": "2026-07-16",
+          "status": "valid"
+        },
+        "signalling": {
+          "department": "signalling",
+          "issue_date": "2025-02-04",
+          "expiry_date": "2026-02-18",
+          "status": "valid"
+        },
+        "telecom": {
+          "department": "telecom",
+          "issue_date": "2024-09-14",
+          "expiry_date": "2025-08-29",
+          "status": "expired"
+        }
+      },
+      "job_cards": [
+        {
+          "id": "JC5016",
+          "description": "Exterior washing",
+          "open_date": "2025-08-25",
+          "criticality": "low",
+          "estimated_hours": 7.647405141832621
+        }
+      ],
+      "branding_contracts": [],
+      "current_mileage": {
+        "bogie": 14060.296077898649,
+        "brake_pad": 9669.326325697051,
+        "hvac": 10269.409276593833
+      },
+      "maintenance_thresholds": {
+        "bogie": 15000,
+        "brake_pad": 13000,
+        "hvac": 15000
+      },
+      "last_deep_cleaning": "2025-09-18",
+      "cleaning_duration": 2,
       "status": "ibl",
-      "current_position": "PT04-2"
+      "current_position": "PT01-2"
     }
   ],
   "cleaning_slots": [
     {
       "id": "CS01",
       "available": true,
-      "available_from": "2025-09-23 14:11:41"
+      "available_from": "2025-09-24 13:03:43"
     },
     {
       "id": "CS02",
       "available": true,
-      "available_from": "2025-09-23 14:11:41"
+      "available_from": "2025-09-24 13:03:43"
     },
     {
       "id": "CS03",
       "available": true,
-      "available_from": "2025-09-23 14:11:41"
+      "available_from": "2025-09-24 13:03:43"
     }
   ],
   "depot_layout": {
@@ -1283,27 +1317,25 @@
         "id": "PT01",
         "capacity": 2,
         "current_trains": [
-          "TM005"
+          "TM014"
         ]
       },
       {
         "id": "PT02",
         "capacity": 2,
-        "current_trains": []
+        "current_trains": [
+          "TM017"
+        ]
       },
       {
         "id": "PT03",
         "capacity": 2,
-        "current_trains": [
-          "TM003"
-        ]
+        "current_trains": []
       },
       {
         "id": "PT04",
         "capacity": 2,
-        "current_trains": [
-          "TM005"
-        ]
+        "current_trains": []
       },
       {
         "id": "PT05",
@@ -1313,47 +1345,54 @@
       {
         "id": "PT06",
         "capacity": 2,
-        "current_trains": []
+        "current_trains": [
+          "TM012",
+          "TM005"
+        ]
       },
       {
         "id": "PT07",
         "capacity": 2,
-        "current_trains": []
+        "current_trains": [
+          "TM021",
+          "TM010"
+        ]
       },
       {
         "id": "PT08",
         "capacity": 2,
         "current_trains": [
-          "TM010"
+          "TM022",
+          "TM001"
         ]
       },
       {
         "id": "PT09",
         "capacity": 2,
-        "current_trains": []
+        "current_trains": [
+          "TM006"
+        ]
       },
       {
         "id": "PT10",
         "capacity": 2,
         "current_trains": [
-          "TM009",
-          "TM010"
+          "TM022",
+          "TM001"
         ]
       },
       {
         "id": "PT11",
         "capacity": 2,
         "current_trains": [
-          "TM003"
+          "TM014",
+          "TM022"
         ]
       },
       {
         "id": "PT12",
         "capacity": 2,
-        "current_trains": [
-          "TM004",
-          "TM013"
-        ]
+        "current_trains": []
       }
     ],
     "ibl_bays": [
@@ -1489,7 +1528,7 @@
       ]
     }
   },
-  "date": "2025-09-23",
+  "date": "2025-09-24",
   "required_trains": 18,
   "standby_trains": 4,
   "cleaning_crew_available": 3

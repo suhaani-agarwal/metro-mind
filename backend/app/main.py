@@ -73,16 +73,24 @@ async def root():
 async def generate_data():
     """Generate synthetic data for testing"""
     try:
-        logger.info("Generating synthetic data...")
+        input_path = os.path.join(DATA_DIR, "input_data.json")
+        # Do NOT overwrite existing input data; return existing if present
+        if os.path.exists(input_path):
+            logger.info("Existing input_data.json found; preserving and returning it")
+            with open(input_path, "r", encoding="utf-8") as f:
+                existing = json.load(f)
+            return {"message": "Existing input_data.json preserved; no overwrite", "data": existing}
+
+        logger.info("Generating synthetic data (first-time init only)...")
         generator = DataGenerator()
         data = generator.generate_all_data()
-        
-        # Save to file
-        with open(os.path.join(DATA_DIR, "input_data.json"), "w") as f:
+
+        # Save ONLY if file doesn't exist (first-time init)
+        with open(input_path, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2)
-            
-        logger.info("Data generated successfully")
-        return {"message": "Data generated successfully", "data": data}
+
+        logger.info("Data generated and saved (first-time)")
+        return {"message": "Data generated (first-time) and saved", "data": data}
     except Exception as e:
         logger.error(f"Error generating data: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -109,7 +117,56 @@ async def optimize_schedule():
         output_path = os.path.join(DATA_DIR, "output.json")
         with open(output_path, "w") as f:
             json.dump(result, f, indent=2)
-            
+
+        # Persist parking override for Layer 2: save all assignments EXCEPT TM024
+        try:
+            parking_path = os.path.join(DATA_DIR, "parking.json")
+            assignments = result.get("parking_assignments", []) or []
+
+            basic_assignments = []
+            for a in assignments:
+                bay = a.get("track_id") or a.get("bay")
+                position = a.get("position_in_track") or a.get("position") or 1
+                train_id = a.get("train_id")
+                if not (train_id and bay):
+                    continue
+                if str(train_id).upper() == "TM024":
+                    # Skip TM024 so user can add via Parking page
+                    continue
+                status = "maintenance" if str(bay).startswith("IBL") else "parking"
+                basic_assignments.append({
+                    "train_id": train_id,
+                    "bay": bay,
+                    "position": int(position),
+                    "status": status,
+                    "arrival_time": datetime.now().isoformat(),
+                    "notes": "Pre-seeded from Layer 1"
+                })
+
+            # Merge with existing to preserve any user-entered TM024 (or other manual edits)
+            existing = []
+            if os.path.exists(parking_path):
+                try:
+                    with open(parking_path, "r", encoding="utf-8") as rf:
+                        existing = json.load(rf)
+                except Exception:
+                    existing = []
+
+            merged_by_id = {}
+            for e in existing:
+                tid = e.get("train_id")
+                if tid:
+                    merged_by_id[tid] = e
+            for a in basic_assignments:
+                merged_by_id[a["train_id"]] = a
+
+            merged = list(merged_by_id.values())
+            merged.sort(key=lambda x: x.get("train_id", ""))
+            with open(parking_path, "w", encoding="utf-8") as pf:
+                json.dump(merged, pf, indent=2)
+        except Exception as pe:
+            logger.warning(f"Failed to persist parking.json: {pe}")
+
         logger.info("Optimization completed successfully")
         return result
     except Exception as e:
