@@ -188,7 +188,9 @@ export default function TrainParkingPage() {
     if (
       isPositionOccupied(selectedTrack, selectedPosition, trackType) &&
       !isEditing
-    )
+    ) {
+      return;
+    }
 
     try {
       const bay = getBayFromTrack(selectedTrack, status);
@@ -221,7 +223,6 @@ export default function TrainParkingPage() {
       console.error("Error assigning parking:", error);
     }
   };
-
 
   const resetForm = () => {
     setSelectedTrain("");
