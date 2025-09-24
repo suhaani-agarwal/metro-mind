@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation"; 
 import axios from "axios";
 
 interface DepotMetadata {
@@ -62,6 +63,7 @@ const fileLabels: { [key: string]: { label: string; description: string } } = {
 };
 
 export default function OnboardingPage() {
+  const router = useRouter();
   const [depot, setDepot] = useState<DepotMetadata>({
     name: "",
     location: "",
@@ -135,10 +137,25 @@ export default function OnboardingPage() {
           headers: { "Content-Type": "multipart/form-data" },
         }
       );
-      alert("Files uploaded successfully!");
+      return true; // Success
     } catch (error) {
       console.error(error);
       alert("File upload failed. Please try again.");
+      return false; // Failure
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async () => {
+    try {
+      setLoading(true);
+      const success = await submitFiles(); // your upload function
+      if (success) {
+        router.push("/trains"); // redirect after success
+      }
+    } catch (error) {
+      console.error("Upload failed:", error);
     } finally {
       setLoading(false);
     }
@@ -463,7 +480,7 @@ export default function OnboardingPage() {
               <div className="flex justify-center pt-8">
                 <button
                   disabled={loading}
-                  onClick={submitFiles}
+                  onClick={handleSubmit}
                   className={`px-8 py-4 text-lg font-semibold text-slate-50 rounded-2xl border border-transparent transition-all duration-300 hover:transform hover:-translate-y-1 hover:shadow-2xl focus:outline-none focus:ring-4 focus:ring-sky-400/20 backdrop-blur-sm ${
                     loading ? "opacity-50 cursor-not-allowed" : ""
                   }`}

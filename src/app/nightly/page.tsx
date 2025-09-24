@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import axios from "axios";
+import { useRouter } from "next/navigation";
 
 interface NightlyForm {
   fitness_certificates?: {
@@ -29,6 +30,7 @@ interface NightlyForm {
 }
 
 export default function NightlyPage() {
+  const router = useRouter();
   const [trains, setTrains] = useState<string[]>([]);
   const [selectedTrain, setSelectedTrain] = useState<string>("");
   const [showFitness, setShowFitness] = useState<boolean>(false);
@@ -403,11 +405,10 @@ export default function NightlyPage() {
                   <button
                     onClick={() => {
                       if (!brandingDraft.advertiser)
-                        return alert("Enter advertiser");
-                      setForm((prev) => ({
-                        ...prev,
-                        brandings: [...(prev.brandings || []), brandingDraft],
-                      }));
+                        setForm((prev) => ({
+                          ...prev,
+                          brandings: [...(prev.brandings || []), brandingDraft],
+                        }));
                       setBrandingDraft({
                         advertiser: "",
                         priority: "",
@@ -469,6 +470,17 @@ export default function NightlyPage() {
             }}
           >
             Save Nightly Data
+          </button>
+
+          <button
+            onClick={() => router.push("/layer1")}
+            className="px-8 py-4 text-lg font-semibold text-slate-50 rounded-2xl border border-transparent transition-all duration-300 hover:transform hover:-translate-y-1 hover:shadow-2xl focus:outline-none focus:ring-4 focus:ring-emerald-400/20 backdrop-blur-sm"
+            style={{
+              background: "linear-gradient(135deg, #06d6a0 0%, #38bdf8 100%)",
+              boxShadow: "0 10px 25px -5px rgba(6, 214, 160, 0.3)",
+            }}
+          >
+            Run Readiness Analysis
           </button>
         </div>
       </div>

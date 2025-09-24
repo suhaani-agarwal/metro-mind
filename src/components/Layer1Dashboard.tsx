@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { generateData, optimize, getResults } from './api';
 import { OptimizationResponse, ReadinessScore, CleaningAssignment } from './types';
 import ParkingMapComponent from './ParkingMap';
+import { useRouter } from "next/navigation";
 
 // Simplified styles to improve performance
 const styles = {
@@ -385,6 +386,7 @@ function CleaningSchedule({ assignments }: { assignments: CleaningAssignment[] }
 }
 
 export default function Layer1Dashboard() {
+  const router = useRouter();
   const [data, setData] = useState<OptimizationResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -411,6 +413,7 @@ export default function Layer1Dashboard() {
     try {
       const res = await getResults();
       setData(res);
+      router.push("/parking");
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
       setError(msg);
@@ -436,7 +439,7 @@ export default function Layer1Dashboard() {
             onClick={handleFetch}
             disabled={loading}
           >
-            Refresh
+            Set final Parking
           </button>
         </div>
       </header>

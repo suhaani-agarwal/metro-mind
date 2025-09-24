@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
+import {useRouter} from 'next/navigation';
 
 interface TrainAssignment {
   train_id: string;
@@ -155,6 +156,7 @@ interface TimetableData {
 }
 
 const Layer2Dashboard: React.FC = () => {
+  const router = useRouter();
   const [data, setData] = useState<OptimizationResult | null>(null);
   const [validationData, setValidationData] = useState<ValidationResult | null>(null);
   const [timetableData, setTimetableData] = useState<TimetableData | null>(null);
@@ -890,11 +892,11 @@ const Layer2Dashboard: React.FC = () => {
 
         {/* Action Buttons */}
         <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-          <button
-            onClick={fetchScheduleData}
+        <button
+            onClick={() => router.push("/rotation")}
             className="bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white font-semibold py-3 px-8 rounded-lg shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
           >
-            Refresh Schedule
+            See Estimated delays
           </button>
           
           <button

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import axios from "axios";
+import { useRouter } from "next/navigation";
 
 interface TrainParking {
   train_id: string;
@@ -20,6 +21,7 @@ interface ParkingTrack {
 }
 
 export default function TrainParkingPage() {
+  const router = useRouter();
   const [trains, setTrains] = useState<string[]>([]);
   const [parkingData, setParkingData] = useState<TrainParking[]>([]);
   const [selectedTrain, setSelectedTrain] = useState<string>("");
@@ -566,11 +568,21 @@ export default function TrainParkingPage() {
             className="xl:col-span-2 backdrop-blur-md rounded-2xl p-6 border border-slate-600/30 shadow-2xl"
             style={{ backgroundColor: "rgba(15, 23, 42, 0.8)" }}
           >
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-2 h-8 rounded-full bg-gradient-to-b from-sky-400 to-blue-400"></div>
-              <h2 className="text-xl font-semibold text-slate-50">
-                Real-Time Parking Layout
-              </h2>
+            <div className="flex items-center justify-between mb-6">
+              {" "}
+              {/* Changed to justify-between */}
+              <div className="flex items-center gap-3">
+                <div className="w-2 h-8 rounded-full bg-gradient-to-b from-sky-400 to-blue-400"></div>
+                <h2 className="text-xl font-semibold text-slate-50">
+                  Real-Time Parking Layout
+                </h2>
+              </div>
+              <button
+                onClick={() => router.push("/Layer2dashboard")}
+                className="px-3 py-2 rounded-md text-sm font-medium bg-gradient-to-r from-sky-400 to-emerald-400 text-slate-900 shadow-md hover:from-sky-500 hover:to-emerald-500 transition-all duration-200"
+              >
+                Go to Dashboard
+              </button>
             </div>
 
             <div className="space-y-8">

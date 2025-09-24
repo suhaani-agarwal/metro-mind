@@ -84,7 +84,7 @@ export default function SecurityPage() {
         setIsLoading(false);
         setCurrentStep(3);
         setTimeout(() => {
-          window.location.href = "/dashboard";
+          window.location.href = "/onboarding";
         }, 3000);
       }, 2500);
     }
