@@ -1,11 +1,8 @@
-
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect, useRef } from "react";
-import { Container, Navbar, Nav, Row, Col } from "react-bootstrap";
+import { useState, useEffect } from "react";
 import {
-  ArrowRight,
   Play,
   Zap,
   Brain,
@@ -18,11 +15,10 @@ import {
   MapPin,
   Train,
   Database,
+  Menu,
+  X,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { Canvas, useFrame } from "@react-three/fiber";
-import { OrbitControls, Text } from "@react-three/drei";
-import * as THREE from "three";
 
 // Quick and support links for footer
 const quickLinks = [
@@ -31,56 +27,14 @@ const quickLinks = [
   { name: "Services", href: "/services" },
   { name: "Contact", href: "/contact" },
 ];
+
 const supportLinks = [
   { name: "Help Center", href: "/help" },
   { name: "FAQ", href: "/faq" },
   { name: "Support", href: "/support" },
 ];
+
 const currentYear = new Date().getFullYear();
-
-// Metro-themed 3D train car component
-function TrainCar({
-  position,
-  color,
-}: {
-  position: [number, number, number];
-  color: string;
-}) {
-  return (
-    <mesh position={position} castShadow receiveShadow>
-      <boxGeometry args={[2.5, 1, 1]} />
-      <meshStandardMaterial color={color} />
-    </mesh>
-  );
-}
-
-// 3D Metro Line Component
-function Metro3DFeature() {
-  const groupRef = useRef<THREE.Group>(null);
-
-  useFrame(({ clock }) => {
-    if (groupRef.current) {
-      groupRef.current.rotation.y = clock.getElapsedTime() * 0.25;
-    }
-  });
-
-  const colors = ["#0ea5e9", "#0284c7", "#0369a1", "#075985"];
-
-  return (
-    <group ref={groupRef} position={[0, 0, 0]} castShadow>
-      {colors.map((color, index) => (
-        <TrainCar
-          key={index}
-          position={[index * 2.6, 0, 0]}
-          color={color}
-        />
-      ))}
-      <Text fontSize={0.5} color="#0ea5e9" position={[3.5, 1, 0]}>
-        Kochi Metro
-      </Text>
-    </group>
-  );
-}
 
 // Features list
 const featuresMetro = [
@@ -89,58 +43,58 @@ const featuresMetro = [
     description:
       "Consolidates Maximo job cards, IoT fitness sensors, cleaning rosters, branding dashboards, and stabling maps.",
     icon: Zap,
-    color: "#0ea5e9",
+    color: "#38bdf8",
   },
   {
     title: "AI Scheduling & Optimisation",
     description:
       "Balances fitness, maintenance, branding, cleaning, mileage, and stabling using multi-objective algorithms.",
     icon: Brain,
-    color: "#0284c7",
+    color: "#06d6a0",
   },
   {
     title: "3D Yard Simulation",
     description:
       "Drag-and-drop depot view for testing scenarios and minimizing shunting time.",
     icon: Shield,
-    color: "#0369a1",
+    color: "#fbbf24",
   },
 ];
-
-const metroGlow =
-  "shadow-[0_0_28px_0_rgba(14,165,233,0.3)] ring-2 ring-blue-400";
 
 // Workflow steps
 const workflowSteps = [
   {
     id: 1,
     title: "Data Ingestion",
-    description: "Nightly Maximo exports, daily constraints ingestion, and data sync.",
-    icon: <Database className="w-8 h-8 text-blue-500" />,
+    description:
+      "Nightly Maximo exports, daily constraints ingestion, and data sync.",
+    icon: <Database className="w-8 h-8 text-sky-400" />,
   },
   {
     id: 2,
     title: "Optimisation",
     description: "Quantum-inspired multi-objective scheduling optimisation.",
-    icon: <Cpu className="w-8 h-8 text-green-500" />,
+    icon: <Cpu className="w-8 h-8 text-emerald-400" />,
   },
   {
     id: 3,
     title: "Supervisor Adjustments",
     description: "Human-in-the-loop verification and AI-assisted overrides.",
-    icon: <User className="w-8 h-8 text-yellow-500" />,
+    icon: <User className="w-8 h-8 text-amber-400" />,
   },
   {
     id: 4,
     title: "Final Plan",
-    description: "Trains ready with validated schedules for morning operations.",
-    icon: <CheckCircle className="w-8 h-8 text-red-500" />,
+    description:
+      "Trains ready with validated schedules for morning operations.",
+    icon: <CheckCircle className="w-8 h-8 text-pink-400" />,
   },
 ];
 
 export default function LandingPage() {
   const [isVisible, setIsVisible] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     setIsVisible(true);
@@ -153,6 +107,7 @@ export default function LandingPage() {
       },
       { threshold: 0.3 }
     );
+
     const section = document.getElementById("workflow");
     if (section) observer.observe(section);
     return () => observer.disconnect();
@@ -168,448 +123,526 @@ export default function LandingPage() {
   }, [isVisible]);
 
   return (
-    <>
-{/* Navbar */}
-<Navbar
-  expand="lg"
-  sticky="top"
-  className="py-3"
-  style={{
-    backgroundColor: "#000", // solid black background
-  }}
->
-  <Container>
-    <Navbar.Brand href="/" className="text-white fw-bold">
-      MetroMind
-    </Navbar.Brand>
-    <Navbar.Toggle
-      aria-controls="basic-navbar-nav"
-      className="bg-white"
-    />
-    <Navbar.Collapse id="basic-navbar-nav">
-      <Nav className="ms-auto">
-        <Nav.Link href="#features" className="text-white">
-          Features
-        </Nav.Link>
-        <Nav.Link href="#about" className="text-white">
-          About
-        </Nav.Link>
-        <Nav.Link href="#contact" className="text-white">
-          Contact
-        </Nav.Link>
-        <Nav.Link as={Link} href="/security" className="text-white">
-          Security
-        </Nav.Link>
-
-        <Nav.Link href="/login">
-          <button className="ms-3 bg-[#00A885] text-white px-4 py-2 rounded hover:bg-[#009174] transition">
-            Login
-          </button>
-        </Nav.Link>
-      </Nav>
-    </Navbar.Collapse>
-  </Container>
-</Navbar>
-
-
-      {/* Hero Section with Video */}
-      <section
-        className="position-relative min-vh-100 d-flex align-items-center text-white"
-        style={{ overflow: "hidden" }}
+    <div
+      className="min-h-screen w-full"
+      style={{
+        background:
+          "linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)",
+      }}
+    >
+      {/* Navbar */}
+      <nav
+        className="fixed top-0 w-full z-50 backdrop-blur-md border-b border-slate-600/30"
+        style={{ backgroundColor: "rgba(15, 23, 42, 0.8)" }}
       >
-        <div
-          className="position-absolute w-100 h-100"
-          style={{ top: 0, left: 0, zIndex: 0 }}
-        >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            {/* Logo */}
+            <div className="flex items-center space-x-3">
+              <div
+                className="h-10 w-10 rounded-xl flex items-center justify-center"
+                style={{
+                  background:
+                    "linear-gradient(135deg, #38bdf8 0%, #06d6a0 100%)",
+                }}
+              >
+                <Train className="h-5 w-5 text-slate-50" />
+              </div>
+              <span className="text-2xl font-bold text-slate-50">
+                MetroMind
+              </span>
+            </div>
+
+            {/* Desktop Menu */}
+            <div className="hidden md:block">
+              <div className="ml-10 flex items-baseline space-x-8">
+                <a
+                  href="#features"
+                  className="text-slate-300 hover:text-slate-50 transition-colors duration-300 font-medium"
+                >
+                  Features
+                </a>
+                <a
+                  href="#about"
+                  className="text-slate-300 hover:text-slate-50 transition-colors duration-300 font-medium"
+                >
+                  About
+                </a>
+                <a
+                  href="#contact"
+                  className="text-slate-300 hover:text-slate-50 transition-colors duration-300 font-medium"
+                >
+                  Contact
+                </a>
+                <Link
+                  href="/security"
+                  className="text-slate-300 hover:text-slate-50 transition-colors duration-300 font-medium"
+                >
+                  Security
+                </Link>
+                <Link href="/security">
+                  <button
+                    className="px-6 py-2 text-slate-50 font-semibold rounded-xl transition-all duration-300 hover:transform hover:-translate-y-1 hover:shadow-xl"
+                    style={{
+                      background:
+                        "linear-gradient(135deg, #38bdf8 0%, #06d6a0 100%)",
+                      boxShadow: "0 4px 15px -3px rgba(56, 189, 248, 0.3)",
+                    }}
+                  >
+                    Login
+                  </button>
+                </Link>
+              </div>
+            </div>
+
+            {/* Mobile menu button */}
+            <div className="md:hidden">
+              <button
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="text-slate-300 hover:text-slate-50 transition-colors duration-300"
+              >
+                {isMobileMenuOpen ? (
+                  <X className="h-6 w-6" />
+                ) : (
+                  <Menu className="h-6 w-6" />
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Mobile Menu */}
+          {isMobileMenuOpen && (
+            <div className="md:hidden">
+              <div
+                className="px-2 pt-2 pb-3 space-y-1 backdrop-blur-md rounded-xl mt-2 border border-slate-600/30"
+                style={{ backgroundColor: "rgba(30, 41, 59, 0.8)" }}
+              >
+                <a
+                  href="#features"
+                  className="block px-3 py-2 text-slate-300 hover:text-slate-50 transition-colors duration-300"
+                >
+                  Features
+                </a>
+                <a
+                  href="#about"
+                  className="block px-3 py-2 text-slate-300 hover:text-slate-50 transition-colors duration-300"
+                >
+                  About
+                </a>
+                <a
+                  href="#contact"
+                  className="block px-3 py-2 text-slate-300 hover:text-slate-50 transition-colors duration-300"
+                >
+                  Contact
+                </a>
+                <Link
+                  href="/security"
+                  className="block px-3 py-2 text-slate-300 hover:text-slate-50 transition-colors duration-300"
+                >
+                  Security
+                </Link>
+              </div>
+            </div>
+          )}
+        </div>
+      </nav>
+
+      {/* Hero Section */}
+      <section className="relative min-h-screen flex items-center text-slate-50 overflow-hidden pt-16">
+        {/* Animated Background Elements */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div
+            className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full opacity-10 animate-pulse"
+            style={{
+              background:
+                "radial-gradient(circle, #38bdf8 0%, transparent 70%)",
+            }}
+          ></div>
+          <div
+            className="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full opacity-10 animate-pulse"
+            style={{
+              background:
+                "radial-gradient(circle, #06d6a0 0%, transparent 70%)",
+            }}
+          ></div>
+        </div>
+
+        {/* Video Background */}
+        <div className="absolute inset-0 w-full h-full">
           <video
             src="https://media.istockphoto.com/id/1971890728/video/the-train-has-arrived-at-the-railway-station.mp4?s=mp4-640x640-is&k=20&c=wzbBXSjZeoXPNPMSuayUl4ujiaP1tTrRqV1bFGPmlNI="
             autoPlay
             loop
             muted
             playsInline
-            className="w-100 h-100 object-fit-cover"
+            className="w-full h-full object-cover"
             style={{
-              filter: "blur(8px) brightness(0.5)",
+              filter: "blur(8px) brightness(0.3)",
               objectPosition: "center",
             }}
           />
-          <div
-            className="position-absolute w-100 h-100"
-            style={{
-              top: 0,
-              left: 0,
-              background: "rgba(0, 0, 0, 0.4)",
-              zIndex: 1,
-            }}
-          />
         </div>
-        <Container className="position-relative z-2">
-          <Row className="align-items-center">
-            <Col lg={8} className="mb-5 mb-lg-0">
-              <h1
-                className="fw-bold mt-3"
-                style={{ fontSize: "4rem", lineHeight: "1.2" }}
+
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div className="space-y-8">
+              <motion.div
+                initial={{ opacity: 0, y: 50 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8 }}
+                viewport={{ once: true, amount: 0.3 }}
               >
-                <span
-                  className="text-primary"
-                  style={{ fontSize: "4.5rem" }}
-                >
-                  MetroMind
-                </span>
-                <br />
-                The Brain Behind
-                <br />
-                Every Train Move
-              </h1>
-              <p
-                className="mt-4"
-                style={{ fontSize: "1.5rem", color: "#d3d3d3" }}
+                <h1 className="text-6xl lg:text-7xl font-bold leading-tight">
+                  <span className="bg-gradient-to-r from-sky-400 to-emerald-400 bg-clip-text text-transparent">
+                    MetroMind
+                  </span>
+                  <br />
+                  <span className="text-slate-50">The Brain Behind</span>
+                  <br />
+                  <span className="text-slate-50">Every Train Move</span>
+                </h1>
+              </motion.div>
+
+              <motion.p
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.2 }}
+                className="text-xl lg:text-2xl text-slate-300 leading-relaxed"
               >
-                Smart Train Induction & Scheduling System for Kochi Metro. <br />
+                Smart Train Induction & Scheduling System for Kochi Metro.
+                <br />
                 Revolutionizing metro operations with AI-powered optimization
                 and real-time intelligence.
-              </p>
-              <div className="d-flex flex-column flex-sm-row gap-3 mt-5">
-                <button className="bg-[#00A885] text-white text-xl px-6 py-3 rounded fw-bold shadow flex items-center gap-2 hover:opacity-90 transition">
-  Access Dashboard
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke="currentColor"
-    className="w-6 h-6"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-      d="M17 8l4 4m0 0l-4 4m4-4H3"
-    />
-  </svg>
-</button>
+              </motion.p>
 
-
-                <button className="flex items-center px-4 py-3 text-white border border-white rounded text-lg hover:bg-white/10 transition">
-                  <Play className="me-2" /> Watch Demo
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.4 }}
+                className="flex flex-col sm:flex-row gap-6"
+              >
+                <button
+                  className="flex items-center justify-center space-x-3 px-8 py-4 text-xl font-semibold text-slate-50 rounded-2xl transition-all duration-300 hover:transform hover:-translate-y-2 hover:shadow-2xl"
+                  style={{
+                    background:
+                      "linear-gradient(135deg, #38bdf8 0%, #06d6a0 100%)",
+                    boxShadow: "0 10px 25px -5px rgba(56, 189, 248, 0.4)",
+                  }}
+                >
+                  <span>Access Dashboard</span>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    className="w-6 h-6"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M17 8l4 4m0 0l-4 4m4-4H3"
+                    />
+                  </svg>
                 </button>
-              </div>
-            </Col>
-          </Row>
-        </Container>
+
+                <button className="flex items-center justify-center space-x-3 px-8 py-4 text-xl text-slate-50 border-2 border-slate-400 rounded-2xl transition-all duration-300 hover:bg-slate-700/30 backdrop-blur-sm">
+                  <Play className="w-6 h-6" />
+                  <span>Watch Demo</span>
+                </button>
+              </motion.div>
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* Features Section */}
-<section id="features" className="py-5 bg-gradient-to-b from-blue-50 to-white">
-  <Container>
-    <h2 className="text-center mb-5 fw-bold text-blue-900">Features</h2>
-    <div className="row g-4 items-center">
-      {/* Left side - Metro GIF */}
-      <div className="col-lg-6 flex items-center justify-center">
-        <img
-          src="/metro.gif" // 👈 place your uploaded file in /public as metro.gif
-          alt="Metro Animation"
-          className="rounded-xl shadow-lg w-full h-auto max-h-[380px] object-contain"
-        />
-      </div>
-
-      {/* Right side - Features cards */}
-      <div className="col-lg-6">
-        {featuresMetro.map((feature, idx) => (
+      <section id="features" className="py-24 relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
-            key={feature.title}
-            className={`card mb-4 rounded-lg p-5 bg-white border-2 border-[#00A885] cursor-pointer ${metroGlow}`}
-            initial={{ opacity: 0, y: 60 }}
-            animate={{ opacity: 1, y: 0 }}
-            whileHover={{ scale: 1.07 }}
-            transition={{ delay: idx * 0.2, duration: 0.6 }}
-            style={{
-              borderRadius: "15px",
-              boxShadow: "0 0 15px rgba(0, 168, 133, 0.4)", // teal glow
-            }}
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 0.8 }}
+            className="text-center mb-16"
           >
-            <div className="flex items-center mb-3 text-[#00A885]">
-              <feature.icon size={30} />
-              <h5 className="ms-3 font-bold text-xl">{feature.title}</h5>
-            </div>
-            <p className="text-gray-700 text-base">{feature.description}</p>
+            <h2 className="text-4xl lg:text-5xl font-bold text-slate-50 mb-4">
+              Advanced Features
+            </h2>
+            <div className="w-24 h-1 mx-auto rounded-full bg-gradient-to-r from-sky-400 to-emerald-400"></div>
           </motion.div>
-        ))}
-      </div>
-    </div>
-  </Container>
-</section>
 
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            {/* Left side - Features cards */}
+            <div className="space-y-8">
+              {featuresMetro.map((feature, idx) => (
+                <motion.div
+                  key={feature.title}
+                  className="backdrop-blur-md rounded-2xl p-6 border border-slate-600/30 shadow-2xl transition-all duration-300 hover:transform hover:-translate-y-2"
+                  style={{ backgroundColor: "rgba(15, 23, 42, 0.8)" }}
+                  initial={{ opacity: 0, x: -50 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true, amount: 0.3 }}
+                  transition={{ delay: idx * 0.2, duration: 0.6 }}
+                  whileHover={{
+                    scale: 1.02,
+                    boxShadow: "0 25px 50px -12px rgba(56, 189, 248, 0.25)",
+                  }}
+                >
+                  <div className="flex items-center mb-4">
+                    <div
+                      className="w-12 h-12 rounded-xl flex items-center justify-center mr-4"
+                      style={{
+                        background: `linear-gradient(135deg, ${feature.color}, ${feature.color}80)`,
+                      }}
+                    >
+                      <feature.icon className="w-6 h-6 text-slate-50" />
+                    </div>
+                    <h3 className="text-xl font-bold text-slate-50">
+                      {feature.title}
+                    </h3>
+                  </div>
+                  <p className="text-slate-300 leading-relaxed">
+                    {feature.description}
+                  </p>
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Right side - Metro Animation */}
+            <div className="flex items-center justify-center">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true, amount: 0.3 }}
+                transition={{ duration: 0.8, delay: 0.2 }}
+                className="w-full max-w-md"
+              >
+                <img
+                  src="/metro.gif"
+                  alt="Metro Animation"
+                  className="rounded-2xl shadow-2xl w-full h-auto max-h-96 object-contain border border-slate-600/30"
+                  style={{
+                    mixBlendMode: "multiply",
+                    filter:
+                      "brightness(1.2) contrast(1.1) drop-shadow(0 25px 50px rgba(56, 189, 248, 0.15))",
+                  }}
+                />
+              </motion.div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Workflow Section */}
-      <section
-        id="workflow"
-        className="relative min-h-screen bg-gradient-to-b from-white to-gray-50 py-24"
-      >
-        <Container className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section id="workflow" className="py-24 relative">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="text-4xl font-bold text-center text-gray-900 mb-20"
+            className="text-4xl lg:text-5xl font-bold text-center text-slate-50 mb-20"
           >
             Workflow Journey
           </motion.h2>
-          <div className="relative flex justify-center">
-            {/* Track */}
-            <div className="absolute top-0 bottom-0 flex flex-col items-center">
-              <div className="w-1 bg-gray-400 rounded-full h-full relative">
-                <div className="absolute inset-0 flex flex-col justify-between py-2">
-                  {Array.from({ length: 20 }).map((_, i) => (
-                    <div
-                      key={i}
-                      className="w-6 h-1 bg-gray-600 mx-auto rounded-sm"
-                    />
-                  ))}
-                </div>
-              </div>
-              <motion.div
-                className="absolute"
-                initial={{ y: 0 }}
-                whileInView={{ y: "90%" }}
-                transition={{ duration: 3, ease: "easeInOut" }}
-              >
-                <Train className="w-10 h-10 text-blue-600" />
-              </motion.div>
-            </div>
+
+          <div className="relative">
             {/* Workflow Steps */}
-            <div className="relative space-y-32 w-full max-w-3xl">
+            <div className="space-y-16">
               {workflowSteps.map((step, index) => (
                 <motion.div
                   key={step.id}
                   initial={{ opacity: 0, x: index % 2 === 0 ? -100 : 100 }}
                   whileInView={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.6, delay: index * 0.2 }}
-                  className={`relative flex items-center ${
+                  className={`flex items-center ${
                     index % 2 === 0 ? "justify-start" : "justify-end"
                   }`}
                 >
-                  <div className="bg-white shadow-lg rounded-xl p-6 w-80">
-                    <div className="flex items-center space-x-4">
-                      {step.icon}
-                      <h3 className="text-xl font-semibold text-gray-800">
+                  <div
+                    className="backdrop-blur-md rounded-2xl p-8 border border-slate-600/30 shadow-2xl max-w-md"
+                    style={{ backgroundColor: "rgba(15, 23, 42, 0.8)" }}
+                  >
+                    <div className="flex items-center space-x-4 mb-4">
+                      <div
+                        className="w-12 h-12 rounded-xl flex items-center justify-center"
+                        style={{ backgroundColor: "rgba(30, 41, 59, 0.6)" }}
+                      >
+                        {step.icon}
+                      </div>
+                      <h3 className="text-xl font-semibold text-slate-50">
                         {step.title}
                       </h3>
                     </div>
-                    <p className="mt-4 text-gray-600">{step.description}</p>
+                    <p className="text-slate-300">{step.description}</p>
                   </div>
                 </motion.div>
               ))}
             </div>
+
+            {/* Central Track */}
+            <div className="absolute left-1/2 top-0 bottom-0 w-1 bg-slate-600 transform -translate-x-1/2">
+              <motion.div
+                className="absolute top-0 w-3 h-3 bg-sky-400 rounded-full transform -translate-x-1/2"
+                animate={{ y: ["0%", "100%"] }}
+                transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+              />
+            </div>
           </div>
-        </Container>
+        </div>
       </section>
 
-
-{/* Process Highlight */}
-<section style={{ backgroundColor: "#f8f9fa", padding: "4rem 0" }}>
-  <div
-    className={`metro-card-elevated p-8 border-primary/20 ${
-      isVisible ? "metro-animate-slide-up animate-in" : "metro-animate-slide-up"
-    }`}
-    style={{ animationDelay: "1.2s" }}
-  >
-    <div className="text-center">
-      <h3 className="text-2xl font-bold text-foreground mb-4">
-        Continuous Learning & Optimization
-      </h3>
-      <p className="max-w-2xl mx-auto mb-6 text-[#00A885]">
-        Every supervisor override and operational decision feeds back into our
-        AI system, making MetroMind smarter and more efficient with each passing
-        day.
-      </p>
-      <div className="flex justify-center space-x-8">
-        <div className="text-center">
-          <div className="text-2xl font-bold text-primary">24/7</div>
-          <div className="text-sm text-muted-foreground">Learning Mode</div>
+      {/* Process Highlight */}
+      <section className="py-24">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            className="backdrop-blur-md rounded-2xl p-12 border border-slate-600/30 shadow-2xl text-center"
+            style={{ backgroundColor: "rgba(15, 23, 42, 0.8)" }}
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+          >
+            <h3 className="text-3xl font-bold text-slate-50 mb-6">
+              Continuous Learning & Optimization
+            </h3>
+            <p className="text-xl text-slate-300 mb-8 max-w-2xl mx-auto">
+              Every supervisor override and operational decision feeds back into
+              our AI system, making MetroMind smarter and more efficient with
+              each passing day.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="text-center">
+                <div className="text-4xl font-bold text-sky-400 mb-2">24/7</div>
+                <div className="text-sm text-slate-400">Learning Mode</div>
+              </div>
+              <div className="text-center">
+                <div className="text-4xl font-bold text-emerald-400 mb-2">
+                  ∞
+                </div>
+                <div className="text-sm text-slate-400">Adaptation Cycles</div>
+              </div>
+              <div className="text-center">
+                <div className="text-4xl font-bold text-amber-400 mb-2">
+                  Real-time
+                </div>
+                <div className="text-sm text-slate-400">Optimization</div>
+              </div>
+            </div>
+          </motion.div>
         </div>
-        <div className="text-center">
-          <div className="text-2xl font-bold text-success">∞</div>
-          <div className="text-sm text-muted-foreground">Adaptation Cycles</div>
-        </div>
-        <div className="text-center">
-          <div className="text-2xl font-bold text-warning">Real-time</div>
-          <div className="text-sm text-muted-foreground">Optimization</div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-
-
+      </section>
 
       {/* Footer */}
       <footer
-        style={{
-          backgroundColor: "#f2f2f2",
-          color: "#333",
-          borderTop: "1px solid #ddd",
-          paddingTop: "2rem",
-          paddingBottom: "2rem",
-        }}
+        className="border-t border-slate-600/30 pt-16 pb-8"
+        style={{ backgroundColor: "rgba(15, 23, 42, 0.8)" }}
       >
-        <Container>
-          <Row className="mb-4">
-            <Col md={4} className="mb-3">
-              <div className="d-flex align-items-center mb-2">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+            {/* Brand */}
+            <div className="col-span-1 md:col-span-1">
+              <div className="flex items-center space-x-3 mb-4">
                 <div
+                  className="h-10 w-10 rounded-xl flex items-center justify-center"
                   style={{
                     background:
-                      "linear-gradient(to bottom right, #00bfff, #87cefa)",
-                    width: 40,
-                    height: 40,
-                    borderRadius: "50%",
+                      "linear-gradient(135deg, #38bdf8 0%, #06d6a0 100%)",
                   }}
-                  className="d-flex align-items-center justify-content-center"
                 >
-                  <strong style={{ color: "#fff", fontSize: "1.25rem" }}>
-                    M
-                  </strong>
+                  <Train className="h-5 w-5 text-slate-50" />
                 </div>
-                <h5
-                  className="ms-2 mb-0"
-                  style={{ color: "#333", fontWeight: "600" }}
-                >
+                <span className="text-xl font-bold text-slate-50">
                   MetroMind
-                </h5>
+                </span>
               </div>
-              <p
-                style={{
-                  color: "#666",
-                  fontSize: "0.9rem",
-                  maxWidth: "280px",
-                }}
-              >
+              <p className="text-slate-400 max-w-xs">
                 The Brain Behind Every Train Move. Smart scheduling & induction
                 system for efficient metro operations.
               </p>
-            </Col>
-            <Col md={2} className="mb-3">
-              <h6 style={{ color: "#444", fontWeight: "600" }}>Quick Links</h6>
-              <ul className="list-unstyled">
+            </div>
+
+            {/* Quick Links */}
+            <div>
+              <h6 className="text-slate-50 font-semibold mb-4">Quick Links</h6>
+              <ul className="space-y-2">
                 {quickLinks.map((link) => (
-                  <li key={link.name} className="mb-2">
+                  <li key={link.name}>
                     <a
                       href={link.href}
-                      style={{
-                        color: "#666",
-                        fontSize: "0.9rem",
-                        textDecoration: "none",
-                      }}
-                      onMouseEnter={(e) =>
-                        (e.currentTarget.style.color = "#00bfff")
-                      }
-                      onMouseLeave={(e) =>
-                        (e.currentTarget.style.color = "#666")
-                      }
+                      className="text-slate-400 hover:text-slate-50 transition-colors duration-300"
                     >
                       {link.name}
                     </a>
                   </li>
                 ))}
               </ul>
-            </Col>
-            <Col md={2} className="mb-3">
-              <h6 style={{ color: "#444", fontWeight: "600" }}>Support</h6>
-              <ul className="list-unstyled">
+            </div>
+
+            {/* Support */}
+            <div>
+              <h6 className="text-slate-50 font-semibold mb-4">Support</h6>
+              <ul className="space-y-2">
                 {supportLinks.map((link) => (
-                  <li key={link.name} className="mb-2">
+                  <li key={link.name}>
                     <a
                       href={link.href}
-                      style={{
-                        color: "#666",
-                        fontSize: "0.9rem",
-                        textDecoration: "none",
-                      }}
-                      onMouseEnter={(e) =>
-                        (e.currentTarget.style.color = "#00bfff")
-                      }
-                      onMouseLeave={(e) =>
-                        (e.currentTarget.style.color = "#666")
-                      }
+                      className="text-slate-400 hover:text-slate-50 transition-colors duration-300"
                     >
                       {link.name}
                     </a>
                   </li>
                 ))}
               </ul>
-            </Col>
-            <Col md={4} className="mb-3">
-              <h6 style={{ color: "#444", fontWeight: "600" }}>
-                Contact Us
-              </h6>
-              <div style={{ fontSize: "0.9rem", color: "#666" }}>
-                <div className="d-flex align-items-center mb-2">
-                  <Mail size={16} className="me-2" style={{ color: "#00bfff" }} />
-                  <span>support@metromind.kochi</span>
+            </div>
+
+            {/* Contact */}
+            <div>
+              <h6 className="text-slate-50 font-semibold mb-4">Contact Us</h6>
+              <div className="space-y-3">
+                <div className="flex items-center space-x-3">
+                  <Mail className="w-4 h-4 text-sky-400" />
+                  <span className="text-slate-400 text-sm">
+                    support@metromind.kochi
+                  </span>
                 </div>
-                <div className="d-flex align-items-center mb-2">
-                  <Phone size={16} className="me-2" style={{ color: "#00bfff" }} />
-                  <span>+91 484 xxx xxxx</span>
+                <div className="flex items-center space-x-3">
+                  <Phone className="w-4 h-4 text-emerald-400" />
+                  <span className="text-slate-400 text-sm">
+                    +91 484 xxx xxxx
+                  </span>
                 </div>
-                <div className="d-flex align-items-center">
-                  <MapPin size={16} className="me-2" color="#00bfff" />
-                  <span>Kochi Metro Rail Limited</span>
+                <div className="flex items-center space-x-3">
+                  <MapPin className="w-4 h-4 text-amber-400" />
+                  <span className="text-slate-400 text-sm">
+                    Kochi Metro Rail Limited
+                  </span>
                 </div>
               </div>
-            </Col>
-          </Row>
-          <div
-            className="d-flex flex-column flex-md-row justify-content-between align-items-center"
-            style={{ borderTop: "1px solid #ddd", paddingTop: "1rem" }}
-          >
-            <p
-              style={{
-                color: "#666",
-                fontSize: "0.8rem",
-                margin: 0,
-              }}
-            >
+            </div>
+          </div>
+
+          {/* Bottom Bar */}
+          <div className="border-t border-slate-600/30 pt-8 flex flex-col md:flex-row justify-between items-center">
+            <p className="text-slate-400 text-sm">
               © {currentYear} MetroMind. All rights reserved.
             </p>
-            <div className="mt-2 mt-md-0">
+            <div className="flex space-x-6 mt-4 md:mt-0">
               <a
                 href="/privacy"
-                style={{
-                  color: "#666",
-                  marginRight: "1rem",
-                  fontSize: "0.8rem",
-                  textDecoration: "none",
-                }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.color = "#00bfff")
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.color = "#666")
-                }
+                className="text-slate-400 hover:text-slate-50 transition-colors duration-300 text-sm"
               >
                 Privacy Policy
               </a>
               <a
                 href="/terms"
-                style={{
-                  color: "#666",
-                  fontSize: "0.8rem",
-                  textDecoration: "none",
-                }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.color = "#00bfff")
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.color = "#666")
-                }
+                className="text-slate-400 hover:text-slate-50 transition-colors duration-300 text-sm"
               >
                 Terms of Service
               </a>
             </div>
           </div>
-        </Container>
+        </div>
       </footer>
-    </>
+    </div>
   );
 }

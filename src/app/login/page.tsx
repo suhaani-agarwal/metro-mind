@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Eye, EyeOff, Shield } from "lucide-react";
+import { Eye, EyeOff, Shield, User, Lock, Train } from "lucide-react";
 import Link from "next/link";
 
 const LoginPage = () => {
@@ -18,43 +18,90 @@ const LoginPage = () => {
   };
 
   return (
-    <section className="min-h-screen flex">
-      {/* Left Side - Login Form */}
-      <div className="flex-1 flex items-center justify-center p-8">
-        <div className="w-full max-w-md space-y-8">
-          {/* Header */}
-          <div className="text-center space-y-4">
+    <section
+      className="min-h-screen w-full relative overflow-hidden"
+      style={{
+        background:
+          "linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)",
+      }}
+    >
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div
+          className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full opacity-10 animate-pulse"
+          style={{
+            background: "radial-gradient(circle, #38bdf8 0%, transparent 70%)",
+          }}
+        ></div>
+        <div
+          className="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full opacity-10 animate-pulse"
+          style={{
+            background: "radial-gradient(circle, #06d6a0 0%, transparent 70%)",
+          }}
+        ></div>
+      </div>
+
+      <div className="relative z-10 min-h-screen flex items-center justify-center p-8">
+        {/* Main Login Container */}
+        <div
+          className="w-full max-w-md backdrop-blur-md rounded-2xl border border-slate-600/30 shadow-2xl p-8"
+          style={{ backgroundColor: "rgba(15, 23, 42, 0.8)" }}
+        >
+          {/* Header Section */}
+          <div className="text-center space-y-6 mb-8">
+            {/* Logo */}
             <div className="flex items-center justify-center">
-              <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-[#00A885] to-teal-400 flex items-center justify-center">
-                <span className="text-white font-bold text-lg">M</span>
+              <div
+                className="h-16 w-16 rounded-2xl flex items-center justify-center shadow-lg border border-slate-600/50"
+                style={{
+                  background:
+                    "linear-gradient(135deg, #38bdf8 0%, #06d6a0 100%)",
+                  boxShadow: "0 10px 25px -5px rgba(56, 189, 248, 0.3)",
+                }}
+              >
+                <Train className="h-8 w-8 text-slate-50" />
               </div>
             </div>
-            <h1 className="text-3xl font-bold text-[#00A885]">MetroMind</h1>
-            <p className="text-gray-500">
-              Secure access for authorized personnel only
-            </p>
+
+            {/* Brand & Title */}
+            <div className="space-y-2">
+              <h1 className="text-4xl font-bold text-slate-50 drop-shadow-lg">
+                MetroMind
+              </h1>
+              <div className="w-16 h-1 mx-auto rounded-full bg-gradient-to-r from-sky-400 to-emerald-400"></div>
+              <p className="text-slate-300 text-sm">
+                Advanced Railway Operations Management
+              </p>
+            </div>
           </div>
 
           {/* Security Badge */}
-          <div className="flex items-center justify-center space-x-2 bg-gray-100 border border-gray-300 rounded-lg p-3">
-            <Shield className="h-5 w-5 text-[#00A885]" />
-            <span className="text-sm font-medium text-gray-700">
+          <div
+            className="flex items-center justify-center space-x-3 rounded-xl p-4 mb-8 border border-slate-600/50 backdrop-blur-sm"
+            style={{ backgroundColor: "rgba(30, 41, 59, 0.6)" }}
+          >
+            <Shield className="h-5 w-5 text-emerald-400" />
+            <span className="text-sm font-semibold text-slate-300">
               Kochi Metro Security Portal
             </span>
+            <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
           </div>
 
           {/* Login Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-4">
-              {/* Employee ID */}
+            <div className="space-y-5">
+              {/* Employee ID Section */}
               <div className="space-y-2">
                 <label
                   htmlFor="employeeId"
-                  className="text-sm font-medium text-gray-700"
+                  className="block text-sm font-semibold text-slate-300"
                 >
-                  Employee ID
+                  Employee Identification
                 </label>
-                <div className="relative">
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <User className="h-5 w-5 text-slate-400 group-focus-within:text-sky-400 transition-colors duration-300" />
+                  </div>
                   <input
                     id="employeeId"
                     type="text"
@@ -63,89 +110,159 @@ const LoginPage = () => {
                     onChange={(e) =>
                       setFormData({ ...formData, employeeId: e.target.value })
                     }
-                    className="w-full border rounded-lg pl-10 p-2 focus:ring-2 focus:ring-[#00A885]"
+                    className="w-full pl-12 pr-4 py-4 rounded-xl border border-slate-600/50 text-slate-50 placeholder:text-slate-400 transition-all duration-300 hover:border-sky-400/50 focus:border-sky-400 focus:ring-2 focus:ring-sky-400/20 outline-none backdrop-blur-sm"
+                    style={{ backgroundColor: "rgba(30, 41, 59, 0.6)" }}
                     required
                   />
                 </div>
+                <p className="text-xs text-slate-400 ml-1">
+                  Use your assigned Metro employee ID
+                </p>
               </div>
 
-              {/* Password */}
+              {/* Password Section */}
               <div className="space-y-2">
                 <label
                   htmlFor="password"
-                  className="text-sm font-medium text-gray-700"
+                  className="block text-sm font-semibold text-slate-300"
                 >
-                  Password
+                  Secure Password
                 </label>
-                <div className="relative">
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <Lock className="h-5 w-5 text-slate-400 group-focus-within:text-sky-400 transition-colors duration-300" />
+                  </div>
                   <input
                     id="password"
                     type={showPassword ? "text" : "password"}
-                    placeholder="Enter your password"
+                    placeholder="Enter your secure password"
                     value={formData.password}
                     onChange={(e) =>
                       setFormData({ ...formData, password: e.target.value })
                     }
-                    className="w-full border rounded-lg pl-10 pr-10 p-2 focus:ring-2 focus:ring-[#00A885]"
+                    className="w-full pl-12 pr-12 py-4 rounded-xl border border-slate-600/50 text-slate-50 placeholder:text-slate-400 transition-all duration-300 hover:border-sky-400/50 focus:border-sky-400 focus:ring-2 focus:ring-sky-400/20 outline-none backdrop-blur-sm"
+                    style={{ backgroundColor: "rgba(30, 41, 59, 0.6)" }}
                     required
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
+                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-sky-400 transition-colors duration-300"
                   >
                     {showPassword ? (
-                      <EyeOff className="h-4 w-4" />
+                      <EyeOff className="h-5 w-5" />
                     ) : (
-                      <Eye className="h-4 w-4" />
+                      <Eye className="h-5 w-5" />
                     )}
                   </button>
                 </div>
+                <p className="text-xs text-slate-400 ml-1">
+                  Your password is encrypted and secure
+                </p>
               </div>
             </div>
 
-            {/* Remember Me & Forgot Password */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <input
-                  id="rememberMe"
-                  type="checkbox"
-                  checked={formData.rememberMe}
-                  onChange={(e) =>
-                    setFormData({ ...formData, rememberMe: e.target.checked })
-                  }
-                  className="h-4 w-4 border-gray-300 rounded"
-                />
-                <label htmlFor="rememberMe" className="text-sm text-gray-600">
-                  Remember me
+            {/* Session Options */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <label
+                  className="flex items-center space-x-3 cursor-pointer group"
+                  htmlFor="rememberMe"
+                >
+                  <input
+                    id="rememberMe"
+                    type="checkbox"
+                    checked={formData.rememberMe}
+                    onChange={(e) =>
+                      setFormData({ ...formData, rememberMe: e.target.checked })
+                    }
+                    className="h-5 w-5 rounded border-slate-600 text-sky-400 focus:ring-sky-400/20 transition-colors duration-300"
+                    style={{ backgroundColor: "rgba(30, 41, 59, 0.6)" }}
+                  />
+                  <span className="text-sm text-slate-300 group-hover:text-slate-50 transition-colors duration-300">
+                    Remember Session
+                  </span>
                 </label>
+                <Link
+                  href="/forgot-password"
+                  className="text-sm text-sky-400 hover:text-sky-300 transition-colors duration-300 font-medium"
+                >
+                  Recovery Options
+                </Link>
               </div>
-              <Link
-                href="/forgot-password"
-                className="text-sm text-[#00A885] hover:underline"
-              >
-                Forgot password?
-              </Link>
             </div>
 
             {/* Submit Button */}
             <button
               type="submit"
-              className="w-full bg-[#00A885] text-white rounded-lg p-2 font-medium hover:bg-[#009174] transition"
+              className="w-full py-4 text-lg font-semibold text-slate-50 rounded-xl border border-transparent transition-all duration-300 hover:transform hover:-translate-y-1 hover:shadow-2xl focus:outline-none focus:ring-4 focus:ring-sky-400/20 backdrop-blur-sm"
+              style={{
+                background: "linear-gradient(135deg, #38bdf8 0%, #06d6a0 100%)",
+                boxShadow: "0 10px 25px -5px rgba(56, 189, 248, 0.3)",
+              }}
             >
               Access Dashboard
             </button>
           </form>
 
-          {/* Additional Links */}
-          <div className="text-center space-y-2">
-            <p className="text-sm text-gray-500">
-              Need access? Contact your system administrator
-            </p>
-            <Link href="/help" className="text-sm text-[#00A885] hover:underline">
-              Get Help
-            </Link>
+          {/* Footer Links */}
+          <div className="mt-8 space-y-4">
+            {/* Divider */}
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-slate-600/50"></div>
+              </div>
+              <div className="relative flex justify-center text-xs">
+                <span
+                  className="px-3 text-slate-400 backdrop-blur-sm"
+                  style={{ backgroundColor: "rgba(15, 23, 42, 0.8)" }}
+                >
+                  Support & Assistance
+                </span>
+              </div>
+            </div>
+
+            {/* Support Links */}
+            <div className="text-center space-y-3">
+              <p className="text-sm text-slate-400">
+                Need access? Contact your system administrator
+              </p>
+              <div className="flex justify-center space-x-6">
+                <Link
+                  href="/help"
+                  className="text-sm text-sky-400 hover:text-sky-300 transition-colors duration-300 font-medium"
+                >
+                  Get Help
+                </Link>
+                <Link
+                  href="/admin"
+                  className="text-sm text-emerald-400 hover:text-emerald-300 transition-colors duration-300 font-medium"
+                >
+                  Admin Portal
+                </Link>
+              </div>
+            </div>
+
+            {/* Version Info */}
+            <div className="text-center pt-4 border-t border-slate-600/30">
+              <p className="text-xs text-slate-500">
+                MetroMind v2.1.0 • Secure Railway Operations Platform
+              </p>
+            </div>
           </div>
+        </div>
+      </div>
+
+      {/* Additional Security Indicator */}
+      <div className="absolute bottom-6 left-6">
+        <div
+          className="flex items-center space-x-2 px-4 py-2 rounded-lg border border-slate-600/50 backdrop-blur-md"
+          style={{ backgroundColor: "rgba(15, 23, 42, 0.8)" }}
+        >
+          <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
+          <span className="text-xs text-slate-400 font-medium">
+            Secure Connection
+          </span>
         </div>
       </div>
     </section>
