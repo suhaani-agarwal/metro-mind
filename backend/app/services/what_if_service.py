@@ -484,68 +484,59 @@ Please format your response as JSON with the following structure:
         scheduled_rationale: Dict[str, Any],
         standby_rationale: Dict[str, Any]
     ) -> Dict[str, Any]:
-        """Generate recommendation using original scheduling rationale"""
-        
-        score_diff = scheduled_score - standby_score
-        ai_recommendation = ai_analysis.get("recommendation", "MANUAL_REVIEW_REQUIRED")
-        
-        # Use the actual reasons from optimization
-        reasoning = []
-        final_recommendation = "REVIEW_REQUIRED"
+        """Generate recommendation using ONLY readiness differences (no Gemini influence)."""
 
-        # Helper flags
-        shunting_issue = "shunting" in standby_rationale.get("shunting_factor", "").lower() or "poor_parking" in standby_rationale.get("primary_reason", "").lower()
-        standby_better_readiness = standby_score > scheduled_score
-        big_readiness_gain = standby_score >= scheduled_score + 5
-        
-        # If standby was rejected for shunting reasons
-        if "shunting" in standby_rationale.get("shunting_factor", "").lower():
-            final_recommendation = "REJECT"
-            reasoning.append("Original optimization rejected due to shunting complexity - swapping would reintroduce avoided penalty")
-        
-        # If standby was rejected for low readiness
-        elif "low_readiness" in standby_rationale.get("primary_reason", ""):
-            final_recommendation = "REJECT"
-            reasoning.append("Original optimization rejected due to insufficient readiness - concerns remain valid")
-        
-        # If scheduled train has optimal position advantage
-        elif "optimal_position" in scheduled_rationale.get("primary_reason", ""):
-            if score_diff < 10:  # Small readiness difference
-                final_recommendation = "REJECT"
-                reasoning.append("Scheduled train has optimal position advantage, readiness trade-off is minimal")
-            else:
-                final_recommendation = "REVIEW_REQUIRED" 
-                reasoning.append("Position advantage vs readiness improvement requires manual assessment")
-        
-        # If scheduled train was selected for high readiness + priority slot
-        elif "high_readiness_priority_slot" in scheduled_rationale.get("primary_reason", ""):
-            final_recommendation = "REJECT"
-            reasoning.append("Would lose high-readiness train from priority slot - goes against optimization goals")
-        
-        # Branding-driven selection: if standby has notably higher readiness and no shunting issue, approve
-        elif big_readiness_gain and not shunting_issue:
-            final_recommendation = "APPROVE"
-            reasoning.append("Standby readiness significantly higher with acceptable shunting - approve despite branding considerations")
-        
-        # If it's just a close call (<=7 points) and positioning is acceptable, lean to APPROVE/REVIEW
-        elif abs(score_diff) <= 7:
-            if not shunting_issue:
-                final_recommendation = "APPROVE" if ai_recommendation in ("APPROVE", "REVIEW_REQUIRED") else "REVIEW_REQUIRED"
-                reasoning.append("Small readiness difference and acceptable positioning - swap can be approved")
-            else:
-                final_recommendation = "REVIEW_REQUIRED"
-                reasoning.append("Small readiness difference but positioning/shunting needs review")
-        
+        # Positive means standby is better than scheduled
+        readiness_delta = standby_score - scheduled_score
+
+        # Thresholds (percentage points). Tunable if needed.
+        CLOSE_DIFF_THRESHOLD = 3      # within +-3% is considered close
+        REJECT_DIFF_THRESHOLD = 8     # if standby worse by >=8% -> reject
+
+        # Determine decision strictly by readiness scores
+        if readiness_delta > 0:
+            decision = "ACCEPTED"
+            reasoning = [
+                f"Standby train has higher readiness (+{readiness_delta} pp) than scheduled train",
+                "Rule: Any positive readiness improvement should be accepted"
+            ]
+        elif readiness_delta >= -CLOSE_DIFF_THRESHOLD:
+            decision = "REVIEW_REQUIRED"
+            reasoning = [
+                f"Standby train is slightly lower in readiness ({readiness_delta} pp)",
+                f"Rule: Within {CLOSE_DIFF_THRESHOLD}% difference requires manual review"
+            ]
+        elif readiness_delta <= -REJECT_DIFF_THRESHOLD:
+            decision = "REJECTED"
+            reasoning = [
+                f"Standby train is significantly worse in readiness ({readiness_delta} pp)",
+                f"Rule: Worse by {REJECT_DIFF_THRESHOLD}% or more should be rejected"
+            ]
         else:
-            final_recommendation = ai_recommendation
-            reasoning.append("Decision based on AI analysis of technical factors and original rationale")
-        
+            decision = "FEASIBLE"
+            reasoning = [
+                f"Standby train has moderately lower readiness ({readiness_delta} pp)",
+                "Rule: Moderate reduction is feasible if operations allow"
+            ]
+
+        # Confidence purely from magnitude of delta
+        abs_delta = abs(readiness_delta)
+        if abs_delta >= REJECT_DIFF_THRESHOLD or readiness_delta >= 5:
+            confidence = "HIGH"
+        elif abs_delta >= CLOSE_DIFF_THRESHOLD:
+            confidence = "MEDIUM"
+        else:
+            confidence = "LOW"
+
+        # score_difference follows existing convention (scheduled - standby)
+        score_difference = scheduled_score - standby_score
+
         return {
-            "decision": final_recommendation,
+            "decision": decision,
             "reasoning": reasoning,
-            "confidence": ai_analysis.get("confidence_level", "MEDIUM"),
-            "score_difference": score_diff,
-            "ai_recommendation": ai_recommendation,
+            "confidence": confidence,
+            "score_difference": score_difference,
+            "ai_recommendation": ai_analysis.get("recommendation", "IGNORED"),
             "original_selection_reason": scheduled_rationale.get("primary_reason", "Unknown"),
             "original_rejection_reason": standby_rationale.get("primary_reason", "Unknown"),
             "optimization_rationale_considered": True
