@@ -369,9 +369,10 @@ const Layer2Dashboard: React.FC = () => {
 
   const getRecommendationColor = (decision: string): string => {
     switch (decision) {
-      case 'APPROVE': return 'bg-emerald-900/50 text-emerald-300 border-emerald-700';
-      case 'REJECT': return 'bg-red-900/50 text-red-300 border-red-700';
+      case 'ACCEPTED': return 'bg-emerald-900/50 text-emerald-300 border-emerald-700';
+      case 'REJECTED': return 'bg-red-900/50 text-red-300 border-red-700';
       case 'REVIEW_REQUIRED': return 'bg-yellow-900/50 text-yellow-300 border-yellow-700';
+      case 'FEASIBLE': return 'bg-indigo-900/50 text-indigo-300 border-indigo-700';
       default: return 'bg-gray-900/50 text-gray-300 border-gray-700';
     }
   };
@@ -1145,8 +1146,9 @@ const Layer2Dashboard: React.FC = () => {
                           {/* )} */}
                         </div>
                         <div className="text-2xl">
-                          {swapAnalysis.recommendation.decision === 'APPROVE' ? '✅' : 
-                           swapAnalysis.recommendation.decision === 'REJECT' ? '❌' : '⚠️'}
+                          {swapAnalysis.recommendation.decision === 'ACCEPTED' ? '✅' :
+                           swapAnalysis.recommendation.decision === 'REJECTED' ? '❌' :
+                           swapAnalysis.recommendation.decision === 'REVIEW_REQUIRED' ? '⚠️' : 'ℹ️'}
                         </div>
                       </div>
                       <div className="mt-3">
