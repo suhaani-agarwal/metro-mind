@@ -181,7 +181,6 @@ export default function TrainParkingPage() {
   /** Assign parking */
   const handleAssignParking = async () => {
     if (!selectedTrain || !selectedTrack || !selectedPosition) {
-      alert("Please select a train, track, and position");
       return;
     }
 
@@ -189,15 +188,7 @@ export default function TrainParkingPage() {
     if (
       isPositionOccupied(selectedTrack, selectedPosition, trackType) &&
       !isEditing
-    ) {
-      alert(
-        `Position ${getBayFromTrack(
-          selectedTrack,
-          trackType
-        )} is already occupied!`
-      );
-      return;
-    }
+    )
 
     try {
       const bay = getBayFromTrack(selectedTrack, status);
@@ -217,17 +208,10 @@ export default function TrainParkingPage() {
           `http://localhost:5005/api/nightly/parking/assignment/${editingTrain}`,
           payload
         );
-        alert(`Parking assignment updated for Train ${selectedTrain} ✅`);
       } else {
         await axios.post(
           "http://localhost:5005/api/nightly/parking/assignment",
           payload
-        );
-        alert(
-          `Train ${selectedTrain} assigned to ${getPositionDisplayName(
-            bay,
-            selectedPosition
-          )} ✅`
         );
       }
 
@@ -235,65 +219,9 @@ export default function TrainParkingPage() {
       fetchParkingData();
     } catch (error) {
       console.error("Error assigning parking:", error);
-      alert("Failed to assign parking");
     }
   };
 
-  /** Edit assignment */
-  const handleEdit = (trainParking: TrainParking) => {
-    let track = "";
-
-    if (trainParking.bay.startsWith("PT")) {
-      track = trainParking.bay.replace("PT", "");
-    } else if (trainParking.bay.startsWith("IBL")) {
-      track = trainParking.bay.replace("IBL", "");
-    }
-
-    setSelectedTrain(trainParking.train_id); // This is already in TM format
-    setSelectedTrack(track);
-    setSelectedPosition(trainParking.position);
-    setStatus(trainParking.status);
-    setNotes(trainParking.notes);
-    setIsEditing(true);
-    setEditingTrain(trainParking.train_id); // This is already in TM format
-  };
-
-  const handleRemove = async (trainId: string) => {
-    if (confirm(`Remove parking assignment for Train ${trainId}?`)) {
-      try {
-        await axios.delete(
-          `http://localhost:5005/api/nightly/parking/assignment/${trainId}`
-        );
-        alert(`Parking assignment removed for Train ${trainId} ✅`);
-        fetchParkingData();
-      } catch (error) {
-        console.error("Error removing parking assignment:", error);
-        alert("Failed to remove parking assignment");
-      }
-    }
-  };
-
-  const handleMarkDeparted = async (trainId: string) => {
-    try {
-      const assignment = parkingData.find(
-        (a) => a.train_id === trainId && !a.departure_time
-      );
-      if (assignment) {
-        await axios.put(
-          `http://localhost:5005/api/nightly/parking/assignment/${trainId}`,
-          {
-            ...assignment,
-            departure_time: new Date().toISOString(),
-          }
-        );
-        alert(`Train ${trainId} marked as departed ✅`);
-        fetchParkingData();
-      }
-    } catch (error) {
-      console.error("Error marking train as departed:", error);
-      alert("Failed to update train status");
-    }
-  };
 
   const resetForm = () => {
     setSelectedTrain("");

@@ -24,17 +24,6 @@ interface FilesState {
   stabling: File | null;
 }
 
-const fieldLabels: { [key: string]: string } = {
-  name: "Depot Name",
-  location: "Depot Location",
-  maintenance_bays: "Number of Maintenance Bays",
-  stabling_tracks: "Number of Stabling Tracks",
-  inspection_lines: "Number of Inspection Lines",
-  washing_lines: "Number of Washing Lines",
-  max_capacity_trains: "Maximum Train Capacity",
-  operational_hours: "Operational Hours",
-};
-
 const fileLabels: { [key: string]: { label: string; description: string } } = {
   fitness: {
     label: "Fitness Certificates",
@@ -104,15 +93,12 @@ export default function OnboardingPage() {
     Object.values(depot).every((value) => value.trim() !== "");
 
   const submitDepot = async () => {
-    if (!isDepotValid()) return alert("Please fill in all depot fields.");
-
     setLoading(true);
     try {
       await axios.post("http://localhost:5005/api/onboarding/depot", depot);
       setStep(2);
     } catch (error) {
       console.error(error);
-      alert("Failed to save depot metadata. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -123,10 +109,6 @@ export default function OnboardingPage() {
     Object.entries(files).forEach(([key, file]) => {
       if (file) formData.append(key, file);
     });
-
-    if (Object.values(files).every((file) => file === null)) {
-      return alert("Please upload at least one file.");
-    }
 
     setLoading(true);
     try {
@@ -140,7 +122,6 @@ export default function OnboardingPage() {
       return true; // Success
     } catch (error) {
       console.error(error);
-      alert("File upload failed. Please try again.");
       return false; // Failure
     } finally {
       setLoading(false);

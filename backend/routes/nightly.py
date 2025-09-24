@@ -384,3 +384,18 @@ def validate_bay_position(bay: str, position: int) -> bool:
         
     except (ValueError, IndexError):
         return False
+
+@router.get("/unified-data")
+async def get_unified_data():
+    try:
+        # Use absolute path or verify the current working directory
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        UNIFIED_JSON_PATH = os.path.join(current_dir, "..", "storage", "unified.json")
+        
+        with open(UNIFIED_JSON_PATH, 'r') as file:
+            data = json.load(file)
+        return data
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="Data file not found")
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=500, detail="Invalid JSON format")

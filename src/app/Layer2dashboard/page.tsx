@@ -226,11 +226,6 @@ const Layer2Dashboard: React.FC = () => {
   };
 
   const analyzeSwap = async () => {
-    if (!selectedScheduledTrain || !selectedStandbyTrain) {
-      alert('Please select both a scheduled train and a standby train');
-      return;
-    }
-
     try {
       setLoadingWhatIf(true);
       const response = await fetch('http://localhost:5005/whatif/analyze', {
@@ -292,7 +287,6 @@ const Layer2Dashboard: React.FC = () => {
 
   const submitOverride = async () => {
     if (!selectedScheduledTrain || !selectedStandbyTrain || !overrideReason) {
-      alert('Select both trains and enter a reason');
       return;
     }
     try {
@@ -318,7 +312,6 @@ const Layer2Dashboard: React.FC = () => {
       });
       const out = await res.json();
       if (!res.ok) throw new Error(out.detail || 'Failed to save override');
-      alert('Override saved');
       setOverrideReason('');
       fetchSuggestedOverrides();
     } catch (err) {
@@ -332,7 +325,6 @@ const Layer2Dashboard: React.FC = () => {
   const fetchValidationData = async () => {
     try {
       await fetchSuggestedOverrides();
-      alert('Override suggestions generated using AI. Scroll to Suggested Overrides section.');
     } catch (err) {
       console.error('Error generating suggestions:', err);
     }
@@ -472,7 +464,6 @@ const Layer2Dashboard: React.FC = () => {
 
   const assignments = data.optimized_assignments || [];
   const sortedAssignments = [...assignments].sort((a, b) => (a.departure_order || 0) - (b.departure_order || 0));
-  const currentValidation = data.input_validation || data.test_data_validation;
   const holidayStatus = getHolidayStatus();
 
   return (

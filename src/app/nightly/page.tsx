@@ -84,7 +84,6 @@ export default function NightlyPage() {
   };
 
   const handleSubmit = async () => {
-    if (!selectedTrain) return alert("Select a train first!");
     try {
       // 1) Save depot deep cleaning labour (independent of train)
       await axios.post(
@@ -114,12 +113,10 @@ export default function NightlyPage() {
         "http://localhost:5005/api/nightly/update/train",
         payload
       );
-      alert(`Train ${selectedTrain} updated successfully ✅`);
       setForm((prev) => ({ ...prev, brandings: [] }));
       setShowAddBranding(false);
     } catch (err) {
       console.error(err);
-      alert("Failed to update train data");
     }
   };
 
