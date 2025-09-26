@@ -700,7 +700,7 @@ def get_optimization_stats():
         
         # Get holiday timetable example
         holiday_timetable = {
-            "first_service": "06:00",
+            "first_service": "07:30",
             "last_service": "22:30",
             "peak_hours": [(8, 20)],
             "peak_headway": 9.75,

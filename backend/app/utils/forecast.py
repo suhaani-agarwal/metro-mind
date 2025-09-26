@@ -250,8 +250,8 @@ def generate_continuous_rotation(
     turnaround_time = 8  # minutes at terminal stations
     depot_to_station_time = 5  # minutes from depot to Aluva station
     
-    # Service hours: 6:00 AM to 10:00 PM
-    service_start = datetime.strptime("06:00", "%H:%M")
+    # Service hours: 7:30 AM to 10:00 PM
+    service_start = datetime.strptime("07:30", "%H:%M")
     service_end = datetime.strptime("22:00", "%H:%M")
     
     for train in scheduled_trains:
@@ -365,7 +365,7 @@ def generate_continuous_rotation(
         "service_date": service_date,
         "weather_conditions": weather_data,
         "total_trains": len(train_schedules),
-        "service_hours": {"start": "06:00", "end": "22:00"},
+        "service_hours": {"start": "07:30", "end": "22:00"},
         "train_schedules": train_schedules,
         "stations": [s["station"] for s in station_timings],
         "station_timings": station_timings,

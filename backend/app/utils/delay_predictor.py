@@ -88,14 +88,14 @@ class DelayPredictor:
         self._init_encoders(stations, list(set(weather_by_station.values())))
 
         results = []
-        service_hours = {"start": "06:00", "end": "22:00"}
+        service_hours = {"start": "07:30", "end": "22:00"}
         service_start_dt = datetime.strptime(service_hours["start"], "%H:%M")
         service_end_dt = datetime.strptime(service_hours["end"], "%H:%M")
 
         for train in scheduled_trains:
             train_id = train.get("train_id")
             departure_slot = train.get("departure_slot", 1)
-            first_departure = datetime.strptime("06:00", "%H:%M") + timedelta(minutes=(departure_slot - 1) * 10)
+            first_departure = datetime.strptime("07:30", "%H:%M") + timedelta(minutes=(departure_slot - 1) * 10)
             # Find train config
             config = next((t for t in train_configs.get("trains", []) if t.get("id") == train_id), {})
             job_cards = config.get("job_cards", [])
@@ -356,7 +356,7 @@ class DelayPredictor:
                 try:
                     sched_dt = datetime.strptime(sched_time, "%H:%M")
                 except:
-                    sched_dt = datetime.strptime("06:00", "%H:%M")
+                    sched_dt = datetime.strptime("07:30", "%H:%M")
                 expected_dt = sched_dt + timedelta(minutes=effective_delay)
                 expected_str = expected_dt.strftime("%H:%M")
 
