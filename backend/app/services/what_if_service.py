@@ -25,14 +25,14 @@ class WhatIfAnalyzer:
     def __init__(self, gemini_api_key: Optional[str] = None):
         if gemini_api_key:
             genai.configure(api_key=gemini_api_key)
-            self.model = genai.GenerativeModel('gemini-1.5-flash')
+            self.model = genai.GenerativeModel('gemini-2.5-pro')
         else:
             # Try to get API key from environment and create model
             api_key = os.getenv("GEMINI_API_KEY")
             if api_key:
                 # API key is already configured globally, just create the model
                 try:
-                    self.model = genai.GenerativeModel('gemini-1.5-flash')
+                    self.model = genai.GenerativeModel('gemini-2.5-pro')
                     print("Gemini model initialized successfully")
                 except Exception as e:
                     print(f"Failed to initialize Gemini model: {e}")
