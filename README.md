@@ -1,20 +1,55 @@
-SIH 2025
+# MetroMind 
+## 🚇 Overview
+MetroMind is an AI-powered intelligent depot management and scheduling system built for Kochi Metro.
+It acts as the central brain for depot operations — autonomously optimizing train scheduling, maintenance planning, and resource allocation through advanced mathematical optimization and machine learning.
+MetroMind transforms conventional human-dependent depot workflows into predictive, adaptive, and self-optimizing operations, ensuring efficiency, safety, and reliability across every daily cycle.
 
-METRO MIND
-(Kochi)
+## ✨ Key Features
+- Virtual Depot Twin – Real-time digital replica of the entire depot built by aggregating sensor data, maintenance logs, and operational inputs.
+- AI-Driven Optimization – Multi-objective scheduling using Google OR-Tools CP-SAT solver for train readiness, maintenance, and parking arrangements.
+- Predictive Intelligence – Machine learning models (LSTM, XGBoost, RandomForest) forecast failures, optimize departure sequences, and adapt to disruptions.
+- Ad-Aware Scheduling – Integrates commercial campaigns into scheduling to maximize advertisement visibility and metro revenue.
+- Interactive Dashboard – Next.js + Tailwind interface for real-time visualization, predictive heatmaps, and natural-language commands.
+- Voice Command Interface – Speech-enabled assistant (OpenAI Whisper + Google TTS) supporting Malayalam and English.
+- Failure Horizon AI – Predicts possible subsystem faults hours in advance, minimizing downtime and improving reliability.
+- Human-in-the-Loop Learning – Learns from supervisor overrides to continuously refine scheduling intelligence.
 
-PROBLEM STATEMENT: 
-Kochi Metro must decide every night which of its 25 four-car trainsets will enter revenue service at dawn, which remain on standby, and which are held back in the Inspection Bay Line (IBL) for maintenance. The decision hinges on six inter-dependent variables: 
+## ⚙️ Core Functional Flow
 
+```text
+Train Sensors & Maintenance Systems  ─▶  Data Ingestion Layer (FastAPI + MQTT)
+                                            │
+                                            ▼
+                                Virtual Depot Twin (Realtime Digital Model)
+                                            │
+                                            ▼
+                        Optimization Engine (CP-SAT Solver + Rule Constraints)
+                                            │
+                                            ▼
+                       Predictive Intelligence (ML Models + AI Reasoning)
+                                            │
+                                            ▼
+                Visualization & Control (Next.js Dashboard + Voice Interface)
+```
+## 🧩 Optimization Objectives
+- Hard Constraints: Safety, certification validity, maintenance job locks.
+- Soft Constraints: Readiness scores, energy minimization, shunting reduction, mileage balance.
+- Commercial Factors: Ad campaign priority, exposure time, event-based dispatching.
+- Operational Factors: Crew shifts, bay availability, weather adaptation.
 
-1. Fitness Certificates – validity windows issued by Rolling-Stock, Signalling and Telecom departments.
-2. Job-Card Status – open vs. closed work orders exported from IBM Maximo.
-3. Branding Priorities – contractual commitments that dictate exterior wrap exposure hours.
-4. Mileage Balancing – kilometre allocation to equalise bogie, brake-pad and HVAC wear. 
-5. Cleaning & Detailing Slots – available manpower and bay occupancy for interior deep-cleaning. 
-6. Stabling Geometry – physical bay positions that minimise nightly shunting and morning turn-out time. 
+## 🧑‍💻 Setup Instructions
 
-At present these data points reside in siloed spreadsheets, manual logbooks, and daily WhatsApp updates. Supervisors reconcile them in a time-compressed window (21:00–23:00 IST) using ad-hoc filters and experience-based heuristics. The process is opaque, non-repeatable, and highly error-prone: ● Missing a single telecom clearance can force an unscheduled rake withdrawal, eroding the 99.5 % punctuality KPI. ● Uneven mileage assignment accelerates component fatigue, inflating maintenance cost. ● Inadequate visibility into branding priorities risks breaching advertiser SLAs, exposing KMRL to revenue penalties. ● Excessive night-time shunting to rearrange rakes increases energy consumption and track-occupancy safety risk. With fleet size slated to grow to 40 trainsets and two depots by 2027, the existing manual workflow cannot scale linearly—neither in staffing nor in cognitive load. Therefore, KMRL requires an integrated, algorithm-driven decision-support platform that can: ● Ingest heterogeneous inputs (Maximo exports, IoT fitness sensors, UNS streams, manual overrides) in near-real-time. ● Enforce rule-based constraints and multi-objective optimisation (service readiness, reliability, cost, branding exposure). ● Generate a ranked induction list with explainable reasoning, conflict alerts, and “what-if” simulation. ● Learn from historical outcomes via machine-learning feedback loops to improve forecast accuracy over time. Such a system will transform induction planning from a manual reconciliation exercise into a reproducible, auditable, data-driven process—delivering higher fleet availability, lower lifecycle cost, and an enhanced passenger experience while freeing operations staff to focus on strategic exceptions rather than routine data wrangling.
+```bash
+# 1. Clone Repository
+git clone https://github.com/yourusername/metromind.git
+cd metromind
 
+# 2. Backend Setup
 cd backend
-uvicorn app.main:app --host 0.0.0.0 --port 5005 --reload
+pip install -r requirements.txt
+uvicorn app.main:app --reload
+
+# 3. Frontend Setup
+cd frontend
+npm install
+npm run dev
