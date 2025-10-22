@@ -4,7 +4,7 @@ MetroMind is an AI-powered intelligent depot management and scheduling system bu
 It acts as the central brain for depot operations — autonomously optimizing train scheduling, maintenance planning, and resource allocation through advanced mathematical optimization and machine learning.
 MetroMind transforms conventional human-dependent depot workflows into predictive, adaptive, and self-optimizing operations, ensuring efficiency, safety, and reliability across every daily cycle.
 
-## ✨ Key Features
+<!-- ## ✨ Key Features
 - Virtual Depot Twin – Real-time digital replica of the entire depot built by aggregating sensor data, maintenance logs, and operational inputs.
 - AI-Driven Optimization – Multi-objective scheduling using Google OR-Tools CP-SAT solver for train readiness, maintenance, and parking arrangements.
 - Predictive Intelligence – Machine learning models (LSTM, XGBoost, RandomForest) forecast failures, optimize departure sequences, and adapt to disruptions.
@@ -35,7 +35,7 @@ Train Sensors & Maintenance Systems  ─▶  Data Ingestion Layer (FastAPI + MQT
 - Hard Constraints: Safety, certification validity, maintenance job locks.
 - Soft Constraints: Readiness scores, energy minimization, shunting reduction, mileage balance.
 - Commercial Factors: Ad campaign priority, exposure time, event-based dispatching.
-- Operational Factors: Crew shifts, bay availability, weather adaptation.
+- Operational Factors: Crew shifts, bay availability, weather adaptation. -->
 
 ## 🧑‍💻 Setup Instructions
 
