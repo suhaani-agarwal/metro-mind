@@ -27,6 +27,14 @@ class ScheduleOptimizer:
         self.standby_vars = {}  # train_id -> BoolVar (1 if on standby)
         self.ibl_vars = {}      # train_id -> BoolVar (1 if in IBL)
         
+        # Handle new IBL bays format (array of objects)
+        self.ibl_bays = []
+        for bay in self.depot_layout["ibl_bays"]:
+            if isinstance(bay, dict):
+                self.ibl_bays.append(bay["id"])
+            else:
+                self.ibl_bays.append(bay)
+        
         # Depot graph for pathfinding
         self.depot_graph = DepotGraph(self.depot_layout["connections"])
         
@@ -362,25 +370,49 @@ class ScheduleOptimizer:
         
         return cleaning_assignments
     
+    def get_current_position(self, train: Dict[str, Any]) -> str:
+        """Get current position handling null values"""
+        current_pos = train.get("current_position")
+        if current_pos is None:
+            # Assign default position based on status
+            if train["status"] == "maintenance":
+                # Find which IBL bay this train is in
+                for bay in self.depot_layout["ibl_bays"]:
+                    bay_id = bay["id"] if isinstance(bay, dict) else bay
+                    current_trains = bay.get("current_trains", []) if isinstance(bay, dict) else []
+                    if train["id"] in current_trains:
+                        return f"{bay_id}-1"
+                return "IBL01-1"  # Default IBL position
+            elif train["status"] == "parking":
+                # Find which parking track this train is in
+                for track in self.depot_layout["parking_tracks"]:
+                    if train["id"] in track.get("current_trains", []):
+                        position = track["current_trains"].index(train["id"]) + 1
+                        return f"{track['id']}-{position}"
+                return "PT01-1"  # Default parking position
+            else:
+                return "Unknown"
+        return current_pos
+    
     def optimize_parking(self, service_trains: List[str], standby_trains: List[str], ibl_trains: List[str]) -> Tuple[List[ParkingAssignment], int]:
         """Optimize parking assignments to minimize shunting"""
         assignments = []
         total_moves = 0
         
-        # Get current positions of all trains
+        # Get current positions of all trains, handling null values
         current_positions = {}
         for train in self.trains:
-            current_positions[train["id"]] = train["current_position"]
+            current_positions[train["id"]] = self.get_current_position(train)
         
         # Assign IBL trains to IBL bays
-        ibl_bays = self.depot_layout["ibl_bays"]
         for i, train_id in enumerate(ibl_trains):
-            if i < len(ibl_bays):
-                target_bay = ibl_bays[i]
+            if i < len(self.ibl_bays):
+                target_bay = self.ibl_bays[i]
                 current_position = current_positions.get(train_id, "Unknown")
                 
                 # Calculate moves required
-                moves, path = self.depot_graph.shortest_path(current_position.split("-")[0], target_bay)
+                current_bay = current_position.split("-")[0] if "-" in current_position else current_position
+                moves, path = self.depot_graph.shortest_path(current_bay, target_bay)
                 moves_required = moves if moves != float('inf') else 0
                 total_moves += moves_required
                 
@@ -436,7 +468,8 @@ class ScheduleOptimizer:
                     current_position = current_positions.get(train_id, "Unknown")
                     
                     # Calculate moves required
-                    moves, path = self.depot_graph.shortest_path(current_position.split("-")[0], track_id)
+                    current_bay = current_position.split("-")[0] if "-" in current_position else current_position
+                    moves, path = self.depot_graph.shortest_path(current_bay, track_id)
                     moves_required = moves if moves != float('inf') else 0
                     total_moves += moves_required
                     
@@ -499,7 +532,6 @@ class ScheduleOptimizer:
                     "train_id": train_id,
                     "score": self.readiness_scores[train_id],
                     "breakdown": self.get_score_breakdown(train),
-                    # Return the details as a dict (component -> text) so Pydantic schema validation passes
                     "details": self.readiness_details[train_id]
                 })
             
@@ -619,7 +651,6 @@ class ScheduleOptimizer:
                 "train_id": train_id,
                 "score": self.readiness_scores[train_id],
                 "breakdown": self.get_score_breakdown(train),
-                # Return details dict rather than the combined string
                 "details": self.readiness_details[train_id]
             })
         
@@ -816,13 +847,13 @@ class ScheduleOptimizer:
         current_positions = {}
         
         for train in self.trains:
-            current_positions[train["id"]] = train["current_position"]
+            current_positions[train["id"]] = self.get_current_position(train)
         
         for train_id in train_ids:
             train = next(t for t in self.trains if t["id"] == train_id)
             current_position = current_positions.get(train_id, "Unknown")
             
-            # Simplified move calculation - in real implementation, use depot graph
+            # Simplified move calculation
             if "IBL" in current_position and train_id not in self.input_data.get("trains_to_ibl", []):
                 total_moves += 2  # Move out of IBL and to parking
             elif "IBL" not in current_position and train_id in self.input_data.get("trains_to_ibl", []):
