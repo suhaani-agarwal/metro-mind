@@ -1,6 +1,9 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import {useRouter} from 'next/navigation';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 interface TrainAssignment {
   train_id: string;
@@ -467,6 +470,188 @@ const Layer2Dashboard: React.FC = () => {
   const sortedAssignments = [...assignments].sort((a, b) => (a.departure_order || 0) - (b.departure_order || 0));
   const holidayStatus = getHolidayStatus();
 
+    const generatePDF = () => {
+  const doc = new jsPDF();
+  
+  // Title
+  doc.setFontSize(20);
+  doc.setTextColor(40, 40, 40);
+  doc.text('Kochi Metro - Optimized Schedule', 105, 15, { align: 'center' });
+  
+  // Date and Info
+  doc.setFontSize(12);
+  doc.setTextColor(100, 100, 100);
+  doc.text(`Service Date: ${selectedDate}`, 14, 25);
+  doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 32);
+  
+  // Timetable Info
+  if (data?.timetable_info) {
+    doc.text(`First Service: ${data.timetable_info.first_service} | Last Service: ${data.timetable_info.last_service}`, 14, 39);
+    doc.text(`Peak Headway: ${formatHeadway(data.timetable_info.peak_headway)} | Off-Peak: ${formatHeadway(data.timetable_info.off_peak_headway)}`, 14, 46);
+  }
+  
+  // Summary Stats
+  const summaryY = 55;
+  doc.setFontSize(10);
+  doc.setTextColor(40, 40, 40);
+  doc.text(`Trains Scheduled: ${data?.total_trains_scheduled || 0}`, 14, summaryY);
+  doc.text(`Standby Trains: ${data?.total_standby_trains || 0}`, 60, summaryY);
+  doc.text(`Shunting Operations: ${data?.shunting_operations_required || 0}`, 110, summaryY);
+  doc.text(`Solver Status: ${data?.solver_status || 'N/A'}`, 160, summaryY);
+  
+  // Schedule Table
+  const tableColumn = ["Slot", "Rank", "Train ID", "Bay", "Position", "Departure", "Readiness", "Status"];
+  const tableRows: any[] = [];
+  
+  sortedAssignments.forEach((train) => {
+    const trainData = [
+      train.departure_slot,
+      train.departure_order,
+      train.train_id,
+      train.bay,
+      train.bay_position || '-',
+      train.departure_time || '-',
+      `${train.readiness}%`,
+      train.needs_shunting ? 'Shunting Required' : (train.is_priority_slot ? 'Priority' : 'Regular')
+    ];
+    tableRows.push(trainData);
+  });
+  
+    autoTable(doc, {
+    head: [tableColumn],
+    body: tableRows,
+    startY: 65,
+    theme: 'grid',
+    headStyles: {
+      fillColor: [59, 130, 246],
+      textColor: 255,
+      fontStyle: 'bold'
+    },
+    alternateRowStyles: {
+      fillColor: [240, 240, 240]
+    },
+    styles: {
+      fontSize: 8,
+      cellPadding: 2
+    },
+    columnStyles: {
+      0: { cellWidth: 15 },
+      1: { cellWidth: 15 },
+      2: { cellWidth: 25 },
+      3: { cellWidth: 20 },
+      4: { cellWidth: 20 },
+      5: { cellWidth: 25 },
+      6: { cellWidth: 20 },
+      7: { cellWidth: 30 }
+    }
+  });
+  // Standby Trains Section
+  const finalY = (doc as any).lastAutoTable.finalY + 10;
+  if (finalY < 250 && data?.standby_trains && data.standby_trains.length > 0) {
+    doc.setFontSize(14);
+    doc.setTextColor(40, 40, 40);
+    doc.text('Standby Trains', 14, finalY);
+    
+    const standbyColumns = ["Train ID", "Bay", "Position", "Readiness", "Status"];
+    const standbyRows: any[] = [];
+    
+    data.standby_trains.forEach((train) => {
+      const standbyData = [
+        train.train_id,
+        train.bay,
+        train.bay_position,
+        `${train.readiness}%`,
+        train.status
+      ];
+      standbyRows.push(standbyData);
+    });
+    
+    autoTable(doc, {
+      head: [standbyColumns],
+      body: standbyRows,
+      startY: finalY + 15,
+      theme: 'grid',
+      headStyles: {
+        fillColor: [139, 92, 246],
+        textColor: 255,
+        fontStyle: 'bold'
+      },
+      styles: {
+        fontSize: 8,
+        cellPadding: 2
+      }
+    });
+  }
+  
+  // Footer
+  const pageCount = doc.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFontSize(8);
+    doc.setTextColor(150, 150, 150);
+    doc.text(`Page ${i} of ${pageCount}`, 105, 290, { align: 'center' });
+    doc.text('Kochi Metro Rail - Automated Scheduling System', 105, 295, { align: 'center' });
+  }
+  
+  return doc;
+};
+
+const downloadPDF = () => {
+  const doc = generatePDF();
+  doc.save(`kochi-metro-schedule-${selectedDate}.pdf`);
+};
+
+const shareViaWhatsApp = () => {
+  const doc = generatePDF();
+  const pdfBlob = doc.output('blob');
+  const pdfUrl = URL.createObjectURL(pdfBlob);
+  
+  // Create shareable message
+  const message = `Kochi Metro Schedule for ${selectedDate}\n\n` +
+    `• ${data?.total_trains_scheduled || 0} trains scheduled\n` +
+    `• ${data?.total_standby_trains || 0} standby trains available\n` +
+    `• ${data?.shunting_operations_required || 0} shunting operations required\n` +
+    `• Solver status: ${data?.solver_status || 'N/A'}\n\n` +
+    `Schedule attached as PDF.`;
+  
+  // Create downloadable link
+  const link = document.createElement('a');
+  link.href = pdfUrl;
+  link.download = `kochi-metro-schedule-${selectedDate}.pdf`;
+  
+  // For WhatsApp sharing, we can't directly attach the PDF, but we can provide the download link
+  // In a real app, you'd upload the PDF to a server and share that URL
+  const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+  window.open(whatsappUrl, '_blank');
+  
+  // Also trigger download
+  link.click();
+  URL.revokeObjectURL(pdfUrl);
+};
+
+const shareSchedule = () => {
+  if (navigator.share) {
+    // Use Web Share API if available
+    const doc = generatePDF();
+    const pdfBlob = doc.output('blob');
+    const pdfFile = new File([pdfBlob], `kochi-metro-schedule-${selectedDate}.pdf`, { 
+      type: 'application/pdf' 
+    });
+    
+    navigator.share({
+      title: `Kochi Metro Schedule - ${selectedDate}`,
+      text: `Kochi Metro optimized schedule for ${selectedDate}. ${data?.total_trains_scheduled || 0} trains scheduled.`,
+      files: [pdfFile]
+    }).catch((error) => {
+      console.log('Web Share failed, falling back to WhatsApp:', error);
+      shareViaWhatsApp();
+    });
+  } else {
+    // Fallback to WhatsApp
+    shareViaWhatsApp();
+  }
+};
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-slate-800 p-4">
       <div className="max-w-7xl mx-auto">
@@ -730,6 +915,15 @@ const Layer2Dashboard: React.FC = () => {
                 View Override Suggestions (AI)
               </button>
               <button
+      onClick={downloadPDF}
+      className="px-4 py-2 text-sm bg-blue-700 hover:bg-blue-600 text-white rounded-md transition-colors font-medium flex items-center gap-2"
+    >
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      </svg>
+      PDF
+    </button>
+              <button
                 onClick={openWhatIfPanel}
                 className="px-4 py-2 text-sm bg-purple-700 hover:bg-purple-600 text-white rounded-md transition-colors font-medium"
               >
@@ -890,6 +1084,15 @@ const Layer2Dashboard: React.FC = () => {
           >
             See Estimated delays
           </button>
+            <button
+            onClick={downloadPDF}
+            className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-3 px-8 rounded-lg shadow-lg hover:shadow-xl transition-all transform hover:scale-105 flex items-center justify-center gap-2"
+            >
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+    </svg>
+    Download PDF
+  </button>
           
           <button
             onClick={openWhatIfPanel}
@@ -897,7 +1100,16 @@ const Layer2Dashboard: React.FC = () => {
           >
             What-If Analysis
           </button>
-          
+          <button
+    onClick={shareSchedule}
+    className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold py-3 px-8 rounded-lg shadow-lg hover:shadow-xl transition-all transform hover:scale-105 flex items-center justify-center gap-2"
+  >
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+    </svg>
+    Share Schedule
+  </button>
+
           
           <button
             onClick={fetchTimetableData}
