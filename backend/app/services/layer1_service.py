@@ -322,8 +322,15 @@ class ScheduleOptimizer:
         self.model.Maximize(sum(readiness_scores))
     
     def optimize_cleaning_schedule(self, trains_to_clean: List[str]) -> List[CleaningAssignment]:
-        """Optimize the cleaning schedule for trains that need cleaning"""
+        """Optimize the cleaning schedule for trains that need cleaning
+        
+        Multiple crews can work simultaneously based on cleaning_crew_available.
+        Each crew handles one train at a time, reducing total schedule time.
+        """
         cleaning_assignments = []
+        
+        if not trains_to_clean:
+            return cleaning_assignments
         
         # Sort trains by priority (readiness score descending)
         trains_with_scores = []
@@ -333,40 +340,46 @@ class ScheduleOptimizer:
         
         trains_with_scores.sort(key=lambda x: x[1], reverse=True)
         
-        # Assign to available cleaning slots
-        available_slots = [slot for slot in self.cleaning_slots if slot["available"]]
-        current_time = datetime.strptime("20:00:00", "%H:%M:%S")  # Start at 8 PM
+        # Track cleaning end time for each crew
+        num_crews = self.cleaning_crew_available
+        crew_end_times = [datetime.strptime("20:00:00", "%H:%M:%S") for _ in range(num_crews)]  # All start at 8 PM
+        crew_assignments = [[] for _ in range(num_crews)]
         
-        for i, (train_id, score) in enumerate(trains_with_scores):
-            if i < len(available_slots) * self.cleaning_crew_available:
-                slot_idx = i % len(available_slots)
-                slot = available_slots[slot_idx]
-                train = next(t for t in self.trains if t["id"] == train_id)
-                duration = train["cleaning_duration"]
-                
-                end_time = current_time + timedelta(hours=duration)
-                
-                # Determine reason for cleaning
-                last_cleaning = datetime.strptime(train["last_deep_cleaning"], "%Y-%m-%d")
-                days_since_cleaning = (datetime.now() - last_cleaning).days
-                
-                if days_since_cleaning >= 7:
-                    reason = "Overdue for cleaning"
-                else:
-                    reason = "Scheduled maintenance cleaning"
-                
-                cleaning_assignments.append({
-                    "train_id": train_id,
-                    "start_time": current_time.strftime("%H:%M:%S"),
-                    "end_time": end_time.strftime("%H:%M:%S"),
-                    "crew_assigned": 1,
-                    "priority": int(score),
-                    "reason": reason
-                })
-                
-                # Update time for next cleaning (staggered based on crew availability)
-                if (i + 1) % self.cleaning_crew_available == 0:
-                    current_time = end_time
+        # Assign trains to crews - each crew takes the next available train
+        for train_id, score in trains_with_scores:
+            # Find the crew that will be free soonest
+            min_end_time_idx = crew_end_times.index(min(crew_end_times))
+            
+            train = next(t for t in self.trains if t["id"] == train_id)
+            duration = train["cleaning_duration"]
+            
+            start_time = crew_end_times[min_end_time_idx]
+            end_time = start_time + timedelta(hours=duration)
+            
+            # Determine reason for cleaning
+            last_cleaning = datetime.strptime(train["last_deep_cleaning"], "%Y-%m-%d")
+            days_since_cleaning = (datetime.now() - last_cleaning).days
+            
+            if days_since_cleaning >= 7:
+                reason = "Overdue for cleaning"
+            else:
+                reason = "Scheduled maintenance cleaning"
+            
+            assignment = {
+                "train_id": train_id,
+                "start_time": start_time.strftime("%H:%M:%S"),
+                "end_time": end_time.strftime("%H:%M:%S"),
+                "crew_assigned": min_end_time_idx + 1,  # Crew numbering starts from 1
+                "priority": int(score),
+                "reason": reason
+            }
+            
+            cleaning_assignments.append(assignment)
+            crew_assignments[min_end_time_idx].append(train_id)
+            crew_end_times[min_end_time_idx] = end_time
+        
+        # Sort by start time for display
+        cleaning_assignments.sort(key=lambda x: x["start_time"])
         
         return cleaning_assignments
     
