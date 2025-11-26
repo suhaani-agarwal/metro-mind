@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List, Dict, Any
 
 class DepotMetadata(BaseModel):
     name: str
@@ -16,19 +16,37 @@ class DepotMetadata(BaseModel):
 class DepotDeepCleaningInput(BaseModel):
     manual_labour_available_today: int
 
-class FitnessModel(BaseModel):
-    issued_at: str
-    valid_until: str
+class FitnessCertificateModel(BaseModel):
+    department: str
+    issue_date: str
+    expiry_date: str
     status: str
 
-class BrandingModel(BaseModel):
+class JobCardModel(BaseModel):
+    id: str
+    description: str
+    open_date: str
+    criticality: str
+    estimated_hours: float
+
+# NEW: Schema for frontend branding format (what the frontend actually sends)
+class FrontendBrandingModel(BaseModel):
     advertiser: str
     priority: str
     exposure_hours_needed: int
 
+class BrandingContractModel(BaseModel):
+    brand: str
+    total_exposure_hours: int
+    completed_hours: int
+    deadline: str
+    priority: int
+    audience_profile: str  
+    preferred_times: str
+
 class BrandingAppendModel(BaseModel):
     train_id: str
-    branding: BrandingModel
+    branding: FrontendBrandingModel
 
 class CleaningModel(BaseModel):
     status: str
@@ -42,27 +60,42 @@ class StablingModel(BaseModel):
     position: str | None
     reception: bool
 
+class FitnessCertificateUpdate(BaseModel):
+    issued_at: Optional[str] = None
+    valid_until: Optional[str] = None
+    status: Optional[str] = None
+    renew_rolling_stock: bool = False
+    renew_signalling: bool = False
+    renew_telecom: bool = False
+
+class BrandingUpdate(BaseModel):
+    advertiser: str
+    priority: str
+    exposure_hours_needed: int
+
 class NightlyUpdateModel(BaseModel):
     train_id: str
-    fitness_certificates: FitnessModel | None = None
-    branding: BrandingModel | None = None
-    cleaning: CleaningModel | None = None
-    stabling: StablingModel | None = None
+    fitness_certificates: Optional[FitnessCertificateUpdate] = None
+    branding: Optional[FrontendBrandingModel] = None
+    cleaning: Optional[CleaningModel] = None
+    stabling: Optional[StablingModel] = None
 
 class ParkingAssignmentModel(BaseModel):
     train_id: str
-    bay: str  # PT01, PT02, ..., PT12 or IBL01, IBL02, ..., IBL05
-    position: int  # 1 or 2 for parking tracks, 1-5 for maintenance
-    status: str = "parking"  # parking or maintenance
+    bay: str
+    position: int
+    status: str = "parking"
     arrival_time: Optional[str] = None
     departure_time: Optional[str] = None
     notes: Optional[str] = None
 
-class ParkingAssignmentResponse(BaseModel):
-    train_id: str
-    bay: str
-    position: int
-    status: str
-    arrival_time: str
-    departure_time: Optional[str] = None
-    notes: Optional[str] = None
+class TrackModel(BaseModel):
+    id: str
+    capacity: int
+    current_trains: List[str]
+
+class DepotLayoutModel(BaseModel):
+    parking_tracks: List[TrackModel]
+    ibl_bays: List[str]
+    exit_points: List[str]
+    connections: Dict[str, List[str]]

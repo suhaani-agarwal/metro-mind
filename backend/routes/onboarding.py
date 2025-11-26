@@ -22,7 +22,6 @@ async def upload_historical_files(
     cleaning: UploadFile = File(None),
     stabling: UploadFile = File(None)
 ):
-    # Create a dictionary of all files
     files_dict = {
         "fitness": fitness,
         "jobcards": jobcards,
@@ -32,7 +31,6 @@ async def upload_historical_files(
         "stabling": stabling,
     }
     
-    # Filter out None values (files that weren't uploaded)
     uploaded_files = {k: v for k, v in files_dict.items() if v is not None and v.filename}
     
     if not uploaded_files:
@@ -41,22 +39,20 @@ async def upload_historical_files(
     # 1️⃣ Save files to uploads folder
     saved_paths = save_uploaded_files(uploaded_files)
 
-    # 2️⃣ Parse the files into structured dict per train
+    # 2️⃣ Parse the files using existing file_parser (NO CHANGES)
     parsed_data = parse_uploaded_files(saved_paths)
 
-    # 3️⃣ Build final unified JSON schema immediately
+    # 3️⃣ Build final unified JSON schema using transformed data
     final_data = build_final_unified_schema(parsed_data)
 
-    with open(UNIFIED_JSON_PATH, "w") as f:
-        json.dump({"data": final_data}, f, indent=2)
-
-    # 5️⃣ Save initial snapshot in historical_data.json
+    # 4️⃣ Save snapshot in historical_data.json
     today = datetime.now().strftime("%Y-%m-%d")
     snapshot = {
         "date": today,
         "source": "onboarding",
-        "data": final_data
+        "data": final_data  # This is now in the new format
     }
+    
     try:
         with open(HISTORICAL_JSON_PATH, "r") as f:
             historical = json.load(f)
@@ -67,4 +63,4 @@ async def upload_historical_files(
     with open(HISTORICAL_JSON_PATH, "w") as f:
         json.dump(historical, f, indent=2)
     
-    return {"message": "Unified + Historical JSON initialized ✅", "trains_count": len(final_data)}
+    return {"message": "Unified + Historical JSON initialized ✅", "trains_count": len(final_data.get("trains", []))}

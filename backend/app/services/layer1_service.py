@@ -395,7 +395,7 @@ class ScheduleOptimizer:
         return current_pos
     
     def optimize_parking(self, service_trains: List[str], standby_trains: List[str], ibl_trains: List[str]) -> Tuple[List[ParkingAssignment], int]:
-        """Optimize parking assignments to minimize shunting"""
+        """Optimize parking assignments to minimize shunting - FIXED for IBL capacity"""
         assignments = []
         total_moves = 0
         
@@ -403,6 +403,36 @@ class ScheduleOptimizer:
         current_positions = {}
         for train in self.trains:
             current_positions[train["id"]] = self.get_current_position(train)
+        
+        # CRITICAL FIX: Handle IBL capacity constraint
+        # Only assign the 5 lowest priority trains to IBL, others go to parking
+        ibl_capacity = len(self.ibl_bays)  # Maximum 5 IBL bays
+        
+        if len(ibl_trains) > ibl_capacity:
+            # Sort IBL trains by readiness score (lowest scores first for IBL assignment)
+            ibl_trains_with_scores = []
+            for train_id in ibl_trains:
+                score = self.readiness_scores[train_id]
+                ibl_trains_with_scores.append((train_id, score))
+            
+            # Sort by score ascending (lowest scores = highest priority for IBL)
+            ibl_trains_with_scores.sort(key=lambda x: x[1])
+            
+            # Take only the worst 5 trains for IBL
+            trains_for_actual_ibl = [train_id for train_id, score in ibl_trains_with_scores[:ibl_capacity]]
+            trains_forced_to_parking = [train_id for train_id, score in ibl_trains_with_scores[ibl_capacity:]]
+            
+            logger.warning(f"IBL capacity exceeded! {len(ibl_trains)} trains need IBL but only {ibl_capacity} slots available.")
+            logger.warning(f"Assigning to IBL (lowest readiness): {trains_for_actual_ibl}")
+            logger.warning(f"Forcing to parking (higher readiness): {trains_forced_to_parking}")
+            
+            # Update the IBL trains list to only include those that actually get IBL slots
+            ibl_trains = trains_for_actual_ibl
+            
+            # Add the forced trains to standby (they'll get parking assignments)
+            standby_trains.extend(trains_forced_to_parking)
+        else:
+            trains_forced_to_parking = []
         
         # Assign IBL trains to IBL bays
         for i, train_id in enumerate(ibl_trains):
@@ -424,7 +454,7 @@ class ScheduleOptimizer:
                     "shunting_path": path
                 })
         
-        # Assign service and standby trains to parking tracks
+        # Assign service and standby trains to parking tracks (including forced IBL trains that couldn't fit)
         non_ibl_trains = service_trains + standby_trains
         
         # Sort trains by readiness score (service trains first, then standby)
@@ -460,6 +490,19 @@ class ScheduleOptimizer:
             
             if len(track_assignments[track_id]) < 2:  # Track capacity is 2
                 track_assignments[track_id].append(train_id)
+            else:
+                # Find next available track
+                assigned = False
+                for j in range(len(sorted_tracks)):
+                    next_track_idx = (track_idx + j) % len(sorted_tracks)
+                    next_track_id = sorted_tracks[next_track_idx]
+                    if len(track_assignments[next_track_id]) < 2:
+                        track_assignments[next_track_id].append(train_id)
+                        assigned = True
+                        break
+                
+                if not assigned:
+                    logger.error(f"Could not assign parking for train {train_id} - no available slots!")
         
         # Create parking assignments
         for track_id, train_ids in track_assignments.items():
@@ -481,7 +524,8 @@ class ScheduleOptimizer:
                         "shunting_path": path
                     })
         
-        return assignments, total_moves
+        # Return the updated IBL trains list (only those actually assigned to IBL)
+        return assignments, total_moves, ibl_trains
     
     def optimize(self) -> Dict[str, Any]:
         """Run the complete optimization"""
@@ -540,20 +584,20 @@ class ScheduleOptimizer:
             cleaning_assignments = self.optimize_cleaning_schedule(trains_to_clean)
             
             logger.info("Optimizing parking assignments...")
-            # Optimize parking assignments
-            parking_assignments, total_moves = self.optimize_parking(trains_to_service, trains_to_standby, trains_to_ibl)
+            # Optimize parking assignments - now returns updated IBL trains list
+            parking_assignments, total_moves, updated_ibl_trains = self.optimize_parking(trains_to_service, trains_to_standby, trains_to_ibl)
             
             logger.info("Generating explanation...")
             # Generate explanation
             explanation = self.generate_explanation(
-                trains_to_service, trains_to_standby, trains_to_ibl, readiness_scores
+                trains_to_service, trains_to_standby, updated_ibl_trains, readiness_scores
             )
             
             result = {
                 "readiness_scores": readiness_scores,
                 "cleaning_assignments": cleaning_assignments,
                 "parking_assignments": parking_assignments,
-                "trains_to_ibl": trains_to_ibl,
+                "trains_to_ibl": updated_ibl_trains,  # Use the capacity-limited IBL list
                 "trains_to_service": trains_to_service,
                 "trains_to_standby": trains_to_standby,
                 "explanation": explanation,
@@ -575,7 +619,7 @@ class ScheduleOptimizer:
             return self.fallback_heuristic()
     
     def fallback_heuristic(self) -> Dict[str, Any]:
-        """Fallback heuristic when CP-SAT solver fails"""
+        """Fallback heuristic when CP-SAT solver fails - FIXED for IBL capacity"""
         logger.info("Using fallback heuristic...")
         
         # Sort trains by readiness score
@@ -609,13 +653,37 @@ class ScheduleOptimizer:
             if has_expired_cert or has_critical_job or overdue:
                 must_go_to_ibl.append(train_id)
         
+        # CRITICAL FIX: Handle IBL capacity in fallback
+        ibl_capacity = len(self.ibl_bays)
+        
+        if len(must_go_to_ibl) > ibl_capacity:
+            # Sort must_go_to_ibl by readiness score (lowest first for IBL)
+            ibl_trains_with_scores = []
+            for train_id in must_go_to_ibl:
+                score = self.readiness_scores[train_id]
+                ibl_trains_with_scores.append((train_id, score))
+            
+            ibl_trains_with_scores.sort(key=lambda x: x[1])  # Sort ascending (lowest scores first)
+            
+            # Take only the worst trains for IBL
+            trains_for_actual_ibl = [train_id for train_id, score in ibl_trains_with_scores[:ibl_capacity]]
+            trains_forced_to_parking = [train_id for train_id, score in ibl_trains_with_scores[ibl_capacity:]]
+            
+            logger.warning(f"Fallback: IBL capacity exceeded! {len(must_go_to_ibl)} need IBL but only {ibl_capacity} slots.")
+            logger.warning(f"Fallback: Assigning to IBL: {trains_for_actual_ibl}")
+            logger.warning(f"Fallback: Forcing to parking: {trains_forced_to_parking}")
+            
+            must_go_to_ibl = trains_for_actual_ibl
+        else:
+            trains_forced_to_parking = []
+        
         # Assign trains to service, standby, and IBL
         trains_to_service = []
         trains_to_standby = []
         trains_to_ibl = must_go_to_ibl.copy()
         
         # Assign remaining trains to service and standby based on readiness score
-        available_trains = [t for t in trains_sorted if t["id"] not in must_go_to_ibl]
+        available_trains = [t for t in trains_sorted if t["id"] not in must_go_to_ibl and t["id"] not in trains_forced_to_parking]
         
         for i, train in enumerate(available_trains):
             if i < self.required_trains:
@@ -623,7 +691,11 @@ class ScheduleOptimizer:
             elif i < self.required_trains + self.standby_trains:
                 trains_to_standby.append(train["id"])
             else:
-                trains_to_ibl.append(train["id"])
+                # These go to parking (not IBL since we're at capacity)
+                trains_to_standby.append(train["id"])
+        
+        # Add forced IBL trains to standby (they'll get parking)
+        trains_to_standby.extend(trains_forced_to_parking)
         
         # Check if we need to adjust requirements
         if len(trains_to_service) < self.required_trains:
@@ -657,19 +729,19 @@ class ScheduleOptimizer:
         # Optimize cleaning schedule
         cleaning_assignments = self.optimize_cleaning_schedule(trains_to_clean)
         
-        # Optimize parking assignments
-        parking_assignments, total_moves = self.optimize_parking(trains_to_service, trains_to_standby, trains_to_ibl)
+        # Optimize parking assignments (with updated IBL trains list)
+        parking_assignments, total_moves, updated_ibl_trains = self.optimize_parking(trains_to_service, trains_to_standby, trains_to_ibl)
         
         # Generate explanation
         explanation = self.generate_explanation(
-            trains_to_service, trains_to_standby, trains_to_ibl, readiness_scores
+            trains_to_service, trains_to_standby, updated_ibl_trains, readiness_scores
         )
         
         return {
             "readiness_scores": readiness_scores,
             "cleaning_assignments": cleaning_assignments,
             "parking_assignments": parking_assignments,
-            "trains_to_ibl": trains_to_ibl,
+            "trains_to_ibl": updated_ibl_trains,  # Use the updated list
             "trains_to_service": trains_to_service,
             "trains_to_standby": trains_to_standby,
             "explanation": explanation,

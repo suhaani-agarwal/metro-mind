@@ -257,7 +257,7 @@ def build_final_unified_schema(parsed_data: dict):
             "available_from": current_time
         })
     
-    # Build final unified data
+    # REALISTIC MUTTOM DEPOT LAYOUT - Complex switching network
     final_data = {
         "trains": trains_data,
         "depot_layout": {
@@ -269,27 +269,72 @@ def build_final_unified_schema(parsed_data: dict):
                 {"id": bay_id, "capacity": 1, "current_trains": trains}
                 for bay_id, trains in ibl_bays.items()
             ],
-            "exit_points": ["EXIT01", "EXIT02"],
+            "exit_points": ["MAIN_LINE"],
             "connections": {
-                "PT01": ["PT02", "IBL01", "IBL02", "EXIT01"],
-                "PT02": ["PT01", "PT03", "IBL01", "IBL02", "EXIT01"],
-                "PT03": ["PT02", "PT04", "IBL01", "IBL02", "EXIT01"],
-                "PT04": ["PT03", "PT05", "EXIT01"],
-                "PT05": ["PT04", "PT06", "EXIT01"],
-                "PT06": ["PT05", "PT07", "EXIT01"],
-                "PT07": ["PT06", "PT08", "EXIT02"],
-                "PT08": ["PT07", "PT09", "EXIT02"],
-                "PT09": ["PT08", "PT10", "EXIT02"],
-                "PT10": ["PT09", "PT11", "IBL04", "IBL05", "EXIT02"],
-                "PT11": ["PT10", "PT12", "IBL04", "IBL05", "EXIT02"],
-                "PT12": ["PT11", "IBL04", "IBL05", "EXIT02"],
-                "IBL01": ["IBL02", "PT01", "PT02", "PT03"],
-                "IBL02": ["IBL01", "IBL03", "PT01", "PT02", "PT03"],
-                "IBL03": ["IBL02", "IBL04", "PT10", "PT11", "PT12"],
-                "IBL04": ["IBL03", "IBL05", "PT10", "PT11", "PT12"],
-                "IBL05": ["IBL04", "PT10", "PT11", "PT12"],
-                "EXIT01": ["PT01", "PT02", "PT03", "PT04", "PT05", "PT06"],
-                "EXIT02": ["PT07", "PT08", "PT09", "PT10", "PT11", "PT12"]
+                # IBL Bays (first 5 tracks) - connect to their convergence points
+                "IBL01": ["IBL01_NODE"],
+                "IBL02": ["IBL02_NODE"],
+                "IBL03": ["IBL03_NODE"],
+                "IBL04": ["IBL04_NODE"],
+                "IBL05": ["IBL05_NODE"],
+                
+                # IBL Convergence - every 2 tracks converge
+                "IBL01_NODE": ["IBL01", "IBL02", "IBL_CONVERGE_1"],
+                "IBL02_NODE": ["IBL01", "IBL02", "IBL_CONVERGE_1"],
+                "IBL03_NODE": ["IBL03", "IBL04", "IBL_CONVERGE_2"],
+                "IBL04_NODE": ["IBL03", "IBL04", "IBL_CONVERGE_2"],
+                "IBL05_NODE": ["IBL05", "IBL_CONVERGE_3"],
+                
+                # IBL Main convergence
+                "IBL_CONVERGE_1": ["IBL01_NODE", "IBL02_NODE", "IBL_MAIN_CONVERGE"],
+                "IBL_CONVERGE_2": ["IBL03_NODE", "IBL04_NODE", "IBL_MAIN_CONVERGE"],
+                "IBL_CONVERGE_3": ["IBL05_NODE", "IBL_MAIN_CONVERGE"],
+                "IBL_MAIN_CONVERGE": ["IBL_CONVERGE_1", "IBL_CONVERGE_2", "IBL_CONVERGE_3", "MAIN_FUNNEL"],
+                
+                # Parking Tracks (next 12 tracks) - every 2 tracks converge
+                "PT01": ["PT01_NODE"],
+                "PT02": ["PT02_NODE"],
+                "PT03": ["PT03_NODE"],
+                "PT04": ["PT04_NODE"],
+                "PT05": ["PT05_NODE"],
+                "PT06": ["PT06_NODE"],
+                "PT07": ["PT07_NODE"],
+                "PT08": ["PT08_NODE"],
+                "PT09": ["PT09_NODE"],
+                "PT10": ["PT10_NODE"],
+                "PT11": ["PT11_NODE"],
+                "PT12": ["PT12_NODE"],
+                
+                # Parking Convergence - every 2 tracks converge
+                "PT01_NODE": ["PT01", "PT02", "PARK_CONVERGE_1"],
+                "PT02_NODE": ["PT01", "PT02", "PARK_CONVERGE_1"],
+                "PT03_NODE": ["PT03", "PT04", "PARK_CONVERGE_2"],
+                "PT04_NODE": ["PT03", "PT04", "PARK_CONVERGE_2"],
+                "PT05_NODE": ["PT05", "PT06", "PARK_CONVERGE_3"],
+                "PT06_NODE": ["PT05", "PT06", "PARK_CONVERGE_3"],
+                "PT07_NODE": ["PT07", "PT08", "PARK_CONVERGE_4"],
+                "PT08_NODE": ["PT07", "PT08", "PARK_CONVERGE_4"],
+                "PT09_NODE": ["PT09", "PT10", "PARK_CONVERGE_5"],
+                "PT10_NODE": ["PT09", "PT10", "PARK_CONVERGE_5"],
+                "PT11_NODE": ["PT11", "PT12", "PARK_CONVERGE_6"],
+                "PT12_NODE": ["PT11", "PT12", "PARK_CONVERGE_6"],
+                
+                # Parking Main convergence
+                "PARK_CONVERGE_1": ["PT01_NODE", "PT02_NODE", "PARK_MAIN_CONVERGE_1"],
+                "PARK_CONVERGE_2": ["PT03_NODE", "PT04_NODE", "PARK_MAIN_CONVERGE_1"],
+                "PARK_CONVERGE_3": ["PT05_NODE", "PT06_NODE", "PARK_MAIN_CONVERGE_2"],
+                "PARK_CONVERGE_4": ["PT07_NODE", "PT08_NODE", "PARK_MAIN_CONVERGE_2"],
+                "PARK_CONVERGE_5": ["PT09_NODE", "PT10_NODE", "PARK_MAIN_CONVERGE_3"],
+                "PARK_CONVERGE_6": ["PT11_NODE", "PT12_NODE", "PARK_MAIN_CONVERGE_3"],
+                
+                # Final convergence
+                "PARK_MAIN_CONVERGE_1": ["PARK_CONVERGE_1", "PARK_CONVERGE_2", "MAIN_FUNNEL"],
+                "PARK_MAIN_CONVERGE_2": ["PARK_CONVERGE_3", "PARK_CONVERGE_4", "MAIN_FUNNEL"],
+                "PARK_MAIN_CONVERGE_3": ["PARK_CONVERGE_5", "PARK_CONVERGE_6", "MAIN_FUNNEL"],
+                
+                # Main funnel to main line
+                "MAIN_FUNNEL": ["PARK_MAIN_CONVERGE_1", "PARK_MAIN_CONVERGE_2", "PARK_MAIN_CONVERGE_3", "IBL_MAIN_CONVERGE", "MAIN_LINE"],
+                "MAIN_LINE": ["MAIN_FUNNEL"]
             }
         },
         "cleaning_slots": cleaning_slots,
