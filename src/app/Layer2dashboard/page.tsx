@@ -500,7 +500,7 @@ const Layer2Dashboard: React.FC = () => {
   doc.text(`Solver Status: ${data?.solver_status || 'N/A'}`, 160, summaryY);
   
   // Schedule Table
-  const tableColumn = ["Slot", "Rank", "Train ID", "Bay", "Position", "Departure", "Readiness", "Status"];
+  const tableColumn = ["Slot", "Train ID", "Bay", "Position", "Departure", "Readiness", "Status"];
   const tableRows: any[] = [];
   
   sortedAssignments.forEach((train) => {
@@ -652,472 +652,399 @@ const shareSchedule = () => {
   }
 };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-slate-800 p-4">
-      <div className="max-w-7xl mx-auto">
-        {/* Header with Date Selection and Status */}
-        <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-2xl shadow-xl p-6 mb-6">
-          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+return (
+  <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-6">
+    <div className="max-w-[1800px] mx-auto space-y-6">
+
+      {/* Clean Header */}
+      <div className="bg-slate-800/50 border-0 rounded-xl p-4">
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+          {/* Title Section */}
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-teal-500 to-emerald-600 rounded-xl flex items-center justify-center">
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+              </svg>
+            </div>
             <div>
-              <h1 className="text-3xl font-bold text-white">Kochi Metro - Layer 2 Optimization</h1>
-              <p className="text-gray-400 mt-2">
-                Readiness-focused departure scheduling with minimal shunting optimization
-              </p>
-              <div className="mt-2 flex gap-2">
-                <span className={`px-3 py-1 rounded-full text-sm font-medium border ${holidayStatus.isHoliday ? 'bg-purple-900/50 text-purple-300 border-purple-700' : 'bg-teal-900/50 text-teal-300 border-teal-700'}`}>
-                  {holidayStatus.displayText}
-                </span>
-                <span className="px-3 py-1 rounded-full text-sm font-medium bg-emerald-900/50 text-emerald-300 border border-emerald-700">
-                  🔄 AI-Powered What-If Analysis
-                </span>
-                {data.optimization_focus && (
-                  <span className="px-3 py-1 rounded-full text-sm font-medium bg-orange-900/50 text-orange-300 border border-orange-700">
-                    🎯 {data.optimization_focus}
-                  </span>
-                )}
-              </div>
+              <h1 className="text-4xl font-bold mb-2">
+            <span className="bg-gradient-to-r from-teal-400 to-emerald-500 bg-clip-text text-transparent">
+              Train Schedule Optimization
+            </span>
+          </h1>
+              <p className="text-sm text-slate-400 mt-0.5">AI-powered scheduling system</p>
+            </div>
+          </div>
+          
+          {/* Status & Controls */}
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 px-4 py-2 bg-slate-800/50 rounded-lg border border-slate-700">
+              <div className={`w-2 h-2 rounded-full ${data.solver_status === 'OPTIMAL' ? 'bg-emerald-500 animate-pulse' : 'bg-yellow-500'}`}></div>
+              <span className="text-sm font-medium text-slate-200">{data.solver_status}</span>
             </div>
             
-            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Service Date</label>
-                <input
-                  type="date"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  className="bg-gray-700 border border-gray-600 text-white rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                />
-              </div>
-              
-              <div className="flex flex-col gap-2">
-                {data.timetable_info && (
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium text-center border ${getServiceTypeColor(data.timetable_info.service_type)}`}>
-                    {data.timetable_info.timetable_code || data.timetable_info.service_type.replace('_', ' ').toUpperCase()}
-                  </span>
-                )}
-                
-                <span className={`px-3 py-1 rounded-full text-xs font-medium text-center border ${getSolverStatusColor(data.solver_status)}`}>
-                  {data.solver_status}
-                </span>
-              </div>
-            </div>
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="bg-slate-800 text-slate-200 rounded-lg px-4 py-2 text-sm border border-slate-700 focus:outline-none focus:border-teal-500 transition-colors"
+            />
+            
+            
+            
+            <button
+              onClick={() => router.push("/rotation")}
+              className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm transition-all flex items-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Delays
+            </button>
           </div>
         </div>
+      </div>
 
-        {/* Enhanced Optimization Summary */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6 mb-6">
-          <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl shadow-lg p-6 text-center">
-            <div className="text-2xl font-bold text-teal-400">{data.total_trains_scheduled || assignments.length}</div>
-            <div className="text-sm text-gray-400">Trains Scheduled</div>
-          </div>
+      {/* Main Layout Grid */}
+      <div className="grid grid-cols-12 gap-6">
+        
+        {/* Left Sidebar - Stats & Quick Info */}
+        <div className="col-span-12 lg:col-span-3 space-y-6">
           
-          <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl shadow-lg p-6 text-center">
-            <div className="text-2xl font-bold text-emerald-400">{data.total_standby_trains || 0}</div>
-            <div className="text-sm text-gray-400">Standby Trains</div>
-          </div>
-          
-          <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl shadow-lg p-6 text-center">
-            <div className="text-2xl font-bold text-purple-400">
-              {data.optimization_summary?.readiness_weighted ? '✅' : '❌'}
+          {/* Stats Grid */}
+          <div className="grid grid-cols-2 gap-4">
+            {/* Trains Scheduled */}
+            <div className="bg-slate-800/50 border-0 rounded-xl p-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <div className="text-slate-400 text-xs font-semibold uppercase tracking-wider">SCHEDULED</div>
+                  <div className="text-2xl font-bold text-white">{data.total_trains_scheduled || assignments.length}</div>
+                  <div className="text-slate-500 text-sm">Active Service</div>
+                </div>
+                <div className="p-2 bg-teal-500/20 rounded-lg">
+                  <svg className="w-5 h-5 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  </svg>
+                </div>
+              </div>
             </div>
-            <div className="text-sm text-gray-400">Readiness Focus</div>
-          </div>
-          
-          <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl shadow-lg p-6 text-center">
-            <div className="text-2xl font-bold text-orange-400">
-              {data.optimization_summary?.parking_position_optimized ? '✅' : '❌'}
-            </div>
-            <div className="text-sm text-gray-400">Position Optimized</div>
-          </div>
-          
-          <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl shadow-lg p-6 text-center">
-            <div className="text-2xl font-bold text-red-400">{data.shunting_operations_required || 0}</div>
-            <div className="text-sm text-gray-400">Shunting Ops</div>
-          </div>
-          
-          <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl shadow-lg p-6 text-center">
-            <div className="text-2xl font-bold text-indigo-400">
-              {data.departure_slots?.length || 10}
-            </div>
-            <div className="text-sm text-gray-400">Available Slots</div>
-          </div>
-        </div>
 
-        {/* Timetable Information */}
-        {data.timetable_info && (
-          <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-2xl shadow-xl p-6 mb-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-white">Timetable Configuration</h2>
+            {/* Standby Trains */}
+            <div className="bg-slate-800/50 border-0 rounded-xl p-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <div className="text-slate-400 text-xs font-semibold uppercase tracking-wider">STANDBY</div>
+                  <div className="text-2xl font-bold text-white">{data.total_standby_trains || 0}</div>
+                  <div className="text-slate-500 text-sm">Ready on Call</div>
+                </div>
+                <div className="p-2 bg-purple-500/20 rounded-lg">
+                  <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Timetable Quick Info */}
+          {data.timetable_info && (
+            <div className="bg-slate-800/50 border-0 rounded-xl p-4">
+              <h3 className="text-sm font-semibold text-teal-400 mb-3 flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Timetable Info
+              </h3>
+              <div className="space-y-2 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-slate-500">First Service:</span>
+                  <span className="text-teal-400 font-medium">{data.timetable_info.first_service}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Last Service:</span>
+                  <span className="text-teal-400 font-medium">{data.timetable_info.last_service}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Peak Headway:</span>
+                  <span className="text-emerald-400 font-medium">{formatHeadway(data.timetable_info.peak_headway)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Off-Peak:</span>
+                  <span className="text-orange-400 font-medium">{formatHeadway(data.timetable_info.off_peak_headway)}</span>
+                </div>
+              </div>
               <button
                 onClick={fetchTimetableData}
-                className="px-3 py-1 text-sm bg-teal-800 hover:bg-teal-700 text-teal-200 rounded-md transition-colors"
+                className="w-full mt-3 px-3 py-1.5 text-xs bg-teal-500/10 hover:bg-teal-500/20 text-teal-300 rounded-lg transition-colors border border-slate-700"
               >
-                View Details
+                View Full Details
               </button>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-teal-400">{data.timetable_info.first_service}</div>
-                <div className="text-sm text-gray-400">First Service</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-teal-400">{data.timetable_info.last_service}</div>
-                <div className="text-sm text-gray-400">Last Service</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-emerald-400">{formatHeadway(data.timetable_info.peak_headway)}</div>
-                <div className="text-sm text-gray-400">Peak Headway</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-orange-400">{formatHeadway(data.timetable_info.off_peak_headway)}</div>
-                <div className="text-sm text-gray-400">Off-Peak Headway</div>
+          )}
+
+          {/* Quick Actions */}
+          <div className="space-y-4">
+            {/* What-If Analysis */}
+            <div className="bg-slate-800/50 border-0 rounded-xl p-4">
+              <h3 className="text-sm font-semibold text-purple-400 mb-3">What-If Analysis</h3>
+              <button
+                onClick={openWhatIfPanel}
+                className="w-full p-3 bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 rounded-lg border border-purple-500/30 transition-all flex items-center justify-between"
+              >
+                <div className="flex items-center gap-2">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                  </svg>
+                  <span className="text-sm">Scenario Testing</span>
+                </div>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Manual Override */}
+            <div className="bg-slate-800/50 border-0 rounded-xl p-4">
+              <h3 className="text-sm font-semibold text-emerald-400 mb-3">Manual Override</h3>
+              <button
+                onClick={openOverridePanel}
+                className="w-full p-3 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 rounded-lg border border-emerald-500/30 transition-all flex items-center justify-between"
+              >
+                <div className="flex items-center gap-2">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                  </svg>
+                  <span className="text-sm">Expert Override</span>
+                </div>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content Area - Schedule Table */}
+        <div className="col-span-12 lg:col-span-9 space-y-6">
+          
+          {/* Shunting Operations Warning */}
+          {data.trains_requiring_shunting && data.trains_requiring_shunting.length > 0 && (
+            <div className="bg-orange-900/20 border-l-4 border-orange-500 p-4 rounded-r-lg">
+              <div className="flex">
+                <div className="text-orange-400 text-xl mr-3">⚠️</div>
+                <div>
+                  <h3 className="text-lg font-medium text-orange-300">Shunting Operations Required</h3>
+                  <p className="text-orange-200 mt-1">
+                    {data.shunting_operations_required} trains require shunting due to parking position constraints:
+                  </p>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {data.trains_requiring_shunting.map((operation, index) => (
+                      <span key={index} className="px-2 py-1 bg-orange-800/50 text-orange-200 text-sm rounded border border-orange-700">
+                        {typeof operation === 'string' ? operation : operation.train_id}
+                      </span>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
-            
-            <div className="mt-6 p-4 bg-gray-900/50 rounded-lg border border-gray-700">
-              <h3 className="font-semibold text-gray-200 mb-2">Peak Hours:</h3>
-              <div className="flex flex-wrap gap-2">
-                {(data.timetable_info.peak_hours || []).concat(
-                  data.timetable_info.morning_peak_hours || [],
-                  data.timetable_info.evening_peak_hours || []
-                ).map(([start, end], index) => (
-                  <span key={index} className="px-3 py-1 bg-teal-900/50 text-teal-300 border border-teal-700 rounded-full text-sm">
-                    {start}:00 - {end}:00
-                  </span>
+          )}
+
+          {/* Suggested Overrides */}
+          {suggestedOverrides.length > 0 && (
+            <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-bold text-teal-400 flex items-center gap-2">
+                  <span>🧠</span>
+                  AI Suggested Overrides
+                </h2>
+                <span className="text-xs text-slate-400 bg-slate-700 px-2 py-1 rounded">
+                  {suggestedOverrides.length} suggestions
+                </span>
+              </div>
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                {suggestedOverrides.map((suggestion, index) => (
+                  <div key={index} className="bg-slate-700/50 border border-slate-600 rounded-lg p-4 transition-all hover:border-teal-500/40">
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <div className="font-bold text-teal-400">
+                          {suggestion.from_train} → {suggestion.to_train}
+                        </div>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                            suggestion.confidence === 'high' ? 'bg-emerald-500/20 text-emerald-300' :
+                            suggestion.confidence === 'medium' ? 'bg-yellow-500/20 text-yellow-300' :
+                            'bg-slate-500/20 text-slate-300'
+                          }`}>
+                            {suggestion.confidence || 'medium'}
+                          </span>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setSelectedScheduledTrain(suggestion.from_train);
+                          setSelectedStandbyTrain(suggestion.to_train);
+                          setShowOverride(true);
+                        }}
+                        className="px-3 py-1 bg-teal-500 hover:bg-teal-600 text-white text-xs rounded transition-colors"
+                      >
+                        Apply
+                      </button>
+                    </div>
+                    <p className="text-xs text-slate-400">{suggestion.reason}</p>
+                  </div>
                 ))}
               </div>
             </div>
+          )}
+
+          {/* Main Schedule Table */}
+          <div className="bg-slate-800/50 border-0 rounded-xl p-4">
+            {/* Table Header */}
+<div className="bg-slate-800/50 border-0 rounded-xl p-4">
+  <div className="flex justify-between items-center">
+    <div>
+      <h2 className="text-xl font-bold text-teal-400">Optimized Schedule</h2>
+      <p className="text-sm text-slate-400 mt-1">
+        {sortedAssignments.length} trains scheduled • AI-optimized assignments
+      </p>
+    </div>
+    <div className="flex gap-3">
+      <button
+        onClick={downloadPDF}
+        className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-sm border border-slate-700 hover:border-slate-600 transition-all flex items-center gap-2"
+      >
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+        Export
+      </button>
+      <button
+        onClick={shareSchedule}
+        className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-sm border border-slate-700 hover:border-slate-600 transition-all flex items-center gap-2"
+      >
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+        </svg>
+        Share
+      </button>
+    </div>
+  </div>
+</div>
             
-            {data.optimization_summary && (
-              <div className="mt-4 p-4 bg-emerald-900/20 border border-emerald-700 rounded-lg">
-                <h3 className="font-semibold text-gray-200 mb-2">Optimization Focus Applied:</h3>
-                <div className="flex flex-wrap gap-2">
-                  {data.optimization_summary.readiness_weighted && (
-                    <span className="px-2 py-1 bg-emerald-900/50 text-emerald-300 text-xs rounded-md border border-emerald-700">Readiness Weighted</span>
-                  )}
-                  {data.optimization_summary.parking_position_optimized && (
-                    <span className="px-2 py-1 bg-orange-900/50 text-orange-300 text-xs rounded-md border border-orange-700">Parking Position</span>
-                  )}
-                  {data.optimization_summary.shunting_constraints && (
-                    <span className="px-2 py-1 bg-red-900/50 text-red-300 text-xs rounded-md border border-red-700">Shunting Minimized</span>
-                  )}
-                  {data.optimization_summary.constraint_programming && (
-                    <span className="px-2 py-1 bg-indigo-900/50 text-indigo-300 text-xs rounded-md border border-indigo-700">CP-SAT Optimized</span>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Shunting Operations Warning */}
-        {data.trains_requiring_shunting && data.trains_requiring_shunting.length > 0 && (
-          <div className="bg-orange-900/20 border-l-4 border-orange-500 p-4 mb-6 rounded-r-lg">
-            <div className="flex">
-              <div className="text-orange-400 text-xl mr-3">⚠️</div>
-              <div>
-                <h3 className="text-lg font-medium text-orange-300">Shunting Operations Required</h3>
-                <p className="text-orange-200 mt-1">
-                  {data.shunting_operations_required} trains require shunting due to parking position constraints:
-                </p>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {data.trains_requiring_shunting.map((operation, index) => (
-                    <span key={index} className="px-2 py-1 bg-orange-800/50 text-orange-200 text-sm rounded border border-orange-700">
-                      {typeof operation === 'string' ? operation : operation.train_id}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Input Validation Warnings */}
-        
-
-        {/* Suggested Overrides */}
-        {suggestedOverrides.length > 0 && (
-          <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-2xl shadow-xl p-6 mt-6">
-            <h2 className="text-xl font-bold text-white mb-4">AI learned Suggested Overrides</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* {suggestedOverrides.map((sug, idx) => (
-                <div key={idx} className="p-4 bg-gray-900/50 border border-gray-700 rounded-lg">
-                  <div className="font-semibold text-gray-200">{sug.from_train} → {sug.to_train}</div>
-                  <div className="text-sm text-gray-400 mt-1">{sug.reason}</div>
-                  {sug.confidence && (
-                    <div className="text-xs text-teal-300 mt-2">Confidence: {sug.confidence}</div>
-                  )}
-                </div>
-              ))} */}
-
-              {suggestedOverrides.map((suggestion, index) => (
-                <div key={index} className="bg-gradient-to-br from-gray-900/60 to-gray-800/60 border border-gray-600 rounded-xl p-4 hover:border-emerald-500/50 transition-all duration-200">
-                  <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <div className="font-bold text-lg text-gray-100">
-                        {suggestion.from_train} → {suggestion.to_train}
-                      </div>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${
-                          suggestion.confidence === 'high' ? 'bg-emerald-500/20 text-emerald-300' :
-                          suggestion.confidence === 'medium' ? 'bg-yellow-500/20 text-yellow-300' :
-                          'bg-gray-500/20 text-gray-300'
-                        }`}>
-                          {suggestion.confidence || 'medium'} confidence
-                        </span>
-                        {suggestion.historical_pattern && (
-                          <span className="px-2 py-1 rounded text-xs font-medium bg-purple-500/20 text-purple-300">
-                            {suggestion.historical_pattern}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => {
-                        setSelectedScheduledTrain(suggestion.from_train);
-                        setSelectedStandbyTrain(suggestion.to_train);
-                        setShowOverride(true);
-                      }}
-                      className="px-3 py-1 bg-teal-600 hover:bg-teal-700 text-white text-xs rounded transition-colors"
-                    >
-                      Apply
-                    </button>
-                  </div>
-                  
-                  <p className="text-sm text-gray-300 mb-3">{suggestion.reason}</p>
-                  
-                  {suggestion.pattern_match && (
-                    <div className="text-xs text-purple-400 mb-2">
-                      📊 {suggestion.pattern_match}
-                    </div>
-                  )}
-                  
-                  <div className="flex justify-between items-center text-xs text-gray-400">
-                    <span>AI Learning from Historical Patterns</span>
-                    <span>🧠</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Main Schedule Table */}
-        <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-2xl shadow-xl p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-bold text-white">Optimized Train Schedule</h2>
-            <div className="flex gap-2">
-              
-              <button
-                onClick={fetchSuggestedOverrides}
-                className="px-3 py-1 text-sm bg-emerald-700 hover:bg-emerald-600 text-white rounded-md"
-              >
-                View Override Suggestions (AI)
-              </button>
-              <button
-      onClick={downloadPDF}
-      className="px-4 py-2 text-sm bg-blue-700 hover:bg-blue-600 text-white rounded-md transition-colors font-medium flex items-center gap-2"
-    >
-      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-      </svg>
-      PDF
-    </button>
-              <button
-                onClick={openWhatIfPanel}
-                className="px-4 py-2 text-sm bg-purple-700 hover:bg-purple-600 text-white rounded-md transition-colors font-medium"
-              >
-                🔄 What-If Analysis
-              </button>
-              <button
-                onClick={openOverridePanel}
-                className="px-4 py-2 text-sm bg-emerald-700 hover:bg-emerald-600 text-white rounded-md transition-colors font-medium"
-              >
-                ✍️ Override Schedule
-              </button>
-              
-            </div>
-          </div>
-          
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-gray-900/50 border-b border-gray-700">
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Slot</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Rank</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Train ID</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Bay</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Departure</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Readiness</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Status</th>
-                  {showDebug && <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Debug Info</th>}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-700">
-                {sortedAssignments.map((train, index) => (
-                  <tr key={train.train_id} className="hover:bg-gray-700/30 transition-colors">
-                    <td className="px-4 py-3 text-center">
-                      <span className="inline-flex items-center justify-center w-10 h-10 rounded-full text-sm font-bold bg-teal-800/50 text-teal-200 border border-teal-600">
-                        {train.departure_slot}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <div className="font-bold text-lg text-gray-200">
-                        #{train.departure_order}
-                      </div>
-                      {train.is_priority_slot && (
-                        <div className="text-xs text-emerald-400 font-medium">Priority</div>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="font-bold text-white">{train.train_id}</div>
-                      {train.readiness_summary && (
-                        <div className="text-xs text-gray-400 mt-1 max-w-xs truncate" title={train.readiness_summary}>
-                          {train.readiness_summary}
+            {/* Table Content */}
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-slate-700/50 border-b border-slate-600">
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Slot</th>
+                    
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Train ID</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Location</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Departure</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Readiness</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-700">
+                  {sortedAssignments.map((train, index) => (
+                    <tr key={train.train_id} className="hover:bg-slate-700/30 transition-colors duration-150">
+                      <td className="px-6 py-4">
+                        <div className="inline-flex items-center justify-center px-3 py-1.5 bg-teal-500/20 border border-teal-500/40 rounded-lg">
+                          <span className="text-sm font-bold text-teal-300">{train.departure_slot}</span>
                         </div>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="text-gray-200 font-medium">{train.bay}</div>
-                      {train.bay_position && (
-                        <div className="text-xs text-gray-400">Position: {train.bay_position}</div>
-                      )}
-                    </td>
-                  <td className="px-4 py-3">
-                    <div className="text-gray-200 font-medium">{train.departure_time || '-'}</div>
-                    <div className="text-xs text-gray-500">Slot #{train.departure_slot}</div>
-                  </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg">{getReadinessIcon(train.readiness)}</span>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getReadinessColor(train.readiness)}`}>
-                          {train.readiness}%
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="space-y-1">
-                      {train.needs_shunting && (
-                          <span className="px-2 py-1 bg-orange-900/50 text-orange-300 border border-orange-700 text-xs rounded-md block w-fit">
-                            Shunting Required
-                          </span>
-                        )}
-                        {train.is_priority_slot && (
-                          <span className="px-2 py-1 bg-emerald-900/50 text-emerald-300 border border-emerald-700 text-xs rounded-md block w-fit">
-                            Priority Slot
-                          </span>
-                        )}
-                        {!train.needs_shunting && !train.is_priority_slot && (
-                          <span className="text-gray-500 text-xs">Regular</span>
-                        )}
-                      </div>
-                    </td>
-                    {showDebug && (
-                      <td className="px-4 py-3 text-xs text-gray-400">
-                        <div>Score: {train.optimization_score}</div>
-                        {train.readiness_details && (
-                          <div className="mt-1 space-y-1">
-                            <div>Mech: {train.readiness_details.mechanical}</div>
-                            <div>Elec: {train.readiness_details.electrical}</div>
-                            <div>Safety: {train.readiness_details.safety}</div>
-                            <div>Clean: {train.readiness_details.cleanliness}</div>
-                            {train.readiness_details.last_maintenance && (
-                              <div>Last Maint: {train.readiness_details.last_maintenance}</div>
-                            )}
+                      </td>
+                      
+                      <td className="px-4 py-3">
+                        <div className="font-bold text-white">{train.train_id}</div>
+                        {train.readiness_summary && (
+                          <div className="text-xs text-slate-400 mt-1 max-w-xs truncate" title={train.readiness_summary}>
+                            {train.readiness_summary}
                           </div>
                         )}
                       </td>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {sortedAssignments.length === 0 && (
-            <div className="text-center py-12">
-              <div className="text-6xl mb-4">🚂</div>
-              <h3 className="text-xl font-semibold text-gray-300 mb-2">No Trains Scheduled</h3>
-              <p className="text-gray-500">No optimized train assignments available for this date.</p>
+                      <td className="px-4 py-3">
+                        <div className="text-white font-medium">{train.bay}</div>
+                        {train.bay_position && (
+                          <div className="text-xs text-slate-400">Position: {train.bay_position}</div>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="text-white font-medium">{train.departure_time || '-'}</div>
+                        <div className="text-xs text-slate-500">Slot #{train.departure_slot}</div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">{getReadinessIcon(train.readiness)}</span>
+                          <span className={`px-3 py-1.5 rounded-full text-xs font-bold border shadow-lg ${getReadinessColor(train.readiness)}`}>
+                            {train.readiness}%
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="space-y-1">
+                          {train.needs_shunting && (
+                            <span className="px-2 py-1 bg-orange-900/50 text-orange-300 border border-orange-700 text-xs rounded-md block w-fit">
+                              Shunting Required
+                            </span>
+                          )}
+                          {train.is_priority_slot && (
+                            <span className="px-2 py-1 bg-emerald-900/50 text-emerald-300 border border-emerald-700 text-xs rounded-md block w-fit">
+                              Priority Slot
+                            </span>
+                          )}
+                          {!train.needs_shunting && !train.is_priority_slot && (
+                            <span className="text-slate-500 text-xs">Regular</span>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          )}
-        </div>
 
-        {/* Suggested Overrides */}
-        
-
-        {/* Standby Trains Summary */}
-        {data.standby_trains && data.standby_trains.length > 0 && (
-          <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-2xl shadow-xl p-6 mt-6">
-            <h2 className="text-xl font-bold text-white mb-4">Standby Trains ({data.standby_trains.length})</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {data.standby_trains.slice(0, 6).map((train) => (
-                <div key={train.train_id} className="bg-gray-900/50 border border-gray-600 rounded-lg p-4">
-                  <div className="flex justify-between items-start mb-2">
-                    <div className="font-bold text-white">{train.train_id}</div>
-                    <span className={`px-2 py-1 rounded text-xs font-medium border ${getReadinessColor(train.readiness)}`}>
-                      {train.readiness}%
-                    </span>
-                  </div>
-                  <div className="text-sm text-gray-400 mb-2">{train.bay} • Position {train.bay_position}</div>
-                  <div className="text-xs text-gray-500 truncate" title={train.readiness_summary}>
-                    {train.readiness_summary}
-                  </div>
-                </div>
-              ))}
-            </div>
-            {data.standby_trains.length > 6 && (
-              <div className="mt-4 text-center">
-                <span className="text-sm text-gray-400">
-                  Showing 6 of {data.standby_trains.length} standby trains
-                </span>
+            {sortedAssignments.length === 0 && (
+              <div className="text-center py-12">
+                <div className="text-6xl mb-4">🚂</div>
+                <h3 className="text-xl font-semibold text-slate-300 mb-2">No Trains Scheduled</h3>
+                <p className="text-slate-500">No optimized train assignments available for this date.</p>
               </div>
             )}
           </div>
-        )}
 
-        {/* Action Buttons */}
-        <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-        <button
-            onClick={() => router.push("/rotation")}
-            className="bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white font-semibold py-3 px-8 rounded-lg shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
-          >
-            See Estimated delays
-          </button>
-            <button
-            onClick={downloadPDF}
-            className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-3 px-8 rounded-lg shadow-lg hover:shadow-xl transition-all transform hover:scale-105 flex items-center justify-center gap-2"
-            >
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-    </svg>
-    Download PDF
-  </button>
-          
-          <button
-            onClick={openWhatIfPanel}
-            className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white font-semibold py-3 px-8 rounded-lg shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
-          >
-            What-If Analysis
-          </button>
-          <button
-    onClick={shareSchedule}
-    className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold py-3 px-8 rounded-lg shadow-lg hover:shadow-xl transition-all transform hover:scale-105 flex items-center justify-center gap-2"
-  >
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-    </svg>
-    Share Schedule
-  </button>
+          {/* Standby Trains Summary */}
+          {data.standby_trains && data.standby_trains.length > 0 && (
+            <div className="bg-slate-800/50 border-0 rounded-xl p-4">
+              <h2 className="text-xl font-bold text-teal-400 mb-4">Standby Trains ({data.standby_trains.length})</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {data.standby_trains.slice(0, 6).map((train) => (
+                  <div key={train.train_id} className="bg-slate-700/50 border border-slate-600 rounded-lg p-4">
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="font-bold text-white">{train.train_id}</div>
+                      <span className={`px-3 py-1.5 rounded text-xs font-bold border shadow-lg ${getReadinessColor(train.readiness)}`}>
+                        {train.readiness}%
+                      </span>
+                    </div>
+                    <div className="text-sm text-slate-400 mb-2">{train.bay} • Position {train.bay_position}</div>
+                    <div className="text-xs text-slate-500 truncate" title={train.readiness_summary}>
+                      {train.readiness_summary}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {data.standby_trains.length > 6 && (
+                <div className="mt-4 text-center">
+                  <span className="text-sm text-slate-400">
+                    Showing 6 of {data.standby_trains.length} standby trains
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
 
-          
-          <button
-            onClick={fetchTimetableData}
-            className="bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white font-semibold py-3 px-8 rounded-lg shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
-          >
-            View Timetable
-          </button>
-        </div>
+        </div> {/* End Main Content */}
+      </div> {/* End Grid Layout */}
+
 
         {/* What-If Analysis Panel */}
 {showWhatIf && (
