@@ -212,10 +212,12 @@ class ScheduleOptimizer:
             summary_parts.append("❌ Overdue maintenance")
         if branding_urgency > 0:
             summary_parts.append(f"🚀 Branding urgency: {branding_urgency}")
-        if final_score > 80:
+        if final_score > 90:
             summary_parts.append("✅ Excellent condition")
+        elif final_score > 80:
+            summary_parts.append("🔵 Good condition")
         elif final_score > 60:
-            summary_parts.append("🟡 Good condition")
+            summary_parts.append("🟡 Moderate condition")
         else:
             summary_parts.append("🔶 Needs attention")
         

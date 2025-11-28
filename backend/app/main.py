@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from app.services.layer1_service import ScheduleOptimizer
 from app.services.data_generator import DataGenerator
@@ -8,11 +8,23 @@ import json
 import os
 import logging
 from typing import Dict, Any, List, Optional
+from pathlib import Path
+from datetime import date, datetime
+
+# Load environment variables
+from dotenv import load_dotenv
+load_dotenv()
+
+# CORS Configuration
+CORS_ORIGINS = os.getenv("CORS_ORIGINS", '["*","http://localhost:3000"]')
+try:
+    import ast
+    CORS_ORIGINS = ast.literal_eval(CORS_ORIGINS)
+except:
+    CORS_ORIGINS = ["*", "http://localhost:3000", "https://metromind.com"]
+
 from app.models import ScheduleRequest, OptimizationParams, SwapAnalysisRequest
 from app.utils.layer2 import validate_input_data, validate_date_format
-from pathlib import Path
-import json
-from datetime import date, datetime
 from app.services.layer2_service import (
     run_layer2_service,
     get_timetable_config,
@@ -33,7 +45,7 @@ app = FastAPI(title="Metro-Mind API", version="1.0.0")
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*", "http://localhost:3000"],
+    allow_origins=CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -1048,6 +1060,30 @@ def get_rotation_predictions(service_date: str = None):
     except Exception as e:
         logger.error(f"Error generating ML predictions: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/save-schedule-pdf")
+async def save_schedule_pdf(file: UploadFile = File(...)):
+    """Save uploaded schedule PDF to backend/app/data/kochi-metro-schedule.pdf, replacing existing file."""
+    try:
+        data_dir = Path(__file__).parent / "data"
+        data_dir.mkdir(parents=True, exist_ok=True)
+        target_path = data_dir / "kochi-metro-schedule.pdf"
+
+        # Remove existing file if present
+        if target_path.exists():
+            try:
+                target_path.unlink()
+            except Exception:
+                pass
+
+        contents = await file.read()
+        with target_path.open("wb") as f:
+            f.write(contents)
+
+        return {"status": "ok", "path": str(target_path)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to save PDF: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn

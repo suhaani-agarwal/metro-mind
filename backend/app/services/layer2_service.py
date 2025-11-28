@@ -105,6 +105,24 @@ def get_timetable_config(service_date=None):
             "service_type": "regular"
         }
 
+def _should_exclude_train(train_id: str, readiness_lookup: Dict, layer1_details_lookup: Dict) -> bool:
+    """Check if a train should be excluded from scheduling due to critical issues"""
+    # Check if train has expired certificates
+    details = layer1_details_lookup.get(train_id, {}).get("details", {})
+    combined = details.get("combined", "")
+    
+    # Exclude if has expired certificates or critical job cards
+    if "❌ Expired certificates" in combined or "❌ Expired" in combined:
+        return True
+    if "❌ Critical job card" in combined or "❌ Critical:" in combined:
+        return True
+    
+    # Additional check: very low readiness score (below 50)
+    if readiness_lookup.get(train_id, 0) < 50:
+        return True
+        
+    return False
+
 def _generate_scheduling_rationale(
     train_id: str, 
     train_positions: Dict, 
@@ -271,8 +289,9 @@ def run_layer2_service(
     use_layer1_output: bool = True  # New parameter to use actual Layer 1 output
 ) -> Dict[str, Any]:
     """
-    Layer 2 optimization: Slot-based train scheduling (1-8 slots)
+    Layer 2 optimization: Slot-based train scheduling (1-10 slots)
     Focus on readiness score and minimizing shunting operations
+    EXCLUDES trains with expired certificates or critical job cards
     """
     try:
         # Use Layer 1 output if requested and available
@@ -344,19 +363,32 @@ def run_layer2_service(
             branding_score = breakdown.get("branding_contracts", 100)
             branding_urgency_lookup[train_id] = max(0.0, float(branding_score) - 100.0)
         
-        valid_trains = [t for t in assigned_trains if t in readiness_lookup]
+        # CRITICAL FIX: Filter out trains that should be excluded
+        valid_trains = []
+        excluded_trains = []
+        
+        for t in assigned_trains:
+            if t in readiness_lookup:
+                if _should_exclude_train(t, readiness_lookup, layer1_details_lookup):
+                    excluded_trains.append(t)
+                    print(f"❌ Excluding train {t} due to critical issues")
+                else:
+                    valid_trains.append(t)
         
         if not valid_trains:
-            return {"status": "No valid trains with both parking and readiness data"}
+            return {"status": "No valid trains available after filtering critical issues"}
 
-        # Get timetable configuration and generate 8 slots
+        # Get timetable configuration and generate 10 slots
         timetable_config = get_timetable_config(service_date)
         # Schedule exactly 10 trains as per requirements
         departure_slots = generate_departure_slots(timetable_config, max_slots=10)
-        max_trains_to_schedule = 10
+        max_trains_to_schedule = min(10, len(valid_trains))  # Don't schedule more than available valid trains
         slot_to_time = compute_departure_times(timetable_config, departure_slots)
         
-        print(f"Debug: Valid trains: {len(valid_trains)}, Available slots: {len(departure_slots)}")
+        print(f"Debug: Total assigned trains: {len(assigned_trains)}")
+        print(f"Debug: Excluded trains (critical issues): {excluded_trains}")
+        print(f"Debug: Valid trains after filtering: {len(valid_trains)}")
+        print(f"Debug: Available slots: {len(departure_slots)}")
         print(f"Debug: Will schedule exactly {max_trains_to_schedule} trains")
 
         # Group trains by bay for constraint creation
@@ -408,7 +440,7 @@ def run_layer2_service(
         for slot_num in departure_slots:
             model.Add(sum(departure_vars[train, slot_num] for train in valid_trains) == 1)
 
-        # Exactly 8 trains must be selected
+        # Exactly max_trains_to_schedule trains must be selected
         model.Add(sum(train_selected_vars[train] for train in valid_trains) == max_trains_to_schedule)
 
         # Priority slot constraint - only for selected trains
@@ -424,7 +456,7 @@ def run_layer2_service(
             model.AddBoolAnd([train_selected_vars[train], priority_slot_assigned]).OnlyEnforceIf(priority_slot_vars[train])
             model.AddBoolOr([train_selected_vars[train].Not(), priority_slot_assigned.Not()]).OnlyEnforceIf(priority_slot_vars[train].Not())
 
-        # Parking position and shunting constraints - KEY LOGIC FOR MINIMAL SHUNTING
+        # CRITICAL FIX: Parking position constraints - Front trains MUST be scheduled before rear trains in same bay
         for bay, trains_in_bay in bay_groups.items():
             if len(trains_in_bay) <= 1:
                 # Single train bays - no shunting needed if selected
@@ -435,7 +467,7 @@ def run_layer2_service(
                     model.AddImplication(train_selected_vars[train], shunting_vars[train].Not())
                 continue
             
-            # Multi-train bay constraints - CRITICAL SHUNTING LOGIC
+            # Multi-train bay constraints - KEY LOGIC: Front trains must leave before rear trains
             for train_a in trains_in_bay:
                 # If train is not selected, no shunting
                 model.AddImplication(train_selected_vars[train_a].Not(), shunting_vars[train_a].Not())
@@ -448,26 +480,27 @@ def run_layer2_service(
                     pos_b = train_positions[train_b]
                     
                     # If train_a is behind train_b (higher position number)
-                    # AND train_a needs to leave before train_b, then train_b needs shunting
+                    # AND both trains are selected, then train_a must get a later slot than train_b
                     if pos_a > pos_b:
+                        # Create constraint: if both selected, train_b must have earlier slot than train_a
                         for slot_a in departure_slots:
                             for slot_b in departure_slots:
-                                if slot_a < slot_b:  # train_a gets earlier slot (leaves before train_b)
-                                    # Create a constraint variable for this specific condition
-                                    constraint_var = model.NewBoolVar(f"shunt_constraint_{train_a}_slot_{slot_a}_{train_b}_slot_{slot_b}")
+                                if slot_a <= slot_b:  # train_a gets same or earlier slot (violates position constraint)
+                                    # Create a constraint variable for this violation
+                                    violation_var = model.NewBoolVar(f"violation_{train_a}_slot_{slot_a}_{train_b}_slot_{slot_b}")
                                     
-                                    # constraint_var is true when all conditions are met:
-                                    model.Add(constraint_var <= departure_vars[train_a, slot_a])
-                                    model.Add(constraint_var <= departure_vars[train_b, slot_b])
-                                    model.Add(constraint_var <= train_selected_vars[train_a])
-                                    model.Add(constraint_var <= train_selected_vars[train_b])
-                                    model.Add(constraint_var >= (departure_vars[train_a, slot_a] + 
-                                                               departure_vars[train_b, slot_b] + 
-                                                               train_selected_vars[train_a] + 
-                                                               train_selected_vars[train_b] - 3))
+                                    # violation_var is true when both selected AND slot constraint violated
+                                    model.Add(violation_var <= departure_vars[train_a, slot_a])
+                                    model.Add(violation_var <= departure_vars[train_b, slot_b])
+                                    model.Add(violation_var <= train_selected_vars[train_a])
+                                    model.Add(violation_var <= train_selected_vars[train_b])
+                                    model.Add(violation_var >= (departure_vars[train_a, slot_a] + 
+                                                              departure_vars[train_b, slot_b] + 
+                                                              train_selected_vars[train_a] + 
+                                                              train_selected_vars[train_b] - 3))
                                     
-                                    # When constraint is active, train_b needs shunting
-                                    model.AddImplication(constraint_var, shunting_vars[train_b])
+                                    # When violation occurs, train_b needs shunting
+                                    model.AddImplication(violation_var, shunting_vars[train_b])
 
         # --- OBJECTIVE FUNCTION: Focus on readiness and minimize shunting ---
         objective_terms = []
@@ -501,7 +534,7 @@ def run_layer2_service(
                 if readiness_score >= 90 and slot_num in priority_slots:
                     objective_terms.append(PRIORITY_SLOT_BONUS * departure_vars[train, slot_num])
 
-        # 2. Position-based bonus (trains in front positions get slight preference)
+        # 2. Position-based bonus (trains in front positions get preference)
         for train in valid_trains:
             position = train_positions[train]
             # Front position (1) gets highest bonus, decreasing for higher positions
@@ -526,7 +559,12 @@ def run_layer2_service(
             return {
                 "status": "No feasible solution",
                 "solver_status": "INFEASIBLE",
-                "error": "Could not find optimal departure schedule"
+                "error": "Could not find optimal departure schedule",
+                "debug_info": {
+                    "valid_trains": valid_trains,
+                    "excluded_trains": excluded_trains,
+                    "max_trains_to_schedule": max_trains_to_schedule
+                }
             }
 
         # --- BUILD RESULTS - Only include selected trains ---
@@ -598,6 +636,22 @@ def run_layer2_service(
                     "scheduling_rationale": not_selected_rationale
                 })
 
+        # Add excluded trains to standby with proper reason
+        for train_id in excluded_trains:
+            standby_trains.append({
+                "train_id": train_id,
+                "readiness": readiness_lookup.get(train_id, 0),
+                "readiness_summary": readiness_summaries.get(train_id, {}).get("summary", "Critical issues"),
+                "bay": bay_assignments.get(train_id, "Unknown"),
+                "bay_position": train_positions.get(train_id, 1),
+                "status": "standby",
+                "scheduling_rationale": {
+                    "primary_reason": "critical_issues_exclusion",
+                    "readiness_factor": "Train has expired certificates or critical job cards",
+                    "layer1_considerations": "Automatically excluded from scheduling"
+                }
+            })
+
         # Sort by departure slot (1..slot_count)
         optimized_assignments.sort(key=lambda x: x["departure_slot"])
 
@@ -608,9 +662,11 @@ def run_layer2_service(
             "standby_trains": standby_trains,
             "timetable_info": timetable_config,
             "departure_slots": departure_slots,
-            "total_trains_available": len(valid_trains),
+            "total_trains_available": len(assigned_trains),
             "total_trains_scheduled": len(optimized_assignments),
             "total_standby_trains": len(standby_trains),
+            "excluded_trains_count": len(excluded_trains),
+            "excluded_trains": excluded_trains,
             "shunting_operations_required": len(shunting_operations),
             "trains_requiring_shunting": shunting_operations,
             "service_date": service_date.isoformat() if service_date else date.today().isoformat(),
@@ -624,10 +680,12 @@ def run_layer2_service(
                 "shunting_minimization": "Heavy penalty applied",
                 "constraint_programming": "Full CP-SAT with logical constraints",
                 "slot_count": len(departure_slots),
-                "scheduling_method": "Slot-based ranking (1-8)",
+                "scheduling_method": "Slot-based ranking (1-10)",
                 "optimization_method": "Multi-objective: readiness + minimal shunting",
                 "selection_summary": {
-                    "requested_trains": len(valid_trains),
+                    "total_assigned_trains": len(assigned_trains),
+                    "excluded_trains": len(excluded_trains),
+                    "available_valid_trains": len(valid_trains),
                     "available_slots": len(departure_slots),
                     "scheduled_trains": len(optimized_assignments),
                     "standby_trains": len(standby_trains),
