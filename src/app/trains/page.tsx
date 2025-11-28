@@ -5,208 +5,180 @@ import Head from "next/head";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 
+type FitnessCertificate = {
+  department: string;
+  issue_date: string;
+  expiry_date: string;
+  status: "valid" | "expired";
+};
+
 type FitnessCertificates = {
-  "Train ID": string;
-  "Rolling Stock Valid": string;
-  "Signalling Valid": string;
-  "Telecom Valid": string;
+  rolling_stock?: FitnessCertificate;
+  signalling?: FitnessCertificate;
+  telecom?: FitnessCertificate;
 };
 
 type JobCard = {
-  "Job ID": string;
-  "Train ID": string;
-  Status: string;
-  Severity: string;
-  Description: string;
-  "Created At": string;
-  "Expected Completion": string;
+  id: string;
+  description: string;
+  open_date: string;
+  criticality: "low" | "medium" | "high" | "critical";
+  estimated_hours: number;
 };
 
-type Branding = {
-  "Train ID": string;
-  "Wrap ID": string;
-  Advertiser: string;
-  "Exposure Hours Today": number;
-  "SLA Hours Month": number;
-  "Preferred Times": string;
-  "Audience Profile": string; // JSON string
+type BrandingContract = {
+  brand: string;
+  total_exposure_hours: number;
+  completed_hours: number;
+  deadline: string;
+  priority: number;
+  audience_profile: string;
+  preferred_times: string;
 };
 
 type Mileage = {
-  "Train ID": string;
-  Date: string;
-  "Km Travelled": number;
-};
-
-type Cleaning = {
-  "Train ID": string;
-  "Last Deep Cleaned Date": string;
-};
-
-type Stabling = {
-  "Train ID": string;
-  "Current Bay": number;
-  Position: string;
-  "Recommended Departure": string;
-  Priority: number;
+  bogie: number;
+  brake_pad: number;
+  hvac: number;
 };
 
 type Train = {
-  train_id: string;
-  date: string;
+  id: string;
   fitness_certificates: FitnessCertificates;
   job_cards: JobCard[];
-  branding: Branding;
-  mileage: Mileage;
-  cleaning: Cleaning;
-  stabling: Stabling;
+  branding_contracts: BrandingContract[];
+  current_mileage: Mileage;
+  maintenance_thresholds: Mileage;
+  last_deep_cleaning: string;
+  cleaning_duration: number;
+  status: "out_for_duty" | "parking" | "maintenance";
+  current_position: string | null;
 };
 
-// Malayalam translations
 const translations = {
   en: {
-    // Navigation
     title: "MetroMind — Fleet Management",
     description: "MetroMind fleet management dashboard",
     exportCSV: "Export CSV",
     nightlyUpdate: "Nightly Update",
-    
-    // Header
     headerTitle: "Fleet Management Dashboard",
     headerSubtitle: "Real-time monitoring and control of metro operations",
-    
-    // Stats
-    totalMetros: "Total Metros",
+    totalTrains: "Total Trains",
     highPriority: "High Priority",
     mediumPriority: "Medium Priority",
     lowPriority: "Low Priority",
-    
-    // Filters
-    searchPlaceholder: "Search by Train ID or Advertiser...",
+    onDuty: "On Duty",
+    maintenance: "Maintenance",
+    parkingLabel: "Parking",
+    searchPlaceholder: "Search by Train ID or Brand...",
     allPriorities: "All Priorities",
-    allFitnessStatus: "All Fitness Status",
-    allBays: "All Bays",
+    allStatus: "All Status",
+    allConditions: "All Conditions",
     valid: "Valid",
     expiringSoon: "Expiring Soon",
     expired: "Expired",
-    
-    // Train Card
-    bayPosition: "Bay & Position",
-    fitness: "Fitness",
-    mileage: "Mileage",
-    jobCards: "Job Cards",
-    wrapID: "Wrap ID",
-    
-    // Modal
+    statusLabel: "Status",
+    positionLabel: "Position",
+    mileageLabel: "Mileage",
+    jobCardsLabel: "Job Cards",
+    brandingLabel: "Branding",
     detailedInfo: "Detailed Information",
     generalInfo: "🚇 General Information",
     trainID: "Train ID",
     priorityLevel: "Priority Level",
-    currentDate: "Current Date",
     fitnessCertificates: "📋 Fitness Certificates",
-    rollingStockValid: "Rolling Stock Valid Until",
-    signallingValid: "Signalling Valid Until",
-    telecomValid: "Telecom Valid Until",
-    overallStatus: "Overall Status",
-    mileageInfo: "🔧 Mileage Information",
-    distanceTravelled: "Distance Travelled",
-    cleaningInfo: "🧹 Cleaning Information",
+    overallCondition: "Overall Condition",
+    mileageInfo: "🔧 Component Mileage",
+    currentMileage: "Current Mileage",
+    maintenanceThreshold: "Maintenance Threshold",
+    mileagePercent: "Usage %",
+    cleaningInfo: "🧹 Cleaning & Maintenance",
     lastDeepCleaned: "Last Deep Cleaned",
+    cleaningDuration: "Cleaning Duration",
     daysSinceClean: "Days Since Clean",
-    stablingInfo: "🏢 Stabling Information",
-    currentBay: "Current Bay",
-    position: "Position",
-    recommendedDeparture: "Recommended Departure",
-    stablingPriority: "Stabling Priority",
-    brandingAdvertising: "🎨 Branding & Advertising",
-    advertiser: "Advertiser",
-    exposureHoursToday: "Exposure Hours Today",
-    slaHoursMonth: "SLA Hours This Month",
+    jobCardsInfo: "📋 Job Cards",
+    noActiveJobCards: "No active job cards",
+    jobDescription: "Description",
+    criticality: "Criticality",
+    estimatedHours: "Est. Hours",
+    openDate: "Open Date",
+    brandingContracts: "🎨 Branding Contracts",
+    noBrandingContracts: "No active branding contracts",
+    brand: "Brand",
+    completionProgress: "Completion",
+    totalHours: "Total Hours",
+    completedHours: "Completed Hours",
+    deadline: "Deadline",
+    daysLeft: "Days Left",
     preferredTimes: "Preferred Times",
+    audienceProfile: "Audience Profile",
     officeWorkers: "Office Workers",
     students: "Students",
     shoppers: "Shoppers",
-    jobCardsCount: "📋 Job Cards",
-    noActiveJobCards: "No active job cards",
-    status: "Status",
-    created: "Created",
-    expected: "Expected",
-    
-    // Loading & Error
     loading: "Loading MetroMind...",
     loadingSubtitle: "Please wait while we load your fleet data",
     dataLoadingError: "Data Loading Error",
     retry: "Retry"
   },
   ml: {
-    // Navigation
     title: "മെട്രോമൈൻഡ് — ഫ്ലീറ്റ് മാനേജ്മെന്റ്",
     description: "മെട്രോമൈൻഡ് ഫ്ലീറ്റ് മാനേജ്മെന്റ് ഡാഷ്ബോർഡ്",
     exportCSV: "CSV എക്സ്പോർട്ട്",
     nightlyUpdate: "നൈറ്റ്ലി അപ്ഡേറ്റ്",
-    
-    // Header
     headerTitle: "ഫ്ലീറ്റ് മാനേജ്മെന്റ് ഡാഷ്ബോർഡ്",
     headerSubtitle: "മെട്രോ പ്രവർത്തനങ്ങളുടെ റിയൽ-ടൈം മോണിറ്ററിംഗും നിയന്ത്രണവും",
-    
-    // Stats
-    totalMetros: "ആകെ മെട്രോകൾ",
+    totalTrains: "ആകെ ട്രെയിനുകൾ",
     highPriority: "ഉയർന്ന പ്രാധാന്യം",
     mediumPriority: "ഇടത്തരം പ്രാധാന്യം",
     lowPriority: "കുറഞ്ഞ പ്രാധാന്യം",
-    
-    // Filters
-    searchPlaceholder: "ട്രെയിൻ ഐഡി അല്ലെങ്കിൽ അഡ്വെർട്ടൈസർ പ്രകാരം തിരയുക...",
+    onDuty: "ഡ്യൂട്ടിയിൽ",
+    maintenance: "പരിപാലനം",
+    parkingLabel: "പാർക്കിംഗ്",
+    searchPlaceholder: "ട്രെയിൻ ഐഡി അല്ലെങ്കിൽ ബ്രാൻഡ് പ്രകാരം തിരയുക...",
     allPriorities: "എല്ലാ പ്രാധാന്യങ്ങളും",
-    allFitnessStatus: "എല്ലാ ഫിറ്റ്നസ് സ്റ്റാറ്റസും",
-    allBays: "എല്ലാ ബേകളും",
+    allStatus: "എല്ലാ സ്ഥിതികളും",
+    allConditions: "എല്ലാ അവസ്ഥകളും",
     valid: "സാധുവായത്",
     expiringSoon: "ഉടൻ കാലഹരണപ്പെടുന്നു",
     expired: "കാലഹരണപ്പെട്ടത്",
-    
-    // Train Card
-    bayPosition: "ബേയും സ്ഥാനവും",
-    fitness: "ഫിറ്റ്നസ്",
-    mileage: "മൈലേജ്",
-    jobCards: "ജോബ് കാർഡുകൾ",
-    wrapID: "റാപ്പ് ഐഡി",
-    
-    // Modal
+    statusLabel: "സ്ഥിതി",
+    positionLabel: "സ്ഥാനം",
+    mileageLabel: "മൈലേജ്",
+    jobCardsLabel: "ജോബ് കാർഡുകൾ",
+    brandingLabel: "ബ്രാൻഡിംഗ്",
     detailedInfo: "വിശദമായ വിവരങ്ങൾ",
     generalInfo: "🚇 പൊതുവായ വിവരങ്ങൾ",
     trainID: "ട്രെയിൻ ഐഡി",
     priorityLevel: "പ്രാധാന്യ നില",
-    currentDate: "നിലവിലെ തീയതി",
     fitnessCertificates: "📋 ഫിറ്റ്നസ് സർട്ടിഫിക്കറ്റുകൾ",
-    rollingStockValid: "റോളിംഗ് സ്റ്റോക്ക് സാധുവായത് വരെ",
-    signallingValid: "സിഗ്നല്ലിംഗ് സാധുവായത് വരെ",
-    telecomValid: "ടെലികോം സാധുവായത് വരെ",
-    overallStatus: "ആകെ സ്ഥിതി",
-    mileageInfo: "🔧 മൈലേജ് വിവരങ്ങൾ",
-    distanceTravelled: "പ്രയാണിച്ച ദൂരം",
-    cleaningInfo: "🧹 ക്ലീനിംഗ് വിവരങ്ങൾ",
+    overallCondition: "മൊത്തം അവസ്ഥ",
+    mileageInfo: "🔧 ഘടക മൈലേജ്",
+    currentMileage: "നിലവിലെ മൈലേജ്",
+    maintenanceThreshold: "പരിപാലന പരിധി",
+    mileagePercent: "ഉപയോഗം %",
+    cleaningInfo: "🧹 ക്ലീനിംഗ് & പരിപാലനം",
     lastDeepCleaned: "അവസാനമായി ഡീപ് ക്ലീൻ ചെയ്തത്",
+    cleaningDuration: "ക്ലീനിംഗ് കാലതളി",
     daysSinceClean: "ക്ലീൻ ചെയ്തതിനുശേഷമുള്ള ദിവസങ്ങൾ",
-    stablingInfo: "🏢 സ്റ്റേബ്ലിംഗ് വിവരങ്ങൾ",
-    currentBay: "നിലവിലെ ബേ",
-    position: "സ്ഥാനം",
-    recommendedDeparture: "ശുപാർശ ചെയ്യുന്ന പുറപ്പെടൽ",
-    stablingPriority: "സ്റ്റേബ്ലിംഗ് പ്രാധാന്യം",
-    brandingAdvertising: "🎨 ബ്രാൻഡിംഗ് & പരസ്യം",
-    advertiser: "പരസ്യം നൽകുന്നയാൾ",
-    exposureHoursToday: "ഇന്നത്തെ എക്സ്പോഷർ മണിക്കൂറുകൾ",
-    slaHoursMonth: "ഈ മാസത്തെ SLA മണിക്കൂറുകൾ",
-    preferredTimes: "മുൻഗണന സമയങ്ങൾ",
+    jobCardsInfo: "📋 ജോബ് കാർഡുകൾ",
+    noActiveJobCards: "സജീവ ജോബ് കാർഡുകളില്ല",
+    jobDescription: "വിവരണം",
+    criticality: "ഗുരുത്വം",
+    estimatedHours: "കണക്കായ മണിക്കൂറുകൾ",
+    openDate: "തുറന്ന തീയതി",
+    brandingContracts: "🎨 ബ്രാൻഡിംഗ് കരാറുകൾ",
+    noBrandingContracts: "സജീവ ബ്രാൻഡിംഗ് കരാറുകളില്ല",
+    brand: "ബ്രാൻഡ്",
+    completionProgress: "സമാപ്തി",
+    totalHours: "ആകെ മണിക്കൂറുകൾ",
+    completedHours: "പൂർത്തിയായ മണിക്കൂറുകൾ",
+    deadline: "കാലമിതി",
+    daysLeft: "ശേഷിക്കുന്ന ദിവസങ്ങൾ",
+    preferredTimes: "പ്രിയപ്പെട്ട സമയങ്ങൾ",
+    audienceProfile: "കേൾവി പ്രൊഫൈൽ",
     officeWorkers: "ഓഫീസ് തൊഴിലാളികൾ",
     students: "വിദ്യാർത്ഥികൾ",
     shoppers: "ഷോപ്പർമാർ",
-    jobCardsCount: "📋 ജോബ് കാർഡുകൾ",
-    noActiveJobCards: "സജീവ ജോബ് കാർഡുകളില്ല",
-    status: "സ്ഥിതി",
-    created: "സൃഷ്ടിച്ചത്",
-    expected: "പ്രതീക്ഷിക്കുന്നത്",
-    
-    // Loading & Error
     loading: "മെട്രോമൈൻഡ് ലോഡ് ചെയ്യുന്നു...",
     loadingSubtitle: "നിങ്ങളുടെ ഫ്ലീറ്റ് ഡാറ്റ ലോഡ് ചെയ്യുന്നതിനിടയിൽ ദയവായി കാത്തിരിക്കുക",
     dataLoadingError: "ഡാറ്റ ലോഡിംഗ് പിശക്",
@@ -214,8 +186,8 @@ const translations = {
   }
 };
 
-function daysBetween(dateA: Date, dateB: Date) {
-  return (dateA.getTime() - dateB.getTime()) / (1000 * 60 * 60 * 24);
+function daysBetween(dateA: Date, dateB: Date): number {
+  return Math.floor((dateA.getTime() - dateB.getTime()) / (1000 * 60 * 60 * 24));
 }
 
 export default function MetroMindPage() {
@@ -224,14 +196,15 @@ export default function MetroMindPage() {
   const [trains, setTrains] = useState<Train[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [priorityFilter, setPriorityFilter] = useState("");
-  const [fitnessFilter, setFitnessFilter] = useState("");
-  const [bayFilter, setBayFilter] = useState<string>("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [conditionFilter, setConditionFilter] = useState("");
   const [selectedTrain, setSelectedTrain] = useState<Train | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const t = translations[lang];
+  const currentDate = useMemo(() => new Date(), []);
 
   useEffect(() => {
     const loadData = async () => {
@@ -241,32 +214,7 @@ export default function MetroMindPage() {
           "http://localhost:5005/api/nightly/unified-data"
         );
 
-        const data = response.data;
-        let trainsData = [];
-
-        if (Array.isArray(data)) {
-          trainsData = data;
-        } else if (data && typeof data === "object") {
-          if (Array.isArray(data.trains)) {
-            trainsData = data.trains;
-          } else if (Array.isArray(data.data)) {
-            trainsData = data.data;
-          } else {
-            trainsData = Object.values(data);
-          }
-        }
-
-        trainsData = trainsData.map((train: any) => ({
-          train_id: train.train_id || train.id || "Unknown",
-          date: train.date || new Date().toISOString().split("T")[0],
-          fitness_certificates: train.fitness_certificates || {},
-          job_cards: Array.isArray(train.job_cards) ? train.job_cards : [],
-          branding: train.branding || {},
-          mileage: train.mileage || {},
-          cleaning: train.cleaning || {},
-          stabling: train.stabling || {},
-        })) as Train[];
-
+        let trainsData = response.data.trains || [];
         setTrains(trainsData);
         setError(null);
       } catch (err) {
@@ -283,176 +231,189 @@ export default function MetroMindPage() {
     loadData();
   }, []);
 
-  const currentDate = useMemo(() => new Date(), []);
+  const calculatePriority = (train: Train): "high" | "medium" | "low" => {
+    let priority: "high" | "medium" | "low" = "low";
 
-  function calculatePriority(train: Train): "high" | "medium" | "low" {
-    const rollingDate = new Date(
-      train.fitness_certificates["Rolling Stock Valid"]
-    );
-    const signallingDate = new Date(
-      train.fitness_certificates["Signalling Valid"]
-    );
-    const telecomDate = new Date(train.fitness_certificates["Telecom Valid"]);
+    // Check fitness certificate status
+    const expiredCerts = Object.values(train.fitness_certificates).filter(
+      (cert) => cert && cert.status === "expired"
+    ).length > 0;
 
-    const isExpired =
-      rollingDate < currentDate ||
-      signallingDate < currentDate ||
-      telecomDate < currentDate;
-
-    const daysToExpiry = Math.min(
-      daysBetween(rollingDate, currentDate),
-      daysBetween(signallingDate, currentDate),
-      daysBetween(telecomDate, currentDate)
-    );
-
+    // Check for critical or high priority job cards
     const hasCriticalJobs = train.job_cards.some(
-      (job) => job.Severity === "Critical"
+      (job) => job.criticality === "critical"
     );
-    const hasOpenJobs = train.job_cards.some((job) => job.Status === "Open");
+    const hasHighJobs = train.job_cards.some((job) => job.criticality === "high");
 
-    const lastCleanedDate = new Date(train.cleaning["Last Deep Cleaned Date"]);
-    const daysSinceClean = daysBetween(currentDate, lastCleanedDate);
+    // Check mileage thresholds
+    const mileageExceeded = Object.keys(train.current_mileage).some((key) => {
+      const current = train.current_mileage[key as keyof Mileage];
+      const threshold = train.maintenance_thresholds[key as keyof Mileage];
+      return current >= threshold * 0.9;
+    });
 
-    if (isExpired || hasCriticalJobs) return "high";
-    if (daysToExpiry < 30 || hasOpenJobs || daysSinceClean > 14)
-      return "medium";
-    return "low";
-  }
+    // Check cleaning (more than 14 days)
+    const daysSinceClean = daysBetween(currentDate, new Date(train.last_deep_cleaning));
 
-  function getFitnessStatus(train: Train): "expired" | "expiring" | "valid" {
-    const rollingDate = new Date(
-      train.fitness_certificates["Rolling Stock Valid"]
-    );
-    const signallingDate = new Date(
-      train.fitness_certificates["Signalling Valid"]
-    );
-    const telecomDate = new Date(train.fitness_certificates["Telecom Valid"]);
+    if (expiredCerts || hasCriticalJobs || daysSinceClean > 14 || mileageExceeded) {
+      priority = "high";
+    } else if (hasHighJobs || daysSinceClean > 7) {
+      priority = "medium";
+    }
 
-    const isExpired =
-      rollingDate < currentDate ||
-      signallingDate < currentDate ||
-      telecomDate < currentDate;
-    const daysToExpiry = Math.min(
-      daysBetween(rollingDate, currentDate),
-      daysBetween(signallingDate, currentDate),
-      daysBetween(telecomDate, currentDate)
-    );
+    return priority;
+  };
 
-    if (isExpired) return "expired";
-    if (daysToExpiry < 30) return "expiring";
+  const getConditionStatus = (
+    train: Train
+  ): "expired" | "expiring" | "valid" => {
+    const expiredCerts = Object.values(train.fitness_certificates).filter(
+      (cert) => cert && cert.status === "expired"
+    ).length;
+
+    if (expiredCerts > 0) return "expired";
+
+    const expiringCerts = Object.values(train.fitness_certificates).filter(
+      (cert) => {
+        if (!cert) return false;
+        const expiryDate = new Date(cert.expiry_date);
+        const daysToExpiry = daysBetween(expiryDate, currentDate);
+        return daysToExpiry < 30 && daysToExpiry > 0;
+      }
+    ).length;
+
+    if (expiringCerts > 0) return "expiring";
     return "valid";
-  }
+  };
 
   const filteredTrains = useMemo(() => {
     return trains.filter((train) => {
       const searchLower = searchTerm.trim().toLowerCase();
       const matchesSearch =
         !searchLower ||
-        train.train_id.toLowerCase().includes(searchLower) ||
-        train.branding.Advertiser.toLowerCase().includes(searchLower);
+        train.id.toLowerCase().includes(searchLower) ||
+        train.branding_contracts.some((brand) =>
+          brand.brand.toLowerCase().includes(searchLower)
+        );
 
-      const pr = calculatePriority(train);
-      const matchesPriority = !priorityFilter || pr === priorityFilter;
+      const priority = calculatePriority(train);
+      const matchesPriority = !priorityFilter || priority === priorityFilter;
 
-      const fs = getFitnessStatus(train);
-      const matchesFitness = !fitnessFilter || fs === fitnessFilter;
+      const matchesStatus = !statusFilter || train.status === statusFilter;
 
-      const matchesBay =
-        !bayFilter ||
-        (train.stabling["Current Bay"] !== null &&
-          train.stabling["Current Bay"] !== undefined &&
-          train.stabling["Current Bay"].toString() === bayFilter);
+      const condition = getConditionStatus(train);
+      const matchesCondition = !conditionFilter || condition === conditionFilter;
 
-      return matchesSearch && matchesPriority && matchesFitness && matchesBay;
+      return matchesSearch && matchesPriority && matchesStatus && matchesCondition;
     });
-  }, [trains, searchTerm, priorityFilter, fitnessFilter, bayFilter]);
+  }, [trains, searchTerm, priorityFilter, statusFilter, conditionFilter]);
 
   const stats = useMemo(() => {
     let high = 0,
       medium = 0,
       low = 0;
-    trains.forEach((t) => {
-      const p = calculatePriority(t);
-      if (p === "high") high++;
-      else if (p === "medium") medium++;
+    let onDuty = 0,
+      maintenanceCount = 0,
+      parkingCount = 0;
+
+    trains.forEach((train) => {
+      const priority = calculatePriority(train);
+      if (priority === "high") high++;
+      else if (priority === "medium") medium++;
       else low++;
+
+      if (train.status === "out_for_duty") onDuty++;
+      else if (train.status === "maintenance") maintenanceCount++;
+      else if (train.status === "parking") parkingCount++;
     });
-    return { total: trains.length, high, medium, low };
+
+    return {
+      total: trains.length,
+      high,
+      medium,
+      low,
+      onDuty,
+      maintenance: maintenanceCount,
+      parking: parkingCount,
+    };
   }, [trains]);
 
-  function openModal(train: Train) {
+  const openModal = (train: Train) => {
     setSelectedTrain(train);
     setModalOpen(true);
-  }
+  };
 
-  function closeModal() {
+  const closeModal = () => {
     setModalOpen(false);
     setSelectedTrain(null);
-  }
+  };
 
-  function generateCSVContent(data: Train[]) {
+  const generateCSVContent = (data: Train[]): string => {
     const headers = [
       "Train ID",
       "Priority",
-      "Current Bay",
+      "Status",
       "Position",
-      "Job Cards Count",
+      "Job Cards",
       "Critical Jobs",
-      "Fitness Status",
-      "Km Travelled",
-      "Last Cleaned",
-      "Advertiser",
-      "Wrap ID",
-      "Exposure Hours Today",
+      "Condition",
+      "Days Since Clean",
+      "Bogie Mileage %",
+      "Branding Contracts",
     ];
 
     const lines = [headers.join(",")];
 
     data.forEach((train) => {
       const priority = calculatePriority(train);
-      const fitness = getFitnessStatus(train);
+      const condition = getConditionStatus(train);
+      const daysSinceClean = daysBetween(
+        currentDate,
+        new Date(train.last_deep_cleaning)
+      );
+      const bogieMileagePercent = Math.round(
+        (train.current_mileage.bogie / train.maintenance_thresholds.bogie) * 100
+      );
       const criticalJobs = train.job_cards.filter(
-        (job) => job.Severity === "Critical"
+        (job) => job.criticality === "critical"
       ).length;
+      const brands = train.branding_contracts.map((b) => b.brand).join("|");
+
       const row = [
-        train.train_id,
+        train.id,
         priority,
-        train.stabling["Current Bay"],
-        train.stabling.Position,
+        train.status,
+        train.current_position || "N/A",
         train.job_cards.length,
         criticalJobs,
-        fitness,
-        train.mileage["Km Travelled"],
-        train.cleaning["Last Deep Cleaned Date"],
-        train.branding.Advertiser,
-        train.branding["Wrap ID"],
-        train.branding["Exposure Hours Today"],
+        condition,
+        daysSinceClean,
+        bogieMileagePercent,
+        brands,
       ];
       lines.push(row.join(","));
     });
 
     return lines.join("\n");
-  }
+  };
 
-  function exportReport() {
+  const exportReport = () => {
     const content = generateCSVContent(trains);
     const blob = new Blob([content], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "metro_fleet_report.csv";
+    a.download = `metro_fleet_report_${new Date().toISOString().split("T")[0]}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-  }
+  };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-700 text-slate-50 flex items-center justify-center">
         <div className="text-center">
           <div className="text-xl font-bold mt-4">{t.loading}</div>
-          <div className="text-slate-300 mt-2">
-            {t.loadingSubtitle}
-          </div>
+          <div className="text-slate-300 mt-2">{t.loadingSubtitle}</div>
         </div>
       </div>
     );
@@ -519,50 +480,44 @@ export default function MetroMindPage() {
           <h2 className="text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-sky-400 to-emerald-400">
             {t.headerTitle}
           </h2>
-          <p className="text-slate-300 mt-2">
-            {t.headerSubtitle}
-          </p>
+          <p className="text-slate-300 mt-2">{t.headerSubtitle}</p>
         </header>
 
-        <section className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="relative overflow-hidden col-span-1 md:col-span-1 bg-slate-800/60 backdrop-blur border border-slate-700 rounded-xl p-4 flex flex-col items-center gap-2 transform transition-transform duration-300 hover:scale-[1.02] active:scale-95">
-            <div className="absolute inset-0 z-0 bg-sky-500/10 animate-pulse-slow"></div>
-            <div className="text-3xl font-bold z-10 relative">
-              {stats.total}
-            </div>
-            <div className="text-slate-300 text-sm z-10 relative">
-              {t.totalMetros}
-            </div>
+        <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-3 mb-6">
+          <div className="relative overflow-hidden bg-slate-800/60 backdrop-blur border border-slate-700 rounded-xl p-4 flex flex-col items-center gap-2 transform transition-transform duration-300 hover:scale-[1.02]">
+            <div className="absolute inset-0 z-0 bg-sky-500/10"></div>
+            <div className="text-3xl font-bold z-10 relative">{stats.total}</div>
+            <div className="text-slate-300 text-sm z-10 relative">{t.totalTrains}</div>
           </div>
 
-          <div className="relative overflow-hidden bg-slate-800/60 backdrop-blur border border-slate-700 rounded-xl p-4 flex flex-col items-center gap-2 transform transition-transform duration-300 hover:scale-[1.02] active:scale-95">
-            <div className="absolute inset-0 z-0 bg-rose-500/10 animate-pulse-slow"></div>
-            <div className="text-3xl font-bold text-rose-400 z-10 relative">
-              {stats.high}
-            </div>
-            <div className="text-slate-300 text-sm z-10 relative">
-              {t.highPriority}
-            </div>
+          <div className="relative overflow-hidden bg-slate-800/60 backdrop-blur border border-slate-700 rounded-xl p-4 flex flex-col items-center gap-2 transform transition-transform duration-300 hover:scale-[1.02]">
+            <div className="absolute inset-0 z-0 bg-rose-500/10"></div>
+            <div className="text-3xl font-bold text-rose-400 z-10 relative">{stats.high}</div>
+            <div className="text-slate-300 text-sm z-10 relative">{t.highPriority}</div>
           </div>
 
-          <div className="relative overflow-hidden bg-slate-800/60 backdrop-blur border border-slate-700 rounded-xl p-4 flex flex-col items-center gap-2 transform transition-transform duration-300 hover:scale-[1.02] active:scale-95">
-            <div className="absolute inset-0 z-0 bg-amber-500/10 animate-pulse-slow"></div>
-            <div className="text-3xl font-bold text-amber-400 z-10 relative">
-              {stats.medium}
-            </div>
-            <div className="text-slate-300 text-sm z-10 relative">
-              {t.mediumPriority}
-            </div>
+          <div className="relative overflow-hidden bg-slate-800/60 backdrop-blur border border-slate-700 rounded-xl p-4 flex flex-col items-center gap-2 transform transition-transform duration-300 hover:scale-[1.02]">
+            <div className="absolute inset-0 z-0 bg-amber-500/10"></div>
+            <div className="text-3xl font-bold text-amber-400 z-10 relative">{stats.medium}</div>
+            <div className="text-slate-300 text-sm z-10 relative">{t.mediumPriority}</div>
           </div>
 
-          <div className="relative overflow-hidden bg-slate-800/60 backdrop-blur border border-slate-700 rounded-xl p-4 flex flex-col items-center gap-2 transform transition-transform duration-300 hover:scale-[1.02] active:scale-95">
-            <div className="absolute inset-0 z-0 bg-emerald-500/10 animate-pulse-slow"></div>
-            <div className="text-3xl font-bold text-emerald-300 z-10 relative">
-              {stats.low}
-            </div>
-            <div className="text-slate-300 text-sm z-10 relative">
-              {t.lowPriority}
-            </div>
+          <div className="relative overflow-hidden bg-slate-800/60 backdrop-blur border border-slate-700 rounded-xl p-4 flex flex-col items-center gap-2 transform transition-transform duration-300 hover:scale-[1.02]">
+            <div className="absolute inset-0 z-0 bg-emerald-500/10"></div>
+            <div className="text-3xl font-bold text-emerald-400 z-10 relative">{stats.onDuty}</div>
+            <div className="text-slate-300 text-sm z-10 relative">{t.onDuty}</div>
+          </div>
+
+          <div className="relative overflow-hidden bg-slate-800/60 backdrop-blur border border-slate-700 rounded-xl p-4 flex flex-col items-center gap-2 transform transition-transform duration-300 hover:scale-[1.02]">
+            <div className="absolute inset-0 z-0 bg-orange-500/10"></div>
+            <div className="text-3xl font-bold text-orange-400 z-10 relative">{stats.maintenance}</div>
+            <div className="text-slate-300 text-sm z-10 relative">{t.maintenance}</div>
+          </div>
+
+          <div className="relative overflow-hidden bg-slate-800/60 backdrop-blur border border-slate-700 rounded-xl p-4 flex flex-col items-center gap-2 transform transition-transform duration-300 hover:scale-[1.02]">
+            <div className="absolute inset-0 z-0 bg-blue-500/10"></div>
+            <div className="text-3xl font-bold text-blue-400 z-10 relative">{stats.parking}</div>
+            <div className="text-slate-300 text-sm z-10 relative">{t.parkingLabel}</div>
           </div>
         </section>
 
@@ -570,14 +525,14 @@ export default function MetroMindPage() {
           <input
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="flex-1 min-w-[200px] px-4 py-2 rounded-md bg-slate-800/60 border border-slate-700 placeholder-slate-400"
+            className="flex-1 min-w-[200px] px-4 py-2 rounded-md bg-slate-800/60 border border-slate-700 placeholder-slate-400 text-slate-50"
             placeholder={t.searchPlaceholder}
           />
 
           <select
             value={priorityFilter}
             onChange={(e) => setPriorityFilter(e.target.value)}
-            className="px-3 py-2 rounded-md bg-slate-800/60 border border-slate-700"
+            className="px-3 py-2 rounded-md bg-slate-800/60 border border-slate-700 text-slate-50"
           >
             <option value="">{t.allPriorities}</option>
             <option value="high">{t.highPriority}</option>
@@ -586,119 +541,120 @@ export default function MetroMindPage() {
           </select>
 
           <select
-            value={fitnessFilter}
-            onChange={(e) => setFitnessFilter(e.target.value)}
-            className="px-3 py-2 rounded-md bg-slate-800/60 border border-slate-700"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="px-3 py-2 rounded-md bg-slate-800/60 border border-slate-700 text-slate-50"
           >
-            <option value="">{t.allFitnessStatus}</option>
+            <option value="">{t.allStatus}</option>
+            <option value="out_for_duty">{t.onDuty}</option>
+            <option value="maintenance">{t.maintenance}</option>
+            <option value="parking">{t.parkingLabel}</option>
+          </select>
+
+          <select
+            value={conditionFilter}
+            onChange={(e) => setConditionFilter(e.target.value)}
+            className="px-3 py-2 rounded-md bg-slate-800/60 border border-slate-700 text-slate-50"
+          >
+            <option value="">{t.allConditions}</option>
             <option value="valid">{t.valid}</option>
             <option value="expiring">{t.expiringSoon}</option>
             <option value="expired">{t.expired}</option>
           </select>
-
-          <select
-            value={bayFilter}
-            onChange={(e) => setBayFilter(e.target.value)}
-            className="px-3 py-2 rounded-md bg-slate-800/60 border border-slate-700"
-          >
-            <option value="">{t.allBays}</option>
-            <option value="1">Bay 1</option>
-            <option value="2">Bay 2</option>
-            <option value="3">Bay 3</option>
-            <option value="4">Bay 4</option>
-            <option value="5">Bay 5</option>
-          </select>
         </section>
 
-        <section className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+        <section className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           {filteredTrains.map((train) => {
-            const pr = calculatePriority(train);
-            const fitness = getFitnessStatus(train);
+            const priority = calculatePriority(train);
+            const condition = getConditionStatus(train);
+            const daysSinceClean = daysBetween(
+              currentDate,
+              new Date(train.last_deep_cleaning)
+            );
+
             return (
               <article
-                key={train.train_id}
+                key={train.id}
                 onClick={() => openModal(train)}
-                className="train-card cursor-pointer bg-slate-800/60 backdrop-blur border border-slate-700 rounded-xl p-4 transform transition-all duration-300 hover:scale-[1.02] hover:translate-y-[-4px] shadow-lg hover:shadow-cyan-500/50"
+                className="cursor-pointer bg-slate-800/60 backdrop-blur border border-slate-700 rounded-xl p-4 transform transition-all duration-300 hover:scale-[1.02] hover:translate-y-[-4px] shadow-lg hover:shadow-cyan-500/50"
               >
                 <div className="flex items-center justify-between mb-3">
-                  <div className="text-lg font-bold">{train.train_id}</div>
+                  <div className="text-lg font-bold truncate">{train.id}</div>
                   <div
-                    className={`px-2 py-1 rounded text-xs font-semibold uppercase ${
-                      pr === "high"
+                    className={`px-2 py-1 rounded text-xs font-semibold uppercase whitespace-nowrap ${priority === "high"
                         ? "text-rose-500 border border-rose-500/30 bg-rose-500/5"
-                        : pr === "medium"
-                        ? "text-amber-400 border border-amber-400/30 bg-amber-400/5"
-                        : "text-emerald-400 border border-emerald-400/30 bg-emerald-400/5"
-                    }`}
+                        : priority === "medium"
+                          ? "text-amber-400 border border-amber-400/30 bg-amber-400/5"
+                          : "text-emerald-400 border border-emerald-400/30 bg-emerald-400/5"
+                      }`}
                   >
-                    {pr}
+                    {priority}
                   </div>
                 </div>
 
                 <div className="flex flex-col gap-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-slate-400">{t.bayPosition}:</span>
-                    <span className="font-medium">
-                      Bay {train.stabling["Current Bay"]} -{" "}
-                      {train.stabling.Position}
+                    <span className="text-slate-400">{t.statusLabel}:</span>
+                    <span className="font-medium capitalize">
+                      {train.status.replace("_", " ")}
                     </span>
                   </div>
 
                   <div className="flex justify-between">
-                    <span className="text-slate-400">{t.fitness}:</span>
+                    <span className="text-slate-400">{t.positionLabel}:</span>
                     <span className="font-medium">
-                      {fitness.toUpperCase()}
-                      <span
-                        className={`inline-block ml-2 w-2 h-2 rounded-full ${
-                          fitness === "valid"
-                            ? "bg-emerald-400"
-                            : fitness === "expiring"
-                            ? "bg-amber-400"
-                            : "bg-rose-400"
-                        }`}
-                      ></span>
+                      {train.current_position || "N/A"}
                     </span>
                   </div>
 
                   <div className="flex justify-between">
-                    <span className="text-slate-400">{t.mileage}:</span>
+                    <span className="text-slate-400">{t.mileageLabel}:</span>
                     <span className="font-medium">
-                      {train.mileage["Km Travelled"]} km
+                      {Math.round(
+                        (train.current_mileage.bogie /
+                          train.maintenance_thresholds.bogie) *
+                        100
+                      )}
+                      %
                     </span>
                   </div>
 
                   <div className="flex justify-between">
-                    <span className="text-slate-400">{t.jobCards}:</span>
-                    <span className="font-medium">
-                      {train.job_cards.length}
-                    </span>
+                    <span className="text-slate-400">{t.jobCardsLabel}:</span>
+                    <span className="font-medium">{train.job_cards.length}</span>
                   </div>
 
                   <div className="flex justify-between">
-                    <span className="text-slate-400">{t.wrapID}:</span>
-                    <span className="font-medium">
-                      {train.branding["Wrap ID"]}
-                    </span>
+                    <span className="text-slate-400">{t.cleaningInfo}:</span>
+                    <span className="font-medium">{daysSinceClean}d ago</span>
                   </div>
+
+                  {train.branding_contracts.length > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">{t.brandingLabel}:</span>
+                      <span className="font-medium">
+                        {train.branding_contracts[0].brand}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </article>
             );
           })}
         </section>
 
-        {/* Modal */}
         {modalOpen && selectedTrain && (
           <div
-            className="fixed inset-0 z-50 flex items-start justify-center p-6 bg-black/60"
+            className="fixed inset-0 z-50 flex items-start justify-center p-6 bg-black/60 overflow-y-auto"
             onClick={closeModal}
           >
             <div
-              className="w-full max-w-4xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-700 border border-slate-700 rounded-xl p-6 overflow-y-auto max-h-[80vh]"
+              className="w-full max-w-4xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-700 border border-slate-700 rounded-xl p-6 mt-20 mb-20"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-start justify-between mb-4">
                 <h3 className="text-xl font-bold">
-                  {selectedTrain.train_id} - {t.detailedInfo}
+                  {selectedTrain.id} - {t.detailedInfo}
                 </h3>
                 <button onClick={closeModal} className="text-2xl leading-none">
                   &times;
@@ -707,25 +663,29 @@ export default function MetroMindPage() {
 
               <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-3 bg-slate-800/60 p-4 rounded-md border border-slate-700">
-                  <h4 className="text-sky-400 font-semibold">
-                    {t.generalInfo}
-                  </h4>
-                  <div className="text-sm">
+                  <h4 className="text-sky-400 font-semibold">{t.generalInfo}</h4>
+                  <div className="text-sm space-y-2">
                     <div className="flex justify-between">
                       <span className="text-slate-400">{t.trainID}</span>
-                      <span className="font-medium">
-                        {selectedTrain.train_id}
-                      </span>
+                      <span className="font-medium">{selectedTrain.id}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-slate-400">{t.priorityLevel}</span>
-                      <span className="font-medium">
-                        {calculatePriority(selectedTrain).toUpperCase()}
+                      <span className="font-medium uppercase">
+                        {calculatePriority(selectedTrain)}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-400">{t.currentDate}</span>
-                      <span className="font-medium">{selectedTrain.date}</span>
+                      <span className="text-slate-400">{t.statusLabel}</span>
+                      <span className="font-medium capitalize">
+                        {selectedTrain.status.replace("_", " ")}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">{t.positionLabel}</span>
+                      <span className="font-medium">
+                        {selectedTrain.current_position || "N/A"}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -734,205 +694,155 @@ export default function MetroMindPage() {
                   <h4 className="text-sky-400 font-semibold">
                     {t.fitnessCertificates}
                   </h4>
-                  <div className="text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">
-                        {t.rollingStockValid}
-                      </span>
-                      <span className="font-medium">
-                        {
-                          selectedTrain.fitness_certificates[
-                            "Rolling Stock Valid"
-                          ]
-                        }
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">
-                        {t.signallingValid}
-                      </span>
-                      <span className="font-medium">
-                        {selectedTrain.fitness_certificates["Signalling Valid"]}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">
-                        {t.telecomValid}
-                      </span>
-                      <span className="font-medium">
-                        {selectedTrain.fitness_certificates["Telecom Valid"]}
-                      </span>
-                    </div>
+                  <div className="text-sm space-y-2">
+                    {selectedTrain.fitness_certificates.rolling_stock && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-400">Rolling Stock</span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">
+                            {selectedTrain.fitness_certificates.rolling_stock.expiry_date}
+                          </span>
+                          <span
+                            className={`w-2 h-2 rounded-full ${selectedTrain.fitness_certificates.rolling_stock
+                                .status === "valid"
+                                ? "bg-emerald-400"
+                                : "bg-rose-400"
+                              }`}
+                          ></span>
+                        </div>
+                      </div>
+                    )}
+                    {selectedTrain.fitness_certificates.signalling && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-400">Signalling</span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">
+                            {selectedTrain.fitness_certificates.signalling.expiry_date}
+                          </span>
+                          <span
+                            className={`w-2 h-2 rounded-full ${selectedTrain.fitness_certificates.signalling
+                                .status === "valid"
+                                ? "bg-emerald-400"
+                                : "bg-rose-400"
+                              }`}
+                          ></span>
+                        </div>
+                      </div>
+                    )}
+                    {selectedTrain.fitness_certificates.telecom && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-400">Telecom</span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">
+                            {selectedTrain.fitness_certificates.telecom.expiry_date}
+                          </span>
+                          <span
+                            className={`w-2 h-2 rounded-full ${selectedTrain.fitness_certificates.telecom.status ===
+                                "valid"
+                                ? "bg-emerald-400"
+                                : "bg-rose-400"
+                              }`}
+                          ></span>
+                        </div>
+                      </div>
+                    )}
                     <div className="flex justify-between mt-2">
-                      <span className="text-slate-400">{t.overallStatus}</span>
-                      <span className="font-medium">
-                        {getFitnessStatus(selectedTrain).toUpperCase()}
+                      <span className="text-slate-400">{t.overallCondition}</span>
+                      <span className="font-medium uppercase">
+                        {getConditionStatus(selectedTrain)}
                       </span>
                     </div>
                   </div>
                 </div>
 
                 <div className="space-y-3 bg-slate-800/60 p-4 rounded-md border border-slate-700">
-                  <h4 className="text-sky-400 font-semibold">
-                    {t.mileageInfo}
-                  </h4>
-                  <div className="text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">{t.distanceTravelled}</span>
-                      <span className="font-medium">
-                        {selectedTrain.mileage["Km Travelled"]} km
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">{t.currentDate}</span>
-                      <span className="font-medium">
-                        {selectedTrain.mileage["Date"]}
-                      </span>
-                    </div>
+                  <h4 className="text-sky-400 font-semibold">{t.mileageInfo}</h4>
+                  <div className="text-sm space-y-2">
+                    {["bogie", "brake_pad", "hvac"].map((component) => {
+                      const current =
+                        selectedTrain.current_mileage[
+                        component as keyof Mileage
+                        ];
+                      const threshold =
+                        selectedTrain.maintenance_thresholds[
+                        component as keyof Mileage
+                        ];
+                      const percentage = Math.round((current / threshold) * 100);
+                      const isWarning = percentage >= 80;
+                      const isCritical = percentage >= 95;
+
+                      return (
+                        <div key={component}>
+                          <div className="flex justify-between mb-1">
+                            <span className="text-slate-400 capitalize">
+                              {component.replace("_", " ")}
+                            </span>
+                            <span
+                              className={`font-medium ${isCritical
+                                  ? "text-rose-400"
+                                  : isWarning
+                                    ? "text-amber-400"
+                                    : "text-emerald-400"
+                                }`}
+                            >
+                              {percentage}%
+                            </span>
+                          </div>
+                          <div className="w-full bg-slate-700 rounded-full h-2">
+                            <div
+                              className={`h-2 rounded-full ${isCritical
+                                  ? "bg-rose-500"
+                                  : isWarning
+                                    ? "bg-amber-500"
+                                    : "bg-emerald-500"
+                                }`}
+                              style={{ width: `${Math.min(percentage, 100)}%` }}
+                            ></div>
+                          </div>
+                          <div className="text-xs text-slate-400 mt-1">
+                            {current.toFixed(0)} / {threshold.toFixed(0)}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
 
                 <div className="space-y-3 bg-slate-800/60 p-4 rounded-md border border-slate-700">
-                  <h4 className="text-sky-400 font-semibold">
-                    {t.cleaningInfo}
-                  </h4>
-                  <div className="text-sm">
+                  <h4 className="text-sky-400 font-semibold">{t.cleaningInfo}</h4>
+                  <div className="text-sm space-y-2">
                     <div className="flex justify-between">
-                      <span className="text-slate-400">{t.lastDeepCleaned}</span>
+                      <span className="text-slate-400">
+                        {t.lastDeepCleaned}
+                      </span>
                       <span className="font-medium">
-                        {selectedTrain.cleaning["Last Deep Cleaned Date"]}
+                        {selectedTrain.last_deep_cleaning}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-slate-400">{t.daysSinceClean}</span>
                       <span className="font-medium">
-                        {Math.floor(
-                          daysBetween(
-                            currentDate,
-                            new Date(
-                              selectedTrain.cleaning["Last Deep Cleaned Date"]
-                            )
-                          )
+                        {daysBetween(
+                          currentDate,
+                          new Date(selectedTrain.last_deep_cleaning)
                         )}{" "}
                         days
                       </span>
                     </div>
-                  </div>
-                </div>
-
-                <div className="space-y-3 bg-slate-800/60 p-4 rounded-md border border-slate-700">
-                  <h4 className="text-sky-400 font-semibold">
-                    {t.stablingInfo}
-                  </h4>
-                  <div className="text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">{t.currentBay}</span>
-                      <span className="font-medium">
-                        Bay {selectedTrain.stabling["Current Bay"]}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">{t.position}</span>
-                      <span className="font-medium">
-                        {selectedTrain.stabling.Position}
-                      </span>
-                    </div>
                     <div className="flex justify-between">
                       <span className="text-slate-400">
-                        {t.recommendedDeparture}
+                        {t.cleaningDuration}
                       </span>
                       <span className="font-medium">
-                        {selectedTrain.stabling["Recommended Departure"]}
+                        {selectedTrain.cleaning_duration} hours
                       </span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">{t.stablingPriority}</span>
-                      <span className="font-medium">
-                        {selectedTrain.stabling.Priority}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-3 bg-slate-800/60 p-4 rounded-md border border-slate-700">
-                  <h4 className="text-sky-400 font-semibold">
-                    {t.brandingAdvertising}
-                  </h4>
-                  <div className="text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">{t.wrapID}</span>
-                      <span className="font-medium">
-                        {selectedTrain.branding["Wrap ID"]}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">{t.advertiser}</span>
-                      <span className="font-medium">
-                        {selectedTrain.branding.Advertiser}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">
-                        {t.exposureHoursToday}
-                      </span>
-                      <span className="font-medium">
-                        {selectedTrain.branding["Exposure Hours Today"]} hours
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">
-                        {t.slaHoursMonth}
-                      </span>
-                      <span className="font-medium">
-                        {selectedTrain.branding["SLA Hours Month"]} hours
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">{t.preferredTimes}</span>
-                      <span className="font-medium">
-                        {selectedTrain.branding["Preferred Times"]}
-                      </span>
-                    </div>
-
-                    {(() => {
-                      try {
-                        const ap = JSON.parse(
-                          selectedTrain.branding["Audience Profile"]
-                        );
-                        return (
-                          <>
-                            <div className="flex justify-between">
-                              <span className="text-slate-400">
-                                {t.officeWorkers}
-                              </span>
-                              <span className="font-medium">
-                                {Math.round(ap.office * 100)}%
-                              </span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-slate-400">{t.students}</span>
-                              <span className="font-medium">
-                                {Math.round(ap.students * 100)}%
-                              </span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-slate-400">{t.shoppers}</span>
-                              <span className="font-medium">
-                                {Math.round(ap.shoppers * 100)}%
-                              </span>
-                            </div>
-                          </>
-                        );
-                      } catch (err) {
-                        return null;
-                      }
-                    })()}
                   </div>
                 </div>
 
                 <div className="col-span-1 md:col-span-2 space-y-3 bg-slate-800/60 p-4 rounded-md border border-slate-700">
                   <h4 className="text-sky-400 font-semibold">
-                    {t.jobCardsCount} ({selectedTrain.job_cards.length})
+                    {t.jobCardsInfo} ({selectedTrain.job_cards.length})
                   </h4>
                   {selectedTrain.job_cards.length === 0 ? (
                     <div className="text-sm text-slate-400">
@@ -942,46 +852,154 @@ export default function MetroMindPage() {
                     <div className="space-y-2">
                       {selectedTrain.job_cards.map((job) => (
                         <div
-                          key={job["Job ID"]}
+                          key={job.id}
                           className="bg-slate-700/30 p-3 rounded border border-slate-600"
                         >
                           <div className="flex justify-between items-start mb-2">
-                            <div className="font-medium">{job["Job ID"]}</div>
+                            <div className="font-medium">{job.id}</div>
                             <div
-                              className={`px-2 py-1 rounded text-xs font-semibold ${
-                                job.Severity === "Critical"
+                              className={`px-2 py-1 rounded text-xs font-semibold capitalize ${job.criticality === "critical"
                                   ? "bg-rose-500/20 text-rose-400"
-                                  : job.Severity === "High"
-                                  ? "bg-orange-500/20 text-orange-400"
-                                  : job.Severity === "Medium"
-                                  ? "bg-amber-500/20 text-amber-400"
-                                  : "bg-green-500/20 text-green-400"
-                              }`}
+                                  : job.criticality === "high"
+                                    ? "bg-orange-500/20 text-orange-400"
+                                    : job.criticality === "medium"
+                                      ? "bg-amber-500/20 text-amber-400"
+                                      : "bg-green-500/20 text-green-400"
+                                }`}
                             >
-                              {job.Severity}
+                              {job.criticality}
                             </div>
                           </div>
-                          <div className="text-sm text-slate-300 mb-1">
-                            {job.Description}
+                          <div className="text-sm text-slate-300 mb-2">
+                            {job.description}
                           </div>
                           <div className="grid grid-cols-2 gap-2 text-xs text-slate-400">
                             <div>
-                              {t.status}:{" "}
-                              <span
-                                className={`font-medium ${
-                                  job.Status === "Open"
-                                    ? "text-amber-400"
-                                    : "text-green-400"
-                                }`}
-                              >
-                                {job.Status}
+                              {t.openDate}: <span className="font-medium">{job.open_date}</span>
+                            </div>
+                            <div>
+                              {t.estimatedHours}:{" "}
+                              <span className="font-medium">
+                                {job.estimated_hours.toFixed(1)}h
                               </span>
                             </div>
-                            <div>{t.created}: {job["Created At"]}</div>
-                            <div>{t.expected}: {job["Expected Completion"]}</div>
                           </div>
                         </div>
                       ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="col-span-1 md:col-span-2 space-y-3 bg-slate-800/60 p-4 rounded-md border border-slate-700">
+                  <h4 className="text-sky-400 font-semibold">
+                    {t.brandingContracts} ({selectedTrain.branding_contracts.length})
+                  </h4>
+                  {selectedTrain.branding_contracts.length === 0 ? (
+                    <div className="text-sm text-slate-400">
+                      {t.noBrandingContracts}
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {selectedTrain.branding_contracts.map((contract, idx) => {
+                        const daysLeft = daysBetween(
+                          new Date(contract.deadline),
+                          currentDate
+                        );
+                        const completionPercent = Math.round(
+                          (contract.completed_hours / contract.total_exposure_hours) *
+                          100
+                        );
+
+                        return (
+                          <div
+                            key={idx}
+                            className="bg-slate-700/30 p-3 rounded border border-slate-600"
+                          >
+                            <div className="flex justify-between items-start mb-2">
+                              <div>
+                                <div className="font-medium">{contract.brand}</div>
+                                <div className="text-xs text-slate-400">
+                                  Priority: {contract.priority}
+                                </div>
+                              </div>
+                              <span
+                                className={`px-2 py-1 rounded text-xs font-semibold ${daysLeft > 14
+                                    ? "bg-green-500/20 text-green-400"
+                                    : daysLeft > 7
+                                      ? "bg-amber-500/20 text-amber-400"
+                                      : "bg-rose-500/20 text-rose-400"
+                                  }`}
+                              >
+                                {daysLeft}d left
+                              </span>
+                            </div>
+
+                            <div className="mb-2">
+                              <div className="flex justify-between text-xs text-slate-400 mb-1">
+                                <span>{t.completionProgress}</span>
+                                <span>{completionPercent}%</span>
+                              </div>
+                              <div className="w-full bg-slate-700 rounded-full h-1.5">
+                                <div
+                                  className="h-1.5 rounded-full bg-sky-500"
+                                  style={{ width: `${completionPercent}%` }}
+                                ></div>
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-2 text-xs text-slate-400">
+                              <div>
+                                {t.completedHours}:{" "}
+                                <span className="font-medium">
+                                  {contract.completed_hours.toFixed(0)}
+                                </span>
+                              </div>
+                              <div>
+                                {t.totalHours}:{" "}
+                                <span className="font-medium">
+                                  {contract.total_exposure_hours.toFixed(0)}
+                                </span>
+                              </div>
+                              <div>
+                                {t.preferredTimes}:{" "}
+                                <span className="font-medium">
+                                  {contract.preferred_times}
+                                </span>
+                              </div>
+                            </div>
+
+                            {(() => {
+                              try {
+                                const ap = JSON.parse(contract.audience_profile);
+                                return (
+                                  <div className="grid grid-cols-3 gap-2 text-xs text-slate-400 mt-2 pt-2 border-t border-slate-600">
+                                    <div>
+                                      {t.officeWorkers}:{" "}
+                                      <span className="font-medium">
+                                        {Math.round((ap.office || 0) * 100)}%
+                                      </span>
+                                    </div>
+                                    <div>
+                                      {t.students}:{" "}
+                                      <span className="font-medium">
+                                        {Math.round((ap.students || 0) * 100)}%
+                                      </span>
+                                    </div>
+                                    <div>
+                                      {t.shoppers}:{" "}
+                                      <span className="font-medium">
+                                        {Math.round((ap.shoppers || 0) * 100)}%
+                                      </span>
+                                    </div>
+                                  </div>
+                                );
+                              } catch {
+                                return null;
+                              }
+                            })()}
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>

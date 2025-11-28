@@ -599,6 +599,8 @@ class ScheduleOptimizer:
             logger.info("Optimizing parking assignments...")
             # Optimize parking assignments - now returns updated IBL trains list
             parking_assignments, total_moves, updated_ibl_trains = self.optimize_parking(trains_to_service, trains_to_standby, trains_to_ibl)
+            # Update parking.json with the assignments
+            self.update_parking_json_from_assignments(parking_assignments, updated_ibl_trains)
             
             logger.info("Generating explanation...")
             # Generate explanation
@@ -744,6 +746,8 @@ class ScheduleOptimizer:
         
         # Optimize parking assignments (with updated IBL trains list)
         parking_assignments, total_moves, updated_ibl_trains = self.optimize_parking(trains_to_service, trains_to_standby, trains_to_ibl)
+
+        self.update_parking_json_from_assignments(parking_assignments)
         
         # Generate explanation
         explanation = self.generate_explanation(
@@ -947,3 +951,47 @@ class ScheduleOptimizer:
                 total_moves += 1  # Regular repositioning
         
         return total_moves
+    
+    def update_parking_json_from_assignments(self, parking_assignments: List[Dict[str, Any]], ibl_trains: List[str]) -> None:
+        """Update parking.json with assignments from Layer 1 optimization"""
+        try:
+            from config import PARKING_JSON_PATH
+            import os
+            
+            # Create directory if it doesn't exist
+            os.makedirs(os.path.dirname(PARKING_JSON_PATH), exist_ok=True)
+            
+            # Convert parking assignments to parking.json format
+            parking_data = []
+            current_time = datetime.now().isoformat()
+            
+            for assignment in parking_assignments:
+                # Determine status based on whether train is in IBL list AND assigned to IBL bay
+                train_id = assignment["train_id"]
+                track_id = assignment["track_id"]
+                
+                # If train is in IBL trains list AND assigned to IBL bay, set status to maintenance
+                if train_id in ibl_trains and track_id.startswith("IBL"):
+                    status = "maintenance"
+                else:
+                    status = "parking"
+                
+                parking_record = {
+                    "train_id": train_id,
+                    "bay": track_id,
+                    "position": assignment["position_in_track"],
+                    "status": status,  # This is the key fix
+                    "arrival_time": current_time,
+                    "notes": "Assigned from Layer 1 optimization"
+                }
+                parking_data.append(parking_record)
+            
+            # Save to parking.json
+            with open(PARKING_JSON_PATH, "w") as f:
+                json.dump(parking_data, f, indent=2)
+                
+            logger.info(f"Updated parking.json with {len(parking_data)} assignments")
+            
+        except Exception as e:
+            logger.error(f"Error updating parking.json: {str(e)}")
+            # Don't raise the exception to avoid breaking the main optimization

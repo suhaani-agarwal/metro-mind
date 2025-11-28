@@ -8,774 +8,1229 @@ type DepotLayoutType = {
   exit_points?: string[];
 };
 
+type NodePos = { x: number; y: number };
+type TrackNodePath = { node: string; pos: NodePos }[];
+
+type SimulationMove = {
+  train_id: string;
+  from_track: string | null;
+  to_track: string;
+  path: TrackNodePath;
+  moves_required: number;
+  start_time: number;
+  duration: number;
+  order: number;
+};
+
 type Props = {
   assignments: ParkingAssignment[];
   depotLayout?: DepotLayoutType;
+  unifiedData?: any;
+  outputData?: any;
   selected?: string | null;
   onSelect?: (trainId: string | null) => void;
 };
 
-const styles = {
-  train: {
-    cursor: 'pointer',
-    transition: 'all 0.3s ease',
-  },
-  selected: {
-    filter: 'drop-shadow(0 0 12px rgba(251, 191, 36, 0.8))',
-    transform: 'scale(1.1)',
-  },
-  mainSpine: {
-    strokeLinecap: 'round' as const,
-  },
-  iblTrack: {
-    strokeLinecap: 'round' as const,
-  },
-  parkingTrack: {
-    strokeLinecap: 'round' as const,
-  },
-  exitPoint: {
-    filter: 'drop-shadow(0 0 8px rgba(16, 185, 129, 0.6))',
-  },
-  shuntingPath: {
-    strokeLinecap: 'round' as const,
-    strokeLinejoin: 'round' as const,
-  }
-};
+export default function AdvancedDepotMap({
+  assignments,
+  depotLayout,
+  unifiedData,
+  outputData,
+  selected,
+  onSelect,
+}: Props) {
+  const [isSimulating, setIsSimulating] = useState(false);
+  const [simProgress, setSimProgress] = useState(0);
+  const [trainStates, setTrainStates] = useState<
+    Record<string, { x: number; y: number; moving: boolean }>
+  >({});
+  const [simMoves, setSimMoves] = useState<SimulationMove[]>([]);
+  const [highlighedPath, setHighlighedPath] = useState<TrackNodePath>([]);
+  const animationRef = useRef<number | null>(null);
+  const startTimeRef = useRef<number>(0);
 
-export default function ParkingMap({ assignments, depotLayout, selected, onSelect }: Props) {
-  const [animatedPath, setAnimatedPath] = useState<string[]>([]);
-  const [animationStep, setAnimationStep] = useState(0);
-  const [isAnimating, setIsAnimating] = useState(false);
-  const [simulationSpeed, setSimulationSpeed] = useState(1);
-  const intervalRef = useRef<number | null>(null);
+  const SVG_W = 1600;
+  const SVG_H = 530; // reduced height so graph fits inside the dashboard box
 
-  // Map train -> assignment
-  const assignMap: Record<string, ParkingAssignment> = {};
-  assignments.forEach(a => { assignMap[a.train_id] = a; });
+  // ========== REALISTIC DEPOT GRAPH STRUCTURE ==========
+  // Every 2 consecutive tracks -> intermediate node, then converge leftward
+  // Final structure: all tracks branch & converge progressively to MAIN_LINE
 
-  // Get selected train details
-  const selectedAssignment = selected ? assignMap[selected] : null;
+  const TRACK_SPACING = 35; // smaller spacing so tracks fit vertically
+  const PARKING_START_Y = 5; // move parking start up to reduce overall height
+  const IBL_END_Y = PARKING_START_Y + 5 * TRACK_SPACING; // IBL in continuity (y=310)
 
-  // Enhanced animation with smooth path following
-  useEffect(() => {
-    setAnimatedPath([]);
-    setAnimationStep(0);
-    if (intervalRef.current) {
-      window.clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-
-    if (selectedAssignment && selectedAssignment.shunting_path && isAnimating) {
-      let step = 0;
-      const path = selectedAssignment.shunting_path;
-      intervalRef.current = window.setInterval(() => {
-        if (step < path.length) {
-          setAnimatedPath(prev => [...prev, path[step]]);
-          setAnimationStep(step + 1);
-          step += 1;
-        } else {
-          if (intervalRef.current) {
-            window.clearInterval(intervalRef.current);
-            intervalRef.current = null;
-          }
-          setIsAnimating(false);
-        }
-      }, Math.max(150, 600 / simulationSpeed));
-    }
-
-    return () => {
-      if (intervalRef.current) {
-        window.clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-    };
-  }, [selected, selectedAssignment, simulationSpeed, isAnimating]);
-
-  // Enhanced depot layout with realistic proportions
-  const svgW = 1200;
-  const svgH = 600;
-
-  // Main spine running horizontally through center
-  const spineY = svgH / 2;
-  const spineStartX = 100;
-  const spineEndX = svgW - 100;
-
-  // IBL maintenance bays (top section) - 5 parallel tracks
-  const iblBays = depotLayout?.ibl_bays || ['IBL01', 'IBL02', 'IBL03', 'IBL04', 'IBL05'];
-  const iblY = 120;
-  const iblSpacing = 180;
-  const iblPositions: Record<string, { x: number, y: number }> = {};
-  iblBays.forEach((bay, i) => {
-    iblPositions[bay] = {
-      x: spineStartX + 200 + (i * iblSpacing),
-      y: iblY
-    };
-  });
-
-  // Parking tracks (bottom section) - 12 tracks in 2 rows
-  const parkingTracks = depotLayout?.parking_tracks || [
-    { id: 'PT01', capacity: 2 }, { id: 'PT02', capacity: 2 },
-    { id: 'PT03', capacity: 2 }, { id: 'PT04', capacity: 2 },
-    { id: 'PT05', capacity: 2 }, { id: 'PT06', capacity: 2 },
-    { id: 'PT07', capacity: 2 }, { id: 'PT08', capacity: 2 },
-    { id: 'PT09', capacity: 2 }, { id: 'PT10', capacity: 2 },
-    { id: 'PT11', capacity: 2 }, { id: 'PT12', capacity: 2 }
+  const iblBays = depotLayout?.ibl_bays || [
+    'IBL01',
+    'IBL02',
+    'IBL03',
+    'IBL04',
+    'IBL05',
   ];
+  const parkingTracks = depotLayout?.parking_tracks || Array.from(
+    { length: 12 },
+    (_, i) => ({ id: `PT${(i + 1).toString().padStart(2, '0')}`, capacity: 2 })
+  );
 
-  const trackPositions: Record<string, { x: number, y: number }> = {};
-  parkingTracks.forEach((track, i) => {
-    const row = Math.floor(i / 6);
-    const col = i % 6;
-    trackPositions[track.id || ''] = {
-      x: spineStartX + 200 + (col * 150),
-      y: spineY + 100 + (row * 60)
-    };
-  });
+  // Build comprehensive node graph
+  const buildNodeGraph = () => {
+    const nodes: Record<string, NodePos> = {};
+    const connections: Record<string, string[]> = {};
 
-  // Entry/Exit points
-  const exitPositions: Record<string, { x: number, y: number }> = {
-    'ENTRY': { x: spineStartX, y: spineY },
-    'EXIT01': { x: spineEndX, y: spineY - 40 },
-    'EXIT02': { x: spineEndX, y: spineY + 40 },
-    'MAIN': { x: spineStartX + 100, y: spineY }
+    const TRACKS_START_X = 1400;
+    const MAIN_LINE_X = 200;
+
+    // ===== IBL NODES =====
+    iblBays.forEach((bay, i) => {
+      const y = PARKING_START_Y + i * TRACK_SPACING;
+      nodes[`${bay}_START`] = { x: TRACKS_START_X, y };
+      nodes[`${bay}_END`] = { x: TRACKS_START_X - 200, y };
+      connections[`${bay}_START`] = [`${bay}_END`];
+      connections[`${bay}_END`] = [];
+    });
+
+    // ===== IBL CONVERGENCE TREE =====
+    // Pair-wise convergence: (IBL01,IBL02)->(IBL_CONV_12), (IBL03,IBL04)->(IBL_CONV_34), (IBL05)->(IBL_CONV_5)
+    // Then all converge to IBL_MAIN
+    nodes['IBL_CONV_12'] = { x: TRACKS_START_X - 350, y: PARKING_START_Y + 0.5 * TRACK_SPACING };
+    nodes['IBL_CONV_34'] = { x: TRACKS_START_X - 350, y: PARKING_START_Y + 3.5 * TRACK_SPACING };
+    nodes['IBL_CONV_5'] = { x: TRACKS_START_X - 350, y: PARKING_START_Y + 4 * TRACK_SPACING };
+    nodes['IBL_MAIN'] = { x: TRACKS_START_X - 500, y: PARKING_START_Y + 2 * TRACK_SPACING };
+
+    connections['IBL01_END'] = ['IBL_CONV_12'];
+    connections['IBL02_END'] = ['IBL_CONV_12'];
+    connections['IBL03_END'] = ['IBL_CONV_34'];
+    connections['IBL04_END'] = ['IBL_CONV_34'];
+    connections['IBL05_END'] = ['IBL_CONV_5'];
+
+    connections['IBL_CONV_12'] = ['IBL_MAIN'];
+    connections['IBL_CONV_34'] = ['IBL_MAIN'];
+    connections['IBL_CONV_5'] = ['IBL_MAIN'];
+    connections['IBL_MAIN'] = [];
+
+    // ===== PARKING NODES =====
+    parkingTracks.forEach((track, i) => {
+      const y = PARKING_START_Y + (5 + i) * TRACK_SPACING;
+      nodes[`${track.id}_START`] = { x: TRACKS_START_X, y };
+      nodes[`${track.id}_END`] = { x: TRACKS_START_X - 350, y };
+      connections[`${track.id}_START`] = [`${track.id}_END`];
+      connections[`${track.id}_END`] = [];
+    });
+
+    // ===== PARKING CONVERGENCE TREE =====
+    // Pair-wise: (PT01,PT02), (PT03,PT04), (PT05,PT06), (PT07,PT08), (PT09,PT10), (PT11,PT12)
+    const parkingGroups = [
+      ['PT01_END', 'PT02_END', 'PARK_CONV_1'],
+      ['PT03_END', 'PT04_END', 'PARK_CONV_2'],
+      ['PT05_END', 'PT06_END', 'PARK_CONV_3'],
+      ['PT07_END', 'PT08_END', 'PARK_CONV_4'],
+      ['PT09_END', 'PT10_END', 'PARK_CONV_5'],
+      ['PT11_END', 'PT12_END', 'PARK_CONV_6'],
+    ];
+
+    parkingGroups.forEach((group, i) => {
+      const y = PARKING_START_Y + (5 + i * 2 + 0.5) * TRACK_SPACING;
+      nodes[group[2]] = { x: TRACKS_START_X - 500, y };
+      connections[group[0]] = [group[2]];
+      connections[group[1]] = [group[2]];
+      connections[group[2]] = [];
+    });
+
+    // ===== SECONDARY PARKING CONVERGENCE =====
+    // (PARK_CONV_1,2)->(PARK_SEC_1), (PARK_CONV_3,4)->(PARK_SEC_2), (PARK_CONV_5,6)->(PARK_SEC_3)
+    nodes['PARK_SEC_1'] = { x: TRACKS_START_X - 650, y: PARKING_START_Y + 5.5 * TRACK_SPACING };
+    nodes['PARK_SEC_2'] = { x: TRACKS_START_X - 650, y: PARKING_START_Y + 8.5 * TRACK_SPACING };
+    nodes['PARK_SEC_3'] = { x: TRACKS_START_X - 650, y: PARKING_START_Y + 11.5 * TRACK_SPACING };
+
+    connections['PARK_CONV_1'] = ['PARK_SEC_1'];
+    connections['PARK_CONV_2'] = ['PARK_SEC_1'];
+    connections['PARK_CONV_3'] = ['PARK_SEC_2'];
+    connections['PARK_CONV_4'] = ['PARK_SEC_2'];
+    connections['PARK_CONV_5'] = ['PARK_SEC_3'];
+    connections['PARK_CONV_6'] = ['PARK_SEC_3'];
+
+    // ===== FINAL CONVERGENCE TO MAIN LINE =====
+    nodes['PARK_MAIN'] = { x: TRACKS_START_X - 800, y: PARKING_START_Y + 8.5 * TRACK_SPACING };
+    nodes['MAIN_FUNNEL'] = { x: MAIN_LINE_X + 150, y: PARKING_START_Y + 8.5 * TRACK_SPACING };
+    nodes['MAIN_LINE'] = { x: MAIN_LINE_X, y: PARKING_START_Y + 8.5 * TRACK_SPACING };
+
+    connections['PARK_SEC_1'] = ['PARK_MAIN'];
+    connections['PARK_SEC_2'] = ['PARK_MAIN'];
+    connections['PARK_SEC_3'] = ['PARK_MAIN'];
+    connections['IBL_MAIN'] = ['PARK_MAIN'];
+    connections['PARK_MAIN'] = ['MAIN_FUNNEL'];
+    connections['MAIN_FUNNEL'] = ['MAIN_LINE'];
+    connections['MAIN_LINE'] = [];
+
+    return { nodes, connections };
+  };
+  // Memoize node graph to avoid recreating objects each render (prevents infinite effect loops)
+  const { nodes: depotNodes, connections: depotConnections } = React.useMemo(() => buildNodeGraph(), [JSON.stringify(depotLayout)]);
+
+  // Build reverse connections map for undirected path searches
+  const reverseConnections = React.useMemo(() => {
+    const rev: Record<string, string[]> = {};
+    Object.entries(depotConnections).forEach(([k, vs]) => {
+      vs.forEach((v) => {
+        if (!rev[v]) rev[v] = [];
+        rev[v].push(k);
+      });
+    });
+    return rev;
+  }, [depotConnections]);
+
+  // ========== BFS SHORTEST PATH ==========
+  const bfsShortestPath = (start: string, end: string = 'MAIN_LINE'): string[] => {
+    const queue: [string, string[]][] = [[start, [start]]];
+    const visited = new Set<string>();
+    visited.add(start);
+
+    while (queue.length > 0) {
+      const [current, path] = queue.shift()!;
+      if (current === end) return path;
+
+      // Treat graph as undirected for path finding (allow travel both ways)
+      const forward = depotConnections[current] || [];
+      const backward = reverseConnections[current] || [];
+      const neighbors = Array.from(new Set([...forward, ...backward]));
+
+      for (const neighbor of neighbors) {
+        if (!visited.has(neighbor)) {
+          visited.add(neighbor);
+          queue.push([neighbor, [...path, neighbor]]);
+        }
+      }
+    }
+    return [start]; // Fallback
   };
 
-  // Junction points for realistic routing
-  const junctionPositions: Record<string, { x: number, y: number }> = {
-    'JCT_IBL': { x: spineStartX + 150, y: spineY },
-    'JCT_PARK': { x: spineStartX + 150, y: spineY },
-    'JCT_EXIT': { x: spineEndX - 100, y: spineY }
-  };
+  // ========== COMPUTE INITIAL TRAIN POSITIONS FROM unified.json ==========
+  useEffect(() => {
+    // Build initial positions along track segments so trains on same track don't overlap.
+    const initialStates: Record<string, { x: number; y: number; moving: boolean }> = {};
 
-  // Track routing algorithm - finds path through actual track connections
-  const findTrackPath = (startNode: string, endNode: string): Array<{ x: number, y: number }> => {
-    const allPositions = { ...iblPositions, ...trackPositions, ...exitPositions, ...junctionPositions };
+    // Helper: compute point along straight segment between start and end nodes
+    const pointAlong = (start: NodePos, end: NodePos, t: number) => ({
+      x: start.x + (end.x - start.x) * t,
+      y: start.y + (end.y - start.y) * t,
+    });
 
-    const startPos = allPositions[startNode];
-    const endPos = allPositions[endNode];
+    // Build a map of track -> trains currently on that track (from unifiedData or assignments)
+    const trackOccupancy: Record<string, Array<{ id: string; slot?: number }>> = {};
 
-    if (!startPos || !endPos) return [];
+    if (unifiedData?.trains) {
+      unifiedData.trains.forEach((train: any) => {
+        if (!train.id) return;
+        // Treat null/empty current_position as MAIN_LINE (they originate from main line)
+        if (train.current_position == null || train.current_position === '') {
+          const trackId = 'MAIN_LINE';
+          if (!trackOccupancy[trackId]) trackOccupancy[trackId] = [];
+          trackOccupancy[trackId].push({ id: train.id, slot: undefined });
+          return;
+        }
 
-    // Define track connectivity based on our layout
-    const getRouteWaypoints = (start: string, end: string): string[] => {
-      const route: string[] = [start];
+        const raw = train.current_position;
+        const [trackId, slotStr] = raw.split('-'); // e.g., PT05-2
+        const slot = slotStr ? parseInt(slotStr, 10) : undefined;
+        const tid = trackId || 'MAIN_LINE';
+        if (!trackOccupancy[tid]) trackOccupancy[tid] = [];
+        trackOccupancy[tid].push({ id: train.id, slot });
+      });
+    }
 
-      // IBL to Parking: IBL -> JCT_IBL -> JCT_PARK -> Parking
-      if (iblBays.includes(start) && parkingTracks.find(p => p.id === end)) {
-        route.push('JCT_IBL', 'JCT_PARK', end);
+    // Ensure assignments trains are present in occupancy if not in unifiedData
+    assignments.forEach((a) => {
+      const tid = a.track_id;
+      if (!trackOccupancy[tid]) trackOccupancy[tid] = [];
+      if (!trackOccupancy[tid].some((t) => t.id === a.train_id)) {
+        trackOccupancy[tid].push({ id: a.train_id, slot: a.position_in_track });
       }
-      // Parking to IBL: Parking -> JCT_PARK -> JCT_IBL -> IBL
-      else if (parkingTracks.find(p => p.id === start) && iblBays.includes(end)) {
-        route.push('JCT_PARK', 'JCT_IBL', end);
+    });
+
+    // For each occupied track, sort by slot if available, otherwise keep given order.
+    Object.entries(trackOccupancy).forEach(([trackId, trains]) => {
+      trains.sort((a, b) => {
+        const sa = a.slot || 0;
+        const sb = b.slot || 0;
+        return sa - sb;
+      });
+
+      const startNode = `${trackId}_START`;
+      const endNode = `${trackId}_END`;
+      const start = depotNodes[startNode];
+      const end = depotNodes[endNode];
+      if (!start || !end) {
+        // fallback: place at START if exists
+        trains.forEach((t) => {
+          const sNode = depotNodes[`${t.id}_START`];
+          if (sNode) initialStates[t.id] = { ...sNode, moving: false };
+        });
+        return;
       }
-      // IBL to Exit: IBL -> JCT_IBL -> JCT_EXIT -> Exit
-      else if (iblBays.includes(start) && Object.keys(exitPositions).includes(end)) {
-        route.push('JCT_IBL', 'JCT_EXIT', end);
-      }
-      // Entry to IBL: Entry -> JCT_IBL -> IBL
-      else if (Object.keys(exitPositions).includes(start) && iblBays.includes(end)) {
-        route.push('JCT_IBL', end);
-      }
-      // Entry to Parking: Entry -> JCT_PARK -> Parking
-      else if (Object.keys(exitPositions).includes(start) && parkingTracks.find(p => p.id === end)) {
-        route.push('JCT_PARK', end);
-      }
-      // Parking to Exit: Parking -> JCT_PARK -> JCT_EXIT -> Exit
-      else if (parkingTracks.find(p => p.id === start) && Object.keys(exitPositions).includes(end)) {
-        route.push('JCT_PARK', 'JCT_EXIT', end);
-      }
-      // Same type movements
-      else if (start !== end) {
-        if (iblBays.includes(start) && iblBays.includes(end)) {
-          route.push('JCT_IBL', end);
-        } else if (parkingTracks.find(p => p.id === start) && parkingTracks.find(p => p.id === end)) {
-          route.push('JCT_PARK', end);
+
+      // Place trains along the segment from START->END with spacing so they don't overlap.
+      // Position 1 (slot 1) should be nearest to END (inside the track); subsequent slots are further towards START.
+      const spacing = 0.34; // increased fractional spacing between consecutive trains to avoid overlap
+      trains.forEach((t, idx) => {
+        const slot = t.slot || idx + 1;
+        // compute t factor (0=start, 1=end). We want slot1 near end (e.g., 0.85), slot2 at 0.63 etc.
+        const base = 0.9;
+        const tt = Math.max(0.05, base - (slot - 1) * spacing);
+        const pos = pointAlong(start, end, tt);
+        initialStates[t.id] = { x: pos.x, y: pos.y, moving: false };
+      });
+    });
+
+    // For any assignment trains not present in occupancy (rare), place at their track START
+    assignments.forEach((a) => {
+      if (!initialStates[a.train_id]) {
+        const startNode = `${a.track_id}_START`;
+        if (depotNodes[startNode]) {
+          initialStates[a.train_id] = { ...depotNodes[startNode], moving: false };
         } else {
-          route.push(end);
+          // fallback to MAIN_LINE
+          initialStates[a.train_id] = { ...depotNodes['MAIN_LINE'], moving: false };
+        }
+      }
+    });
+
+    // Preserve selected train position if present
+    setTrainStates((prev) => {
+      const merged = { ...initialStates } as Record<string, { x: number; y: number; moving: boolean }>;
+      if (selected && prev && prev[selected]) merged[selected] = prev[selected];
+      return merged;
+    });
+  }, [unifiedData, assignments]);
+
+  // When not simulating, place trains at their final assigned parking positions (from outputData)
+  useEffect(() => {
+    if (isSimulating) return; // only when not simulating
+    if (!outputData?.parking_assignments) return;
+
+    const finalStates: Record<string, { x: number; y: number; moving: boolean }> = {};
+
+    const pointAlong = (start: NodePos, end: NodePos, t: number) => ({
+      x: start.x + (end.x - start.x) * t,
+      y: start.y + (end.y - start.y) * t,
+    });
+
+    // For each parking assignment, compute final pos based on slot
+    outputData.parking_assignments.forEach((p: any) => {
+      const trackId = p.track_id;
+      const slot = p.position_in_track || 1;
+      const startNode = `${trackId}_START`;
+      const endNode = `${trackId}_END`;
+      const start = depotNodes[startNode];
+      const end = depotNodes[endNode];
+      if (start && end) {
+        const base = 0.9;
+        const spacing = 0.34;
+        const tt = Math.max(0.05, base - (slot - 1) * spacing);
+        const pos = pointAlong(start, end, tt);
+        finalStates[p.train_id] = { x: pos.x, y: pos.y, moving: false };
+      }
+    });
+
+    // For any trains not in parking_assignments, place them at MAIN_LINE or known current positions
+    // Use union of assignment train ids and provided `assignments` prop to ensure coverage
+    const knownTrainIds = new Set<string>();
+    outputData.parking_assignments.forEach((p: any) => knownTrainIds.add(p.train_id));
+    assignments.forEach((a) => knownTrainIds.add(a.train_id));
+
+    Array.from(knownTrainIds).forEach((tid) => {
+      if (!finalStates[tid]) {
+        // try to place at their assignment if present
+        const assn = outputData.parking_assignments?.find((a: any) => a.train_id === tid);
+        if (assn) {
+          const startNode = `${assn.track_id}_START`;
+          if (depotNodes[startNode]) finalStates[tid] = { ...depotNodes[startNode], moving: false };
+        } else {
+          finalStates[tid] = { ...depotNodes['MAIN_LINE'], moving: false };
+        }
+      }
+    });
+
+    // fallback: ensure every assigned train has a state
+    outputData.parking_assignments.forEach((p: any) => {
+      if (!finalStates[p.train_id]) {
+        finalStates[p.train_id] = { ...depotNodes['MAIN_LINE'], moving: false };
+      }
+    });
+
+    // Merge with existing trainStates to preserve the selected train's current position
+    setTrainStates((prev) => {
+      const merged: Record<string, { x: number; y: number; moving: boolean }> = {
+        ...finalStates,
+      };
+      if (selected && prev && prev[selected]) {
+        merged[selected] = prev[selected];
+      }
+      return merged;
+    });
+  }, [isSimulating, outputData, depotNodes]);
+
+  // When simulation starts, reset train positions to the initial positions from unified.json
+  useEffect(() => {
+    if (!isSimulating) return;
+
+    const initialStates: Record<string, { x: number; y: number; moving: boolean }> = {};
+    const pointAlong = (start: NodePos, end: NodePos, t: number) => ({
+      x: start.x + (end.x - start.x) * t,
+      y: start.y + (end.y - start.y) * t,
+    });
+
+    const trackOccupancy: Record<string, Array<{ id: string; slot?: number }>> = {};
+    if (unifiedData?.trains) {
+      unifiedData.trains.forEach((train: any) => {
+        if (!train.id) return;
+        // If current_position is null/empty, treat as MAIN_LINE
+        if (train.current_position == null || train.current_position === '') {
+          if (!trackOccupancy['MAIN_LINE']) trackOccupancy['MAIN_LINE'] = [];
+          trackOccupancy['MAIN_LINE'].push({ id: train.id, slot: undefined });
+          return;
+        }
+
+        const raw = train.current_position;
+        const [trackId, slotStr] = raw.split('-');
+        const slot = slotStr ? parseInt(slotStr, 10) : undefined;
+        const tid = trackId || 'MAIN_LINE';
+        if (!trackOccupancy[tid]) trackOccupancy[tid] = [];
+        trackOccupancy[tid].push({ id: train.id, slot });
+      });
+    }
+
+    assignments.forEach((a) => {
+      const tid = a.track_id;
+      if (!trackOccupancy[tid]) trackOccupancy[tid] = [];
+      if (!trackOccupancy[tid].some((t) => t.id === a.train_id)) {
+        trackOccupancy[tid].push({ id: a.train_id, slot: a.position_in_track });
+      }
+    });
+
+    Object.entries(trackOccupancy).forEach(([trackId, trains]) => {
+      trains.sort((a, b) => (a.slot || 0) - (b.slot || 0));
+      const startNode = `${trackId}_START`;
+      const endNode = `${trackId}_END`;
+      const start = depotNodes[startNode] || depotNodes['MAIN_LINE'];
+      const end = depotNodes[endNode] || depotNodes['MAIN_LINE'];
+      const spacing = 0.34;
+      trains.forEach((t, idx) => {
+        const slot = t.slot || idx + 1;
+        const base = trackId === 'MAIN_LINE' ? 0.5 : 0.85;
+        const tt = Math.max(0.05, base - (slot - 1) * spacing);
+        const pos = pointAlong(start, end, tt);
+        initialStates[t.id] = { x: pos.x, y: pos.y, moving: false };
+      });
+    });
+
+    // Preserve selected train position if present to avoid it jumping on select
+    setTrainStates((prev) => {
+      const merged = { ...initialStates } as Record<string, { x: number; y: number; moving: boolean }>;
+      if (selected && prev && prev[selected]) merged[selected] = prev[selected];
+      return merged;
+    });
+  }, [isSimulating, unifiedData, assignments, depotNodes]);
+
+  // ========== GENERATE CHOREOGRAPHED SIMULATION MOVES ==========
+  useEffect(() => {
+    if (!outputData?.parking_assignments) return;
+
+    // Map current positions (track ids) from unifiedData
+    const currentPositions: Record<string, string | null> = {};
+    const currentSlots: Record<string, number | undefined> = {};
+    if (unifiedData?.trains) {
+      unifiedData.trains.forEach((train: any) => {
+        if (!train.id) return;
+        if (train.current_position == null || train.current_position === '') {
+          currentPositions[train.id] = 'MAIN_LINE';
+          currentSlots[train.id] = undefined;
+          return;
+        }
+        const raw = train.current_position;
+        const [trackId, slotStr] = raw.split('-');
+        currentPositions[train.id] = trackId || 'MAIN_LINE';
+        currentSlots[train.id] = slotStr ? parseInt(slotStr, 10) : undefined;
+      });
+    }
+
+    // Build dependency graph: if train A is in front of train B, B depends on A
+    const moves: SimulationMove[] = [];
+    const trackContent: Record<string, string[]> = {}; // track -> [train_ids]
+
+    // Initialize track content with current positions
+    Object.entries(currentPositions).forEach(([trainId, trackId]) => {
+      if (trackId) {
+        if (!trackContent[trackId]) trackContent[trackId] = [];
+        trackContent[trackId].push(trainId);
+      }
+    });
+
+    // Generate moves from assignments
+    outputData.parking_assignments.forEach((assignment: any) => {
+      const trainId = assignment.train_id;
+      const targetTrack = assignment.track_id;
+      const from = currentPositions[trainId] || 'MAIN_LINE';
+
+      // If the train is already in correct track and slot (if specified), skip move
+      const desiredSlot = assignment.position_in_track;
+      const currSlot = currentSlots[trainId];
+      if (from === targetTrack && (!desiredSlot || desiredSlot === currSlot)) {
+        return; // already correct
+      }
+
+      // If this train is currently selected, keep it stationary and don't schedule its move animation
+      if (selected === trainId) return;
+
+      const fromNode = from === 'MAIN_LINE' ? 'MAIN_LINE' : `${from}_START`;
+      const toNode = `${targetTrack}_END`;
+      const path = bfsShortestPath(fromNode, toNode);
+
+      const pathWithCoords: TrackNodePath = path.map((node) => ({
+        node,
+        pos: depotNodes[node] || { x: 0, y: 0 },
+      }));
+
+      moves.push({
+        train_id: trainId,
+        from_track: from,
+        to_track: targetTrack,
+        path: pathWithCoords,
+        moves_required: assignment.moves_required || 0,
+        start_time: 0,
+        duration: 1800 + pathWithCoords.length * 350,
+        order: 0,
+      });
+    });
+
+    // ===== SCHEDULE MOVES INTO ROUNDS WITH DEPENDENCY AWARENESS =====
+    // We'll build rounds iteratively. In each round we pick moves that:
+    // - do not depend on other pending moves (target track not currently occupied by a train that hasn't moved yet)
+    // - do not conflict on path nodes with other moves in the same round
+    const nodeSetFor = (m: SimulationMove) => new Set(m.path.map((p) => p.node).filter((n) => n !== 'MAIN_LINE'));
+
+    const remaining: SimulationMove[] = [...moves];
+    const rounds: SimulationMove[][] = [];
+
+    // Helper: check if a track is currently occupied by a train that is still in `remaining`
+    const isTargetBlocked = (targetTrack: string | null) => {
+      if (!targetTrack) return false;
+      const occupants = trackContent[targetTrack] || [];
+      // if any occupant is still planned to move (i.e., exists in remaining), it's blocking
+      return occupants.some((tid) => remaining.some((rm) => rm.train_id === tid));
+    };
+
+    while (remaining.length > 0) {
+      const round: SimulationMove[] = [];
+
+      for (const m of [...remaining]) {
+        // Skip if target is blocked by a train that hasn't moved yet
+        if (isTargetBlocked(m.to_track)) continue;
+
+        // Check node conflicts with already selected moves in this round
+        const mNodes = nodeSetFor(m);
+        let conflict = false;
+        for (const rm of round) {
+          const rn = nodeSetFor(rm);
+          for (const n of mNodes) {
+            if (rn.has(n)) {
+              conflict = true;
+              break;
+            }
+          }
+          if (conflict) break;
+        }
+        if (!conflict) {
+          round.push(m);
+          // remove from remaining
+          const idx = remaining.findIndex((x) => x === m);
+          if (idx >= 0) remaining.splice(idx, 1);
+          // update trackContent: vacate from_track and mark to_track will be occupied by this train
+          if (m.from_track && trackContent[m.from_track]) {
+            trackContent[m.from_track] = trackContent[m.from_track].filter((t) => t !== m.train_id);
+          }
+          if (!trackContent[m.to_track]) trackContent[m.to_track] = [];
+          trackContent[m.to_track].push(m.train_id);
         }
       }
 
-      return route;
+      if (round.length === 0) {
+        // To break deadlocks (cycles), pick the move with smallest moves_required and force it into a round
+        remaining.sort((a, b) => (a.moves_required || 0) - (b.moves_required || 0));
+        const forced = remaining.shift()!;
+        rounds.push([forced]);
+        // update trackContent for forced move
+        if (forced.from_track && trackContent[forced.from_track]) {
+          trackContent[forced.from_track] = trackContent[forced.from_track].filter((t) => t !== forced.train_id);
+        }
+        if (!trackContent[forced.to_track]) trackContent[forced.to_track] = [];
+        trackContent[forced.to_track].push(forced.train_id);
+        continue;
+      }
+
+      rounds.push(round);
+    }
+
+    // Compute start times for rounds (rounds run sequentially, moves within a round run in parallel)
+    const GAP = 500;
+    let offset = 0;
+    const orderedMoves: SimulationMove[] = [];
+    for (let i = 0; i < rounds.length; i++) {
+      const r = rounds[i];
+      const maxDur = Math.max(...r.map((m) => m.duration));
+      for (const m of r) {
+        m.start_time = offset;
+        m.order = i;
+        orderedMoves.push(m);
+      }
+      offset += maxDur + GAP;
+    }
+
+    setSimMoves(orderedMoves);
+  }, [outputData, unifiedData, selected]);
+
+  // ========== ANIMATION LOOP ==========
+  useEffect(() => {
+    if (!isSimulating || simMoves.length === 0) return;
+
+    const animate = (timestamp: number) => {
+      if (startTimeRef.current === 0) startTimeRef.current = timestamp;
+      const elapsed = timestamp - startTimeRef.current;
+      const totalDuration = Math.max(
+        ...simMoves.map((m) => m.start_time + m.duration)
+      );
+
+      if (elapsed > totalDuration) {
+        setIsSimulating(false);
+        startTimeRef.current = 0;
+        return;
+      }
+
+      // Update train positions based on active moves
+      const newStates = { ...trainStates };
+      let activeMove: SimulationMove | null = null;
+      let currentHighlighted: TrackNodePath | null = null;
+
+      simMoves.forEach((move) => {
+        // Skip updating the position for the selected train -- keep it stationary and highlighted
+        if (selected === move.train_id) return;
+
+        const moveProgress = (elapsed - move.start_time) / move.duration;
+
+        if (moveProgress >= 0 && moveProgress < 1) {
+          activeMove = move;
+          currentHighlighted = move.path;
+          // compute interpolated position over the segmented path (per-node linear interpolation)
+          const segments = move.path.length - 1 || 1;
+          const totalSegProgress = moveProgress * segments;
+          const pathIndex = Math.floor(totalSegProgress);
+          const nextIndex = Math.min(pathIndex + 1, move.path.length - 1);
+          const localProgress = totalSegProgress - pathIndex;
+
+          const current = move.path[pathIndex].pos;
+          const next = move.path[nextIndex].pos;
+          const x = current.x + (next.x - current.x) * localProgress;
+          const y = current.y + (next.y - current.y) * localProgress;
+
+          newStates[move.train_id] = { x, y, moving: true };
+        } else if (moveProgress >= 1) {
+          // Move complete: snap to final position
+          const finalPos = move.path[move.path.length - 1].pos;
+          newStates[move.train_id] = { ...finalPos, moving: false };
+        }
+      });
+
+      setHighlighedPath(currentHighlighted || []);
+
+      setTrainStates(newStates);
+      setSimProgress(Math.min(elapsed / totalDuration, 1));
+      animationRef.current = requestAnimationFrame(animate);
     };
 
-    const waypoints = getRouteWaypoints(startNode, endNode);
-    return waypoints.map(node => allPositions[node]).filter(Boolean);
-  };
+    animationRef.current = requestAnimationFrame(animate);
+    return () => {
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
+    };
+  }, [isSimulating, simMoves]);
 
-  // Render realistic track infrastructure
+  // ========== RENDER FUNCTIONS ==========
+
   const renderTracks = () => {
+    const allTracks = [...iblBays, ...parkingTracks.map((t) => t.id!)];
+
     return (
-      <>
-        {/* Grid background */}
+      <g>
+        {/* Defs */}
         <defs>
-          <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-            <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(100,150,255,0.1)" strokeWidth="0.5" />
-          </pattern>
-          <filter id="glow">
-            <feGaussianBlur stdDeviation="3" result="coloredBlur" />
+          <linearGradient id="trackGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#64748b" />
+            <stop offset="50%" stopColor="#94a3b8" />
+            <stop offset="100%" stopColor="#64748b" />
+          </linearGradient>
+          <linearGradient id="mainLineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#10b981" />
+            <stop offset="50%" stopColor="#34d399" />
+            <stop offset="100%" stopColor="#10b981" />
+          </linearGradient>
+          <filter id="trackGlow">
+            <feGaussianBlur stdDeviation="2" result="coloredBlur" />
             <feMerge>
               <feMergeNode in="coloredBlur" />
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
-          <linearGradient id="trackGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" style={{ stopColor: "#4a5568", stopOpacity: 1 }} />
-            <stop offset="50%" style={{ stopColor: "#718096", stopOpacity: 1 }} />
-            <stop offset="100%" style={{ stopColor: "#4a5568", stopOpacity: 1 }} />
-          </linearGradient>
         </defs>
 
-        <rect width="100%" height="100%" fill="url(#grid)" opacity="0.3" />
+        {/* Draw all track lines */}
+        {allTracks.map((trackId) => {
+          const startNode = `${trackId}_START`;
+          const endNode = `${trackId}_END`;
+          const start = depotNodes[startNode];
+          const end = depotNodes[endNode];
 
-        {/* Main spine track */}
-        <g style={styles.mainSpine}>
-          <line
-            x1={spineStartX} y1={spineY}
-            x2={spineEndX} y2={spineY}
-            stroke="url(#trackGradient)"
-            strokeWidth="12"
-            filter="url(#glow)"
-          />
-          <line
-            x1={spineStartX} y1={spineY - 2}
-            x2={spineEndX} y2={spineY - 2}
-            stroke="#e2e8f0"
-            strokeWidth="2"
-          />
-          <line
-            x1={spineStartX} y1={spineY + 2}
-            x2={spineEndX} y2={spineY + 2}
-            stroke="#e2e8f0"
-            strokeWidth="2"
-          />
-        </g>
-
-        {/* IBL tracks with realistic connections */}
-        {iblBays.map((bay, i) => {
-          const pos = iblPositions[bay];
-          const connectionX = spineStartX + 150;
+          if (!start || !end) return null;
 
           return (
-            <g key={bay} style={styles.iblTrack}>
-              {/* Main track */}
+            <g key={trackId}>
+              {/* Track line */}
               <line
-                x1={pos.x - 80} y1={pos.y}
-                x2={pos.x + 80} y2={pos.y}
-                stroke="url(#trackGradient)"
-                strokeWidth="10"
-                filter="url(#glow)"
+                x1={start.x}
+                y1={start.y}
+                x2={end.x}
+                y2={end.y}
+                stroke="url(#trackGrad)"
+                strokeWidth="18"
+                filter="url(#trackGlow)"
+                opacity="0.9"
               />
-
               {/* Rails */}
-              <line x1={pos.x - 80} y1={pos.y - 2} x2={pos.x + 80} y2={pos.y - 2} stroke="#e2e8f0" strokeWidth="1.5" />
-              <line x1={pos.x - 80} y1={pos.y + 2} x2={pos.x + 80} y2={pos.y + 2} stroke="#e2e8f0" strokeWidth="1.5" />
-
-              {/* Sleepers */}
-              {Array.from({ length: 16 }, (_, j) => (
-                <rect
-                  key={j}
-                  x={pos.x - 75 + j * 10}
-                  y={pos.y - 4}
-                  width="2"
-                  height="8"
-                  fill="#4a5568"
-                />
-              ))}
-
-              {/* Connection to spine */}
-              <path
-                d={`M ${connectionX} ${spineY} Q ${connectionX + 30} ${(spineY + pos.y) / 2} ${pos.x - 80} ${pos.y}`}
-                stroke="url(#trackGradient)"
-                strokeWidth="8"
-                fill="none"
-                filter="url(#glow)"
+              <line
+                x1={start.x}
+                y1={start.y - 4}
+                x2={end.x}
+                y2={end.y - 4}
+                stroke="#f1f5f9"
+                strokeWidth="2"
               />
+              <line
+                x1={start.x}
+                y1={start.y + 4}
+                x2={end.x}
+                y2={end.y + 4}
+                stroke="#f1f5f9"
+                strokeWidth="2"
+              />
+              {/* Sleepers */}
+              {Array.from({
+                length: Math.floor(
+                  Math.sqrt(
+                    (end.x - start.x) ** 2 + (end.y - start.y) ** 2
+                  ) / 30
+                ),
+              }).map((_, i) => {
+                const t = i / (Math.floor(
+                  Math.sqrt(
+                    (end.x - start.x) ** 2 + (end.y - start.y) ** 2
+                  ) / 30
+                ) || 1);
+                const x = start.x + (end.x - start.x) * t;
+                const y = start.y + (end.y - start.y) * t;
+                return (
+                  <rect
+                    key={i}
+                    x={x - 2}
+                    y={y - 3}
+                    width="4"
+                    height="6"
+                    fill="#334155"
+                    opacity="0.7"
+                  />
+                );
+              })}
 
-              {/* Track label with futuristic styling */}
-              <g transform={`translate(${pos.x}, ${pos.y - 25})`}>
-                <rect x="-20" y="-8" width="40" height="16" rx="8" fill="rgba(56,178,172,0.2)" stroke="#38b2ac" strokeWidth="1" />
+              {/* Track label */}
+              <g
+                transform={`translate(${(start.x + end.x) / 2}, ${(start.y + end.y) / 2 - 25})`}
+              >
+                <rect
+                  x="-25"
+                  y="-8"
+                  width="50"
+                  height="16"
+                  rx="4"
+                  fill="rgba(30, 41, 59, 0.95)"
+                  stroke="#94a3b8"
+                  strokeWidth="1"
+                />
                 <text
                   textAnchor="middle"
                   y="4"
-                  fill="#38b2ac"
+                  fill="#e2e8f0"
                   fontSize="11"
                   fontWeight="bold"
                   fontFamily="monospace"
                 >
-                  {bay}
+                  {trackId}
                 </text>
               </g>
-
-              {/* Maintenance equipment indicators */}
-              <circle cx={pos.x - 50} cy={pos.y - 15} r="3" fill="#38b2ac" opacity="0.7" />
-              <circle cx={pos.x + 50} cy={pos.y - 15} r="3" fill="#38b2ac" opacity="0.7" />
             </g>
           );
         })}
 
-        {/* Parking tracks */}
-        {parkingTracks.map((track, i) => {
-          const pos = trackPositions[track.id || ''];
-          const connectionX = spineStartX + 150;
+        {/* Draw convergence nodes and connections */}
+        {Object.entries(depotConnections).map(([from, tos]) =>
+          tos.map((to) => {
+            const fromPos = depotNodes[from];
+            const toPos = depotNodes[to];
+            if (!fromPos || !toPos) return null;
 
-          return (
-            <g key={track.id} style={styles.parkingTrack}>
-              {/* Main track */}
+            return (
               <line
-                x1={pos.x - 60} y1={pos.y}
-                x2={pos.x + 60} y2={pos.y}
-                stroke="url(#trackGradient)"
-                strokeWidth="8"
+                key={`${from}-${to}`}
+                x1={fromPos.x}
+                y1={fromPos.y}
+                x2={toPos.x}
+                y2={toPos.y}
+                stroke="#475569"
+                strokeWidth="14"
+                opacity="0.6"
+                strokeDasharray="8,4"
               />
-
-              {/* Rails */}
-              <line x1={pos.x - 60} y1={pos.y - 1.5} x2={pos.x + 60} y2={pos.y - 1.5} stroke="#e2e8f0" strokeWidth="1" />
-              <line x1={pos.x - 60} y1={pos.y + 1.5} x2={pos.x + 60} y2={pos.y + 1.5} stroke="#e2e8f0" strokeWidth="1" />
-
-              {/* Sleepers */}
-              {Array.from({ length: 12 }, (_, j) => (
-                <rect
-                  key={j}
-                  x={pos.x - 55 + j * 10}
-                  y={pos.y - 3}
-                  width="1.5"
-                  height="6"
-                  fill="#4a5568"
-                />
-              ))}
-
-              {/* Connection to spine */}
-              <path
-                d={`M ${connectionX} ${spineY} Q ${connectionX + 20} ${(spineY + pos.y) / 2} ${pos.x - 60} ${pos.y}`}
-                stroke="url(#trackGradient)"
-                strokeWidth="6"
-                fill="none"
-              />
-
-              {/* Track label */}
-              <g transform={`translate(${pos.x}, ${pos.y - 20})`}>
-                <rect x="-15" y="-6" width="30" height="12" rx="6" fill="rgba(102,126,234,0.2)" stroke="#667eea" strokeWidth="1" />
-                <text
-                  textAnchor="middle"
-                  y="3"
-                  fill="#667eea"
-                  fontSize="9"
-                  fontWeight="bold"
-                  fontFamily="monospace"
-                >
-                  {track.id}
-                </text>
-              </g>
-
-              {/* Position markers */}
-              {[1, 2].map((position, idx) => (
-                <g key={position} transform={`translate(${pos.x - 25 + (idx * 50)}, ${pos.y})`}>
-                  <circle r="5" fill="rgba(251,191,36,0.3)" stroke="#fbbf24" strokeWidth="2" />
-                  <text textAnchor="middle" y="2" fill="#fbbf24" fontSize="8" fontWeight="bold">{position}</text>
-                </g>
-              ))}
-            </g>
-          );
-        })}
-
-        {/* Entry/Exit points with enhanced styling */}
-        {Object.entries(exitPositions).map(([id, pos]) => (
-          <g key={id} style={styles.exitPoint}>
-            <circle
-              cx={pos.x} cy={pos.y}
-              r="20"
-              fill="rgba(16,185,129,0.1)"
-              stroke="#10b981"
-              strokeWidth="2"
-              filter="url(#glow)"
-            />
-            <circle cx={pos.x} cy={pos.y} r="12" fill="rgba(16,185,129,0.3)" />
-            <text
-              x={pos.x} y={pos.y + 3}
-              textAnchor="middle"
-              fill="#10b981"
-              fontSize="10"
-              fontWeight="bold"
-              fontFamily="monospace"
-            >
-              {id}
-            </text>
-            {/* Signal indicators */}
-            <circle cx={pos.x + 25} cy={pos.y - 25} r="4" fill="#10b981" opacity="0.8">
-              <animate attributeName="opacity" values="0.3;1;0.3" dur="2s" repeatCount="indefinite" />
-            </circle>
-          </g>
-        ))}
-
-        {/* Junction indicators */}
-        {Object.entries(junctionPositions).map(([id, pos]) => (
-          <g key={id}>
-            <polygon
-              points={`${pos.x - 8},${pos.y - 8} ${pos.x + 8},${pos.y - 8} ${pos.x + 8},${pos.y + 8} ${pos.x - 8},${pos.y + 8}`}
-              fill="rgba(236,72,153,0.2)"
-              stroke="#ec4899"
-              strokeWidth="1"
-            />
-          </g>
-        ))}
-      </>
-    );
-  };
-
-  // Enhanced train rendering
-  const renderTrains = () => {
-    return assignments.map((a) => {
-      let position;
-      if (iblBays.includes(a.track_id)) {
-        position = iblPositions[a.track_id];
-      } else {
-        position = trackPositions[a.track_id];
-        if (position) {
-          position = {
-            x: position.x - 25 + ((a.position_in_track - 1) * 50),
-            y: position.y
-          };
-        }
-      }
-
-      if (!position) return null;
-
-      const isSelected = selected === a.train_id;
-
-      return (
-        <g
-          key={a.train_id}
-          className={`train ${isSelected ? 'selected' : ''}`}
-          onClick={() => onSelect?.(isSelected ? null : a.train_id)}
-          style={{ cursor: 'pointer' }}
-        >
-          {/* Train shadow */}
-          <ellipse
-            cx={position.x + 2} cy={position.y + 18}
-            rx="22" ry="6"
-            fill="rgba(0,0,0,0.3)"
-          />
-
-          {/* Train body with gradient */}
-          <defs>
-            <linearGradient id={`trainGrad-${a.train_id}`} x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor={isSelected ? '#fbbf24' : '#06d6a0'} />
-              <stop offset="100%" stopColor={isSelected ? '#f59e0b' : '#048b5c'} />
-            </linearGradient>
-          </defs>
-
-          <rect
-            x={position.x - 20} y={position.y - 12}
-            width={40} height={24}
-            rx="6"
-            fill={`url(#trainGrad-${a.train_id})`}
-            stroke={isSelected ? '#f59e0b' : '#048b5c'}
-            strokeWidth="2"
-            filter={isSelected ? "url(#glow)" : "none"}
-          />
-
-          {/* Train details */}
-          <rect x={position.x - 16} y={position.y - 8} width={7} height={5} rx="1" fill="rgba(0,0,0,0.7)" />
-          <rect x={position.x - 6} y={position.y - 8} width={7} height={5} rx="1" fill="rgba(0,0,0,0.7)" />
-          <rect x={position.x + 4} y={position.y - 8} width={7} height={5} rx="1" fill="rgba(0,0,0,0.7)" />
-
-          {/* Front/rear lights */}
-          <circle cx={position.x - 18} cy={position.y} r="2" fill="#fbbf24" />
-          <circle cx={position.x + 18} cy={position.y} r="2" fill="#ef4444" />
-
-          {/* Train ID with background */}
-          <rect
-            x={position.x - 12} y={position.y + 16}
-            width={24} height={12}
-            rx="4"
-            fill="rgba(0,0,0,0.8)"
-          />
-          <text
-            x={position.x} y={position.y + 24}
-            textAnchor="middle"
-            fill="#ffffff"
-            fontWeight="bold"
-            fontSize="9"
-            fontFamily="monospace"
-          >
-            {a.train_id}
-          </text>
-        </g>
-      );
-    });
-  };
-
-  // Enhanced shunting path animation with realistic routing
-  const renderShuntingPath = () => {
-    if (!selectedAssignment || !selectedAssignment.shunting_path) return null;
-
-    const pathNodes = selectedAssignment.shunting_path;
-    if (pathNodes.length < 2) return null;
-
-    // Generate realistic track path between consecutive nodes
-    const fullTrackPath: Array<{ x: number, y: number }> = [];
-
-    for (let i = 0; i < pathNodes.length - 1; i++) {
-      const segmentPath = findTrackPath(pathNodes[i], pathNodes[i + 1]);
-      if (i === 0) {
-        fullTrackPath.push(...segmentPath);
-      } else {
-        // Skip first point to avoid duplication
-        fullTrackPath.push(...segmentPath.slice(1));
-      }
-    }
-
-    if (fullTrackPath.length < 2) return null;
-
-    // Create smooth curved path following tracks
-    const createTrackPath = (points: Array<{ x: number, y: number }>) => {
-      if (points.length < 2) return '';
-
-      let d = `M ${points[0].x} ${points[0].y}`;
-
-      for (let i = 1; i < points.length; i++) {
-        const prev = points[i - 1];
-        const curr = points[i];
-
-        // Use smooth curves for track transitions
-        if (i === 1) {
-          d += ` L ${curr.x} ${curr.y}`;
-        } else {
-          const next = points[i + 1];
-          if (next) {
-            // Smooth curve through junction points
-            const cp1x = prev.x + (curr.x - prev.x) * 0.6;
-            const cp1y = prev.y + (curr.y - prev.y) * 0.6;
-            d += ` Q ${cp1x} ${cp1y} ${curr.x} ${curr.y}`;
-          } else {
-            d += ` L ${curr.x} ${curr.y}`;
-          }
-        }
-      }
-      return d;
-    };
-
-    const fullPath = createTrackPath(fullTrackPath);
-
-    // Calculate animated portion based on progress
-    const animatedPoints = Math.min(animationStep + 1, fullTrackPath.length);
-    const animatedPath = createTrackPath(fullTrackPath.slice(0, animatedPoints));
-
-    return (
-      <g style={styles.shuntingPath}>
-        {/* Full path (dimmed) */}
-        <path
-          d={fullPath}
-          stroke="rgba(251,191,36,0.3)"
-          strokeWidth="4"
-          fill="none"
-          strokeDasharray="8,4"
-        />
-
-        {/* Animated path */}
-        {animationStep > 0 && animatedPoints > 1 && (
-          <path
-            d={animatedPath}
-            stroke="#fbbf24"
-            strokeWidth="6"
-            fill="none"
-            filter="url(#glow)"
-            markerEnd="url(#arrowhead)"
-          />
+            );
+          })
         )}
 
-        {/* Track junction indicators */}
-        {fullTrackPath.slice(0, animatedPoints).map((pos, i) => {
-          if (i % 3 === 0) { // Show every 3rd point to avoid clutter
+        {/* Main line */}
+        <g>
+          <line
+            x1={depotNodes['MAIN_LINE'].x}
+            y1={depotNodes['MAIN_LINE'].y - 25}
+            x2={depotNodes['MAIN_LINE'].x}
+            y2={depotNodes['MAIN_LINE'].y + 25}
+            stroke="url(#mainLineGrad)"
+            strokeWidth="30"
+            filter="url(#trackGlow)"
+          />
+          <circle
+            cx={depotNodes['MAIN_LINE'].x}
+            cy={depotNodes['MAIN_LINE'].y}
+            r="35"
+            fill="none"
+            stroke="#10b981"
+            strokeWidth="3"
+            opacity="0.5"
+          />
+          <text
+            x={depotNodes['MAIN_LINE'].x}
+            y={depotNodes['MAIN_LINE'].y - 45}
+            textAnchor="middle"
+            fill="#10b981"
+            fontSize="14"
+            fontWeight="bold"
+            fontFamily="monospace"
+          >
+            MAIN LINE
+          </text>
+        </g>
+
+        {/* Node points (debug) */}
+        {Object.entries(depotNodes).map(([nodeId, pos]) => {
+          if (
+            nodeId.includes('_END') ||
+            nodeId.includes('_START') ||
+            nodeId.includes('CONV') ||
+            nodeId.includes('MAIN') ||
+            nodeId.includes('SEC') ||
+            nodeId.includes('FUNNEL')
+          ) {
             return (
               <circle
-                key={i}
-                cx={pos.x} cy={pos.y}
-                r="3"
-                fill="#fbbf24"
-                stroke="#f59e0b"
-                strokeWidth="1"
-                opacity="0.8"
-              >
-                <animate attributeName="r" values="3;6;3" dur="2s" repeatCount="indefinite" />
-              </circle>
+                key={nodeId}
+                cx={pos.x}
+                cy={pos.y}
+                r="4"
+                fill="#ec4899"
+                opacity="0.3"
+              />
             );
           }
           return null;
         })}
+      </g>
+    );
+  };
 
-        {/* Moving train indicator */}
-        {animationStep > 0 && animatedPoints <= fullTrackPath.length && (
-          <g transform={`translate(${fullTrackPath[Math.min(animatedPoints - 1, fullTrackPath.length - 1)].x}, ${fullTrackPath[Math.min(animatedPoints - 1, fullTrackPath.length - 1)].y})`}>
-            <circle r="12" fill="rgba(251,191,36,0.3)" stroke="#fbbf24" strokeWidth="2">
-              <animate attributeName="r" values="8;16;8" dur="1s" repeatCount="indefinite" />
-            </circle>
-            <polygon points="-8,-6 8,-6 8,6 -8,6" fill="#fbbf24" />
-            <text y="2" textAnchor="middle" fill="#000" fontSize="8" fontWeight="bold">
-              {selectedAssignment.train_id}
-            </text>
-          </g>
-        )}
+  const renderTrains = () => {
+    const TRAIN_LENGTH = 110;
+    const TRAIN_HEIGHT = 28;
+    const POSITION_OFFSET = 35; // Spacing between trains on same track
+
+    return (
+      <g>
+        {assignments.map((assignment, idx) => {
+          const state = trainStates[assignment.train_id];
+          if (!state) return null;
+
+          const isSelected = selected === assignment.train_id;
+
+          // Position offset for trains behind first on same track
+          const positionInTrack = assignment.position_in_track || 1;
+          let offsetMultiplier = 1;
+          if (positionInTrack === 2) {
+            offsetMultiplier = 1.3;
+          }
+
+          return (
+            <g key={assignment.train_id}>
+              {/* Train shadow */}
+              <ellipse
+                cx={state.x + TRAIN_LENGTH / 4}
+                cy={state.y + 20}
+                rx={TRAIN_LENGTH / 2}
+                ry="6"
+                fill="#000"
+                opacity="0.3"
+              />
+
+              {/* Main train body */}
+              <g
+                onClick={() =>
+                  onSelect?.(isSelected ? null : assignment.train_id)
+                }
+                style={{
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  filter: isSelected
+                    ? 'drop-shadow(0 0 15px rgba(251, 191, 36, 0.8))'
+                    : state.moving
+                      ? 'drop-shadow(0 0 10px rgba(34, 197, 94, 0.6))'
+                      : 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
+                  transformBox: 'fill-box',
+                  transformOrigin: 'center',
+                  transform: isSelected ? 'scale(1.04)' : 'scale(1)',
+                }}
+              >
+                {/* Train gradient */}
+                <defs>
+                  <linearGradient
+                    id={`grad-${assignment.train_id}`}
+                    x1="0%"
+                    y1="0%"
+                    x2="0%"
+                    y2="100%"
+                  >
+                    <stop
+                      offset="0%"
+                      stopColor={isSelected ? '#fbbf24' : '#dc2626'}
+                    />
+                    <stop
+                      offset="100%"
+                      stopColor={isSelected ? '#f59e0b' : '#991b1b'}
+                    />
+                  </linearGradient>
+                </defs>
+
+                {/* Train body */}
+                <rect
+                  x={state.x - TRAIN_LENGTH / 2}
+                  y={state.y - TRAIN_HEIGHT / 2}
+                  width={TRAIN_LENGTH}
+                  height={TRAIN_HEIGHT}
+                  rx="8"
+                  fill={`url(#grad-${assignment.train_id})`}
+                  stroke={isSelected ? '#fbbf24' : '#7f1d1d'}
+                  strokeWidth="2"
+                />
+
+                {/* Windows */}
+                {Array.from({ length: 7 }).map((_, i) => (
+                  <rect
+                    key={i}
+                    x={state.x - TRAIN_LENGTH / 2 + 10 + i * 14}
+                    y={state.y - 6}
+                    width="10"
+                    height="8"
+                    rx="1"
+                    fill="#0ea5e9"
+                    stroke="#0284c7"
+                    strokeWidth="0.5"
+                  />
+                ))}
+
+                {/* Front light */}
+                <circle
+                  cx={state.x - TRAIN_LENGTH / 2 + 5}
+                  cy={state.y}
+                  r="5"
+                  fill="#fbbf24"
+                />
+
+                {/* Rear light */}
+                <circle
+                  cx={state.x + TRAIN_LENGTH / 2 - 5}
+                  cy={state.y}
+                  r="5"
+                  fill="#ef4444"
+                />
+              </g>
+
+              {/* Train ID label */}
+              <g transform={`translate(${state.x}, ${state.y - TRAIN_HEIGHT / 2 + 8})`}>
+                <rect
+                  x="-28"
+                  y="-9"
+                  width="56"
+                  height="18"
+                  rx="4"
+                  fill="rgba(0, 0, 0, 0.8)"
+                  stroke={isSelected ? '#fbbf24' : '#94a3b8'}
+                  strokeWidth="1"
+                />
+                <text
+                  textAnchor="middle"
+                  y="4"
+                  fill="#ffffff"
+                  fontSize="11"
+                  fontWeight="bold"
+                  fontFamily="monospace"
+                >
+                  {assignment.train_id}
+                </text>
+              </g>
+
+              {/* Position indicator */}
+              <circle
+                cx={state.x + TRAIN_LENGTH / 2 + 12}
+                cy={state.y}
+                r="7"
+                fill={positionInTrack === 1 ? '#22c55e' : '#fbbf24'}
+                stroke="white"
+                strokeWidth="1"
+              />
+              <text
+                x={state.x + TRAIN_LENGTH / 2 + 12}
+                y={state.y}
+                textAnchor="middle"
+                dy="0.3em"
+                fill="#000"
+                fontSize="9"
+                fontWeight="bold"
+              >
+                {positionInTrack}
+              </text>
+            </g>
+          );
+        })}
+      </g>
+    );
+  };
+
+  const renderAnimationPath = () => {
+    if (highlighedPath.length < 2) return null;
+
+    const pathStr = highlighedPath
+      .map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.pos.x} ${p.pos.y}`)
+      .join(' ');
+
+    return (
+      <g>
+        {/* Background path */}
+        <path
+          d={pathStr}
+          fill="none"
+          stroke="rgba(251, 191, 36, 0.1)"
+          strokeWidth="20"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        {/* Animated path */}
+        <path
+          d={pathStr}
+          fill="none"
+          stroke="#fbbf24"
+          strokeWidth="12"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          opacity="0.8"
+          filter="url(#pathGlow)"
+          strokeDasharray="20"
+          strokeDashoffset={-simProgress * 40}
+        >
+          <defs>
+            <filter id="pathGlow">
+              <feGaussianBlur stdDeviation="3" result="coloredBlur" />
+              <feMerge>
+                <feMergeNode in="coloredBlur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+        </path>
       </g>
     );
   };
 
   return (
-    <div style={{
-      background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)',
-      borderRadius: '12px',
-      padding: '1.5rem',
-      border: '1px solid rgba(148, 163, 184, 0.2)',
-      boxShadow: '0 20px 40px rgba(0,0,0,0.3)'
-    }}>
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '1.5rem',
-        borderBottom: '1px solid rgba(148, 163, 184, 0.2)',
-        paddingBottom: '1rem'
-      }}>
-        <h3 style={{
-          margin: 0,
-          color: '#f8fafc',
-          fontSize: '1.5rem',
-          fontWeight: 'bold',
-          background: 'linear-gradient(90deg, #38bdf8, #06d6a0)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent'
-        }}>
-          Kochi Metro Depot - Real-time Operations
-        </h3>
+    <div
+      style={{
+        background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+        borderRadius: '20px',
+        padding: '2rem',
+        border: '1px solid rgba(148, 163, 184, 0.3)',
+        boxShadow: '0 30px 60px rgba(0,0,0,0.6)',
+        margin: '1rem',
+        fontFamily: 'system-ui, sans-serif',
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '2rem',
+          borderBottom: '2px solid rgba(148, 163, 184, 0.2)',
+          paddingBottom: '1.5rem',
+        }}
+      >
+        <div>
+          <h1
+            style={{
+              margin: 0,
+              color: '#f8fafc',
+              fontSize: '2.2rem',
+              fontWeight: '800',
+              background:
+                'linear-gradient(90deg, #38bdf8, #06d6a0, #fbbf24)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              fontFamily: 'monospace',
+            }}
+          >
+            🚇 Muttom Metro Depot
+          </h1>
+          <p
+            style={{
+              margin: '0.5rem 0 0 0',
+              color: '#94a3b8',
+              fontSize: '1.1rem',
+              fontFamily: 'monospace',
+            }}
+          >
+            Real-time Train Operations & Choreographed Shunting
+          </p>
+        </div>
 
-        {selectedAssignment && (
-          <div style={{
-            display: 'flex',
-            gap: '1rem',
-            alignItems: 'center'
-          }}>
-            <button
-              onClick={() => {
-                setAnimatedPath([]);
-                setAnimationStep(0);
-                setIsAnimating(!isAnimating);
-              }}
-              style={{
-                background: isAnimating
-                  ? 'linear-gradient(90deg, #ef4444, #dc2626)'
-                  : 'linear-gradient(90deg, #10b981, #059669)',
-                color: 'white',
-                border: 'none',
-                padding: '0.5rem 1rem',
-                borderRadius: '8px',
-                fontWeight: 'bold',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease'
-              }}
-            >
-              {isAnimating ? 'Stop Simulation' : 'Start Simulation'}
-            </button>
-
-            <select
-              value={simulationSpeed}
-              onChange={(e) => setSimulationSpeed(Number(e.target.value))}
-              style={{
-                background: 'rgba(30, 41, 59, 0.8)',
-                color: '#f8fafc',
-                border: '1px solid rgba(148, 163, 184, 0.3)',
-                padding: '0.5rem',
-                borderRadius: '6px'
-              }}
-            >
-              <option value={0.5}>Slow</option>
-              <option value={1}>Normal</option>
-              <option value={2}>Fast</option>
-              <option value={3}>Express</option>
-            </select>
-          </div>
-        )}
-      </div>
-
-      {selectedAssignment && (
-        <div style={{
-          background: 'rgba(30, 41, 59, 0.6)',
-          padding: '1rem',
-          borderRadius: '8px',
-          marginBottom: '1rem',
-          border: '1px solid rgba(251, 191, 36, 0.3)'
-        }}>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '0.5rem'
-          }}>
-            <span style={{
-              color: '#fbbf24',
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+          <button
+            onClick={() => {
+              setIsSimulating(!isSimulating);
+              if (!isSimulating) startTimeRef.current = 0;
+            }}
+            style={{
+              background: isSimulating
+                ? 'linear-gradient(90deg, #ef4444, #dc2626)'
+                : 'linear-gradient(90deg, #10b981, #059669)',
+              color: 'white',
+              border: 'none',
+              padding: '1rem 2rem',
+              borderRadius: '12px',
               fontWeight: 'bold',
-              fontSize: '1.2rem',
-              fontFamily: 'monospace'
-            }}>
-              {selectedAssignment.train_id}
-            </span>
-            <span style={{ color: '#06d6a0' }}>
-              Track: {selectedAssignment.track_id} (Pos. {selectedAssignment.position_in_track})
-            </span>
-            <span style={{ color: '#f472b6' }}>
-              Moves: {selectedAssignment.moves_required}
-            </span>
-          </div>
-
-          <div style={{ color: '#cbd5e1', fontSize: '0.9rem' }}>
-            <strong>Route:</strong> {selectedAssignment.shunting_path.join(' → ')}
+              cursor: 'pointer',
+              transition: 'all 0.3s ease',
+              fontFamily: 'monospace',
+              fontSize: '16px',
+              boxShadow: '0 4px 15px rgba(0,0,0,0.3)',
+            }}
+          >
+            {isSimulating ? '⏹️ Stop' : '▶️ Start Simulation'}
+          </button>
+          <div
+            style={{
+              background: 'rgba(30, 41, 59, 0.8)',
+              padding: '0.75rem 1.5rem',
+              borderRadius: '10px',
+              color: '#e2e8f0',
+              fontFamily: 'monospace',
+              fontSize: '14px',
+            }}
+          >
+            Progress: {Math.round(simProgress * 100)}%
           </div>
         </div>
-      )}
+      </div>
 
-      <div style={{
-        background: '#020617',
-        borderRadius: '8px',
-        overflow: 'hidden',
-        border: '2px solid rgba(148, 163, 184, 0.1)',
-        position: 'relative'
-      }}>
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #020617, #0f172a)',
+          borderRadius: '15px',
+          overflow: 'hidden',
+          border: '3px solid rgba(148, 163, 184, 0.2)',
+          position: 'relative',
+          boxShadow:
+            'inset 0 0 100px rgba(0,0,0,0.7), 0 20px 60px rgba(0,0,0,0.5)',
+        }}
+      >
         <svg
-          viewBox={`0 0 ${svgW} ${svgH}`}
+          viewBox={`0 0 ${SVG_W} ${SVG_H}`}
           style={{
             width: '100%',
-            height: '500px',
-            display: 'block'
+            height: `${SVG_H}px`,
+            display: 'block',
+            background: 'linear-gradient(180deg, rgba(15,23,42,0.9) 0%, rgba(30,41,59,0.7) 100%)',
           }}
           preserveAspectRatio="xMidYMid meet"
         >
+          {/* Background grid */}
           <defs>
-            <marker
-              id="arrowhead"
-              markerWidth="10"
-              markerHeight="8"
-              refX="9"
-              refY="4"
-              orient="auto"
+            <pattern
+              id="depotGrid"
+              width="50"
+              height="50"
+              patternUnits="userSpaceOnUse"
             >
-              <polygon points="0 0, 10 4, 0 8" fill="#fbbf24" />
-            </marker>
+              <path
+                d="M 50 0 L 0 0 0 50"
+                fill="none"
+                stroke="rgba(148, 163, 184, 0.05)"
+                strokeWidth="1"
+              />
+            </pattern>
           </defs>
+          <rect
+            width="100%"
+            height="100%"
+            fill="url(#depotGrid)"
+          />
 
           {renderTracks()}
-          {renderShuntingPath()}
+          {renderAnimationPath()}
           {renderTrains()}
         </svg>
       </div>
 
-      <div style={{
-        textAlign: 'center',
-        color: '#94a3b8',
-        fontSize: '0.9rem',
-        marginTop: '1rem',
-        fontStyle: 'italic'
-      }}>
-        Click any train to view its optimized shunting path and start simulation
-      </div>
+      {selected && (
+        <div
+          style={{
+            background:
+              'linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9))',
+            padding: '1.5rem 2rem',
+            borderRadius: '15px',
+            marginTop: '2rem',
+            border: '2px solid rgba(251, 191, 36, 0.5)',
+            backdropFilter: 'blur(10px)',
+            boxShadow: '0 8px 32px rgba(251, 191, 36, 0.2)',
+            color: '#cbd5e1',
+            fontFamily: 'monospace',
+            fontSize: '1rem',
+          }}
+        >
+          <span style={{ color: '#fbbf24', fontWeight: 'bold' }}>
+            🚂 {selected}
+          </span>{' '}
+          • Track: <span style={{ color: '#06d6a0' }}>
+            {assignments.find((a) => a.train_id === selected)?.track_id}
+          </span>
+        </div>
+      )}
     </div>
   );
 }

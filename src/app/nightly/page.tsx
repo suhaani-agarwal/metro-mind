@@ -9,6 +9,9 @@ interface NightlyForm {
     issued_at: string;
     valid_until: string;
     status: string;
+    renew_rolling_stock?: boolean;
+    renew_signalling?: boolean;
+    renew_telecom?: boolean;
   };
   brandings?: {
     advertiser: string;
@@ -29,11 +32,22 @@ interface NightlyForm {
   };
 }
 
+interface CertificateDetails {
+  [key: string]: {
+    issue_date: string;
+    expiry_date: string;
+    status: string;
+    department: string;
+  };
+}
+
 export default function NightlyPage() {
   const router = useRouter();
   const [trains, setTrains] = useState<string[]>([]);
   const [selectedTrain, setSelectedTrain] = useState<string>("");
   const [showFitness, setShowFitness] = useState<boolean>(false);
+  const [expiredCertificates, setExpiredCertificates] = useState<string[]>([]);
+  const [certificateDetails, setCertificateDetails] = useState<CertificateDetails>({});
 
   const [form, setForm] = useState<NightlyForm>({ brandings: [] });
   const [deepCleaningLabour, setDeepCleaningLabour] = useState<number>(0);
@@ -51,27 +65,48 @@ export default function NightlyPage() {
       if (res.data.trains.length) {
         const trainId = res.data.trains[0];
         setSelectedTrain(trainId);
-
-        // Fetch current fitness for first train
-        const fitnessRes = await axios.get(
-          `http://localhost:5005/api/nightly/train/${trainId}/fitness`
-        );
-        const { valid_until } = fitnessRes.data || {};
-        if (valid_until && new Date(valid_until) < new Date()) {
-          setShowFitness(true);
-          // Initialize fitness form with current data
-          setForm((prev) => ({
-            ...prev,
-            fitness_certificates: {
-              issued_at: fitnessRes.data?.issued_at || "",
-              valid_until: fitnessRes.data?.valid_until || "",
-              status: fitnessRes.data?.status || "valid",
-            },
-          }));
-        }
+        await loadTrainFitness(trainId);
       }
     });
   }, []);
+
+  const loadTrainFitness = async (trainId: string) => {
+    try {
+      const fitnessRes = await axios.get(
+        `http://localhost:5005/api/nightly/train/${trainId}/fitness`
+      );
+      
+      const { has_expired, expired_certificates, certificate_details } = fitnessRes.data;
+      setShowFitness(has_expired);
+      setExpiredCertificates(expired_certificates || []);
+      setCertificateDetails(certificate_details || {});
+
+      if (has_expired) {
+        // Initialize with all expired certificates selected for renewal by default
+        const renewDefaults: { [key: string]: boolean } = {};
+          expired_certificates.forEach((cert: string) => {
+            renewDefaults[`renew_${cert}`] = true;
+          });
+
+        setForm((prev) => ({
+          ...prev,
+          fitness_certificates: {
+            issued_at: new Date().toISOString().slice(0, 16),
+            valid_until: "",
+            status: "valid",
+            ...renewDefaults
+          },
+        }));
+      } else {
+        setForm((prev) => ({
+          ...prev,
+          fitness_certificates: undefined,
+        }));
+      }
+    } catch (error) {
+      console.error("Error loading fitness data:", error);
+    }
+  };
 
   const handleChange = (section: string, field: string, value: any) => {
     setForm((prev) => ({
@@ -83,9 +118,14 @@ export default function NightlyPage() {
     }));
   };
 
+  const handleCertificateToggle = (certType: string) => {
+    const currentValue = form.fitness_certificates?.[`renew_${certType}` as keyof typeof form.fitness_certificates] || false;
+    handleChange("fitness_certificates", `renew_${certType}`, !currentValue);
+  };
+
   const handleSubmit = async () => {
     try {
-      // 1) Save depot deep cleaning labour (independent of train)
+      // 1) Save depot deep cleaning labour
       await axios.post(
         "http://localhost:5005/api/nightly/depot/deep-cleaning",
         {
@@ -93,30 +133,59 @@ export default function NightlyPage() {
         }
       );
 
-      // 2) Append all queued branding entries for the selected train
+      // 2) Append all queued branding entries
       if (form.brandings && form.brandings.length > 0) {
-        for (const b of form.brandings) {
-          if (!b.advertiser) continue;
-          await axios.post("http://localhost:5005/api/nightly/branding/add", {
+      for (const b of form.brandings) {
+        if (!b.advertiser) continue;
+        
+        // Send to the correct endpoint with correct structure
+        await axios.post("http://localhost:5005/api/nightly/branding/add", {
+          train_id: selectedTrain,
+          branding: {
+            advertiser: b.advertiser,
+            priority: b.priority,
+            exposure_hours_needed: b.exposure_hours_needed
+          }
+        });
+      }
+    }
+
+      // 3) Update the train data with fitness certificates (only if renewal is selected)
+      if (form.fitness_certificates) {
+        // Check if any certificate is selected for renewal AND dates are provided
+        const hasRenewalSelected = expiredCertificates.some(cert => 
+          form.fitness_certificates?.[`renew_${cert}` as keyof typeof form.fitness_certificates]
+        );
+        
+        const hasValidDates = form.fitness_certificates.issued_at && form.fitness_certificates.valid_until;
+
+        if (hasRenewalSelected && hasValidDates) {
+          const payload = {
             train_id: selectedTrain,
-            branding: b,
-          });
+            fitness_certificates: form.fitness_certificates,
+          };
+          await axios.post(
+            "http://localhost:5005/api/nightly/update/train",
+            payload
+          );
+        } else if (hasRenewalSelected && !hasValidDates) {
+          // alert("Please provide both issue date and valid until date for certificate renewal.");
+          return;
         }
+        // If no renewal selected, skip fitness certificate update
       }
 
-      // 3) Update the train data (currently only fitness is collected here)
-      const payload = {
-        train_id: selectedTrain,
-        fitness_certificates: form.fitness_certificates,
-      };
-      await axios.post(
-        "http://localhost:5005/api/nightly/update/train",
-        payload
-      );
+      // Reset forms
       setForm((prev) => ({ ...prev, brandings: [] }));
       setShowAddBranding(false);
-    } catch (err) {
+      
+      // Reload fitness data to reflect changes
+      await loadTrainFitness(selectedTrain);
+      
+      // alert("Nightly data saved successfully!");
+    } catch (err: any) {
       console.error(err);
+      // alert(`Error saving nightly data: ${err.response?.data?.detail || err.message}`);
     }
   };
 
@@ -124,8 +193,7 @@ export default function NightlyPage() {
     <div
       className="min-h-screen w-full"
       style={{
-        background:
-          "linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)",
+        background: "linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)",
       }}
     >
       <div className="max-w-6xl mx-auto p-8 space-y-8">
@@ -137,7 +205,7 @@ export default function NightlyPage() {
           <div className="w-24 h-1 mx-auto rounded-full bg-gradient-to-r from-sky-400 to-emerald-400"></div>
         </div>
 
-        {/* Depot Deep Cleaning (top-level, not per-train) */}
+        {/* Depot Deep Cleaning */}
         <div
           className="backdrop-blur-md rounded-2xl p-6 border border-slate-600/30 shadow-2xl"
           style={{ backgroundColor: "rgba(15, 23, 42, 0.8)" }}
@@ -155,9 +223,7 @@ export default function NightlyPage() {
                 <input
                   type="number"
                   value={deepCleaningLabour}
-                  onChange={(e) =>
-                    setDeepCleaningLabour(Number(e.target.value))
-                  }
+                  onChange={(e) => setDeepCleaningLabour(Number(e.target.value))}
                   className="w-full p-4 rounded-xl border border-slate-600/50 text-slate-50 placeholder:text-slate-400 transition-all duration-300 hover:border-sky-400/50 focus:border-sky-400 focus:ring-2 focus:ring-sky-400/20 outline-none backdrop-blur-sm"
                   style={{ backgroundColor: "rgba(30, 41, 59, 0.6)" }}
                 />
@@ -187,33 +253,7 @@ export default function NightlyPage() {
                 onChange={async (e) => {
                   const trainId = e.target.value;
                   setSelectedTrain(trainId);
-
-                  // Check fitness expiry when train changes
-                  const fitnessRes = await axios.get(
-                    `http://localhost:5005/api/nightly/train/${trainId}/fitness`
-                  );
-                  const { valid_until } = fitnessRes.data || {};
-                  const isExpired =
-                    valid_until && new Date(valid_until) < new Date();
-                  setShowFitness(isExpired);
-
-                  if (isExpired) {
-                    // Initialize fitness form with current data
-                    setForm((prev) => ({
-                      ...prev,
-                      fitness_certificates: {
-                        issued_at: fitnessRes.data?.issued_at || "",
-                        valid_until: fitnessRes.data?.valid_until || "",
-                        status: fitnessRes.data?.status || "valid",
-                      },
-                    }));
-                  } else {
-                    // Clear fitness form if not expired
-                    setForm((prev) => ({
-                      ...prev,
-                      fitness_certificates: undefined,
-                    }));
-                  }
+                  await loadTrainFitness(trainId);
                 }}
               >
                 {trains.map((t, idx) => (
@@ -232,76 +272,116 @@ export default function NightlyPage() {
             className="backdrop-blur-md rounded-2xl p-6 border border-amber-500/30 shadow-2xl"
             style={{ backgroundColor: "rgba(15, 23, 42, 0.8)" }}
           >
-            <div className="space-y-4">
+            <div className="space-y-6">
               <h2 className="text-xl font-semibold text-slate-50 flex items-center gap-3">
                 <div className="w-2 h-8 rounded-full bg-gradient-to-b from-amber-400 to-orange-400"></div>
-                Fitness Certificate Renewal
+                Fitness Certificate Renewal (Optional)
                 <span className="px-3 py-1 text-xs font-medium bg-amber-400/20 text-amber-300 rounded-full border border-amber-400/30">
-                  EXPIRED
+                  EXPIRED CERTIFICATES DETECTED
                 </span>
               </h2>
-              <div className="grid md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-slate-300">
-                    Issued At
-                  </label>
-                  <input
-                    type="datetime-local"
-                    value={form.fitness_certificates?.issued_at || ""}
-                    onChange={(e) =>
-                      handleChange(
-                        "fitness_certificates",
-                        "issued_at",
-                        e.target.value
-                      )
-                    }
-                    className="w-full p-4 rounded-xl border border-slate-600/50 text-slate-50 transition-all duration-300 hover:border-amber-400/50 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 outline-none backdrop-blur-sm"
-                    style={{ backgroundColor: "rgba(30, 41, 59, 0.6)" }}
-                  />
+              
+              {/* Expired Certificates List with Toggle */}
+              <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+                <h3 className="text-amber-300 font-semibold mb-3">Select Certificates to Renew:</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {expiredCertificates.map((cert, idx) => {
+                    const certDetail = certificateDetails[cert];
+                    const isSelected = form.fitness_certificates?.[`renew_${cert}` as keyof typeof form.fitness_certificates] || false;
+                    
+                    return (
+                      <div 
+                        key={idx} 
+                        className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all ${
+                          isSelected 
+                            ? 'bg-green-500/10 border-green-500/50' 
+                            : 'bg-amber-500/10 border-amber-500/30'
+                        }`}
+                        onClick={() => handleCertificateToggle(cert)}
+                      >
+                        <div>
+                          <div className={`font-medium capitalize ${
+                            isSelected ? 'text-green-200' : 'text-amber-200'
+                          }`}>
+                            {cert.replace('_', ' ')}
+                          </div>
+                          <div className={`text-sm ${
+                            isSelected ? 'text-green-300/80' : 'text-amber-300/80'
+                          }`}>
+                            Expired: {certDetail?.expiry_date}
+                          </div>
+                        </div>
+                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                          isSelected 
+                            ? 'bg-green-500 border-green-400' 
+                            : 'bg-transparent border-amber-400'
+                        }`}>
+                          {isSelected && (
+                            <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                            </svg>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-slate-300">
-                    Valid Until
-                  </label>
-                  <input
-                    type="datetime-local"
-                    value={form.fitness_certificates?.valid_until || ""}
-                    onChange={(e) =>
-                      handleChange(
-                        "fitness_certificates",
-                        "valid_until",
-                        e.target.value
-                      )
-                    }
-                    className="w-full p-4 rounded-xl border border-slate-600/50 text-slate-50 transition-all duration-300 hover:border-amber-400/50 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 outline-none backdrop-blur-sm"
-                    style={{ backgroundColor: "rgba(30, 41, 59, 0.6)" }}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-slate-300">
-                    Status
-                  </label>
-                  <select
-                    value={form.fitness_certificates?.status || "valid"}
-                    onChange={(e) =>
-                      handleChange(
-                        "fitness_certificates",
-                        "status",
-                        e.target.value
-                      )
-                    }
-                    className="w-full p-4 rounded-xl border border-slate-600/50 text-slate-50 transition-all duration-300 hover:border-amber-400/50 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 outline-none backdrop-blur-sm"
-                    style={{ backgroundColor: "rgba(30, 41, 59, 0.6)" }}
-                  >
-                    <option value="valid" className="bg-slate-800">
-                      Valid
-                    </option>
-                    <option value="expired" className="bg-slate-800">
-                      Expired
-                    </option>
-                  </select>
-                </div>
+                <p className="text-amber-300/80 text-sm mt-3">
+                  Select which certificates you want to renew and provide the new dates below.
+                </p>
               </div>
+
+              {/* Renewal Form - Only show if certificates are selected */}
+              {expiredCertificates.some(cert => 
+                form.fitness_certificates?.[`renew_${cert}` as keyof typeof form.fitness_certificates]
+              ) && (
+                <div className="space-y-4">
+                  <h4 className="text-lg font-semibold text-green-300">Renewal Dates</h4>
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-slate-300">
+                        New Issue Date *
+                      </label>
+                      <input
+                        type="datetime-local"
+                        value={form.fitness_certificates?.issued_at || ""}
+                        onChange={(e) =>
+                          handleChange("fitness_certificates", "issued_at", e.target.value)
+                        }
+                        className="w-full p-4 rounded-xl border border-slate-600/50 text-slate-50 transition-all duration-300 hover:border-green-400/50 focus:border-green-400 focus:ring-2 focus:ring-green-400/20 outline-none backdrop-blur-sm"
+                        style={{ backgroundColor: "rgba(30, 41, 59, 0.6)" }}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-slate-300">
+                        New Valid Until Date *
+                      </label>
+                      <input
+                        type="datetime-local"
+                        value={form.fitness_certificates?.valid_until || ""}
+                        onChange={(e) =>
+                          handleChange("fitness_certificates", "valid_until", e.target.value)
+                        }
+                        className="w-full p-4 rounded-xl border border-slate-600/50 text-slate-50 transition-all duration-300 hover:border-green-400/50 focus:border-green-400 focus:ring-2 focus:ring-green-400/20 outline-none backdrop-blur-sm"
+                        style={{ backgroundColor: "rgba(30, 41, 59, 0.6)" }}
+                        required
+                      />
+                    </div>
+                  </div>
+                  
+                  {/* Selected for Renewal Summary */}
+                  <div className="p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
+                    <div className="text-green-300 text-sm">
+                      <strong>Selected for renewal:</strong>{" "}
+                      {expiredCertificates
+                        .filter(cert => form.fitness_certificates?.[`renew_${cert}` as keyof typeof form.fitness_certificates])
+                        .map(cert => cert.replace('_', ' '))
+                        .join(', ')}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -362,7 +442,7 @@ export default function NightlyPage() {
                           priority: e.target.value,
                         }))
                       }
-                      className="w-full p-4 rounded-xl border border-slate-600/50 text-slate-50 transition-all duration-300 hover:border-emerald-400/50 focus;border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 outline-none backdrop-blur-sm"
+                      className="w-full p-4 rounded-xl border border-slate-600/50 text-slate-50 transition-all duration-300 hover:border-emerald-400/50 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 outline-none backdrop-blur-sm"
                       style={{ backgroundColor: "rgba(30, 41, 59, 0.6)" }}
                     >
                       <option value="" className="bg-slate-800">
@@ -393,7 +473,7 @@ export default function NightlyPage() {
                           exposure_hours_needed: Number(e.target.value),
                         }))
                       }
-                      className="w-full p-4 rounded-xl border border-slate-600/50 text-slate-50 placeholder:text-slate-400 transition-all duration-300 hover;border-emerald-400/50 focus;border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 outline-none backdrop-blur-sm"
+                      className="w-full p-4 rounded-xl border border-slate-600/50 text-slate-50 placeholder:text-slate-400 transition-all duration-300 hover:border-emerald-400/50 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 outline-none backdrop-blur-sm"
                       style={{ backgroundColor: "rgba(30, 41, 59, 0.6)" }}
                     />
                   </div>
@@ -401,16 +481,17 @@ export default function NightlyPage() {
                 <div className="flex gap-3">
                   <button
                     onClick={() => {
-                      if (!brandingDraft.advertiser)
+                      if (brandingDraft.advertiser) {
                         setForm((prev) => ({
                           ...prev,
                           brandings: [...(prev.brandings || []), brandingDraft],
                         }));
-                      setBrandingDraft({
-                        advertiser: "",
-                        priority: "",
-                        exposure_hours_needed: 0,
-                      });
+                        setBrandingDraft({
+                          advertiser: "",
+                          priority: "",
+                          exposure_hours_needed: 0,
+                        });
+                      }
                     }}
                     className="px-4 py-2 text-slate-50 rounded-xl border border-transparent"
                     style={{ background: "rgba(56, 189, 248, 0.2)" }}
