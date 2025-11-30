@@ -10,6 +10,7 @@ import logging
 from typing import Dict, Any, List, Optional
 from pathlib import Path
 from datetime import date, datetime
+from fastapi.responses import FileResponse
 
 # Load environment variables
 from dotenv import load_dotenv
@@ -1084,6 +1085,24 @@ async def save_schedule_pdf(file: UploadFile = File(...)):
         return {"status": "ok", "path": str(target_path)}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to save PDF: {str(e)}")
+
+@app.get("/get-schedule-pdf")
+async def get_schedule_pdf():
+    """Return the latest saved Kochi Metro schedule PDF."""
+    try:
+        data_dir = Path(__file__).parent / "data"
+        file_path = data_dir / "kochi-metro-schedule.pdf"
+
+        if not file_path.exists():
+            raise HTTPException(status_code=404, detail="PDF not found")
+
+        return FileResponse(
+            path=file_path,
+            filename="kochi-metro-schedule.pdf",
+            media_type="application/pdf"
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching PDF: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn
