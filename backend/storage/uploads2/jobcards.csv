@@ -1,0 +1,29 @@
+job_id,train_id,description,open_date,criticality,estimated_hours
+JC1000,TM001,Software major update,2025-11-15,high,5.1
+JC1001,TM002,Interior deep cleaning,2025-11-04,low,2.1
+JC1002,TM003,Software major update,2025-11-20,high,5.1
+JC1003,TM003,Bogie alignment,2025-11-12,medium,3.8
+JC1004,TM004,Software major update,2025-11-26,high,5.1
+JC1005,TM004,Bogie alignment,2025-11-17,medium,3.8
+JC1006,TM005,Safety system check,2025-11-02,low,1.5
+JC1007,TM006,HVAC system maintenance,2025-11-06,high,4.5
+JC1008,TM009,Interior deep cleaning,2025-11-04,low,2.1
+JC1009,TM011,Software major update,2025-11-27,high,5.1
+JC1010,TM012,Critical brake system failure,2025-11-25,critical,7.5
+JC1011,TM013,Routine inspection,2025-11-06,low,1.8
+JC1012,TM014,HVAC system maintenance,2025-10-30,high,4.5
+JC1013,TM015,Interior deep cleaning,2025-11-25,low,2.1
+JC1014,TM015,Safety system check,2025-10-30,low,1.5
+JC1015,TM016,Bogie alignment,2025-11-21,medium,3.8
+JC1016,TM016,Software major update,2025-11-14,high,5.1
+JC1017,TM017,Software major update,2025-11-23,high,5.1
+JC1018,TM017,HVAC system maintenance,2025-10-31,high,4.5
+JC1019,TM018,Software major update,2025-11-15,high,5.1
+JC1020,TM018,Bogie alignment,2025-11-12,medium,3.8
+JC1021,TM020,Software major update,2025-11-10,high,5.1
+JC1022,TM022,HVAC system maintenance,2025-11-12,high,4.5
+JC1023,TM023,Interior deep cleaning,2025-11-27,low,2.1
+JC1024,TM024,Software major update,2025-11-11,high,5.1
+JC1025,TM024,HVAC system maintenance,2025-11-27,high,4.5
+JC1026,TM025,Software major update,2025-11-22,high,5.1
+JC1027,TM025,Bogie alignment,2025-11-22,medium,3.8
