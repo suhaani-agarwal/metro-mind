@@ -1,6 +1,7 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo  } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
+import { MapPin, Clock, ChevronUp } from 'lucide-react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -139,7 +140,6 @@ const dmsToDecimal = (degrees: number, minutes: number, seconds: number, directi
 };
 
 // Kochi Metro stations with actual geographic coordinates
-// Kochi Metro stations with actual geographic coordinates (updated with exact DMS coordinates)
 const kochiMetroStations = [
   { id: 'aluva', name: 'Aluva', position: [dmsToDecimal(10, 6, 35, 'N'), dmsToDecimal(76, 20, 59, 'E')] as [number, number], isTerminal: true },
   { id: 'pulinchodu', name: 'Pulinchodu', position: [dmsToDecimal(10, 5, 42, 'N'), dmsToDecimal(76, 20, 48, 'E')] as [number, number] },
@@ -239,27 +239,82 @@ const airportExtensionStations = [
   { id: 'nh_ext_terminal', name: 'NH-544 / Thrissur ext', position: [10.1900, 76.3660] as [number, number], isTerminal: true }
 ];
 
-// NEW: Leaflet Metro Map Component
+// NEW: Improved Metro Map Component
+// NEW: Metro Map Component with Station Labels
 const MetroMap: React.FC<{ rotationData: RotationData; onStationSelect: (stationId: string | null) => void }> = ({ rotationData, onStationSelect }) => {
   const [selectedStation, setSelectedStation] = useState<string | null>(null);
   const [showTrains, setShowTrains] = useState(true);
-  const [selectedLine, setSelectedLine] = useState<'all' | 'main' | 'kakkanad' | 'airport'>('all');
+  const [selectedLine, setSelectedLine] = useState<'all' | 'main' | 'kakkanad' | 'airport'>('main');
 
   // Generate metro line coordinates
   const metroLine = kochiMetroStations.map(station => station.position);
   const kakkanadLine = kakkanadExtensionStations.map(station => station.position);
   const airportLine = airportExtensionStations.map(station => station.position);
 
-  // Simulate train positions based on rotation data
+  // Calculate bounds for main line (zoomed in view)
+  const getMainLineBounds = () => {
+    const mainLinePositions = kochiMetroStations.map(s => s.position);
+    return L.latLngBounds(mainLinePositions);
+  };
+
+  // Custom station icons with different colors per line
+  const createStationIcon = (line: 'main' | 'kakkanad' | 'airport', isActive: boolean, isTerminal: boolean) => {
+    const colors = {
+      main: { fill: isActive ? '#2dd4bf' : '#64748b', border: isTerminal ? '#f59e0b' : '#1e293b' },
+      kakkanad: { fill: isActive ? '#ec4899' : '#9d174d', border: isTerminal ? '#f59e0b' : '#1e293b' },
+      airport: { fill: isActive ? '#eab308' : '#854d0e', border: isTerminal ? '#f59e0b' : '#1e293b' }
+    };
+    
+    const color = colors[line];
+    
+    return new L.Icon({
+      iconUrl: 'data:image/svg+xml;base64,' + btoa(`
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="12" cy="12" r="10" fill="${color.fill}" stroke="${color.border}" stroke-width="${isTerminal ? '3' : '2'}"/>
+          ${isActive ? `
+            <circle cx="12" cy="12" r="14" fill="${color.fill}" opacity="0.3">
+              <animate attributeName="r" values="14;18;14" dur="2s" repeatCount="indefinite"/>
+              <animate attributeName="opacity" values="0.3;0.1;0.3" dur="2s" repeatCount="indefinite"/>
+            </circle>
+          ` : ''}
+        </svg>
+      `),
+      iconSize: [24, 24],
+      iconAnchor: [12, 12],
+      popupAnchor: [0, -12],
+    });
+  };
+
+  // Custom DivIcon for station labels
+  const createStationLabel = (stationName: string, line: 'main' | 'kakkanad' | 'airport') => {
+    const colors = {
+      main: 'text-teal-600',
+      kakkanad: 'text-pink-600', 
+      airport: 'text-yellow-600'
+    };
+    
+    return L.divIcon({
+      html: `
+        <div class="station-label ${colors[line]} font-medium text-xs bg-white/90 backdrop-blur-sm px-2 py-1 rounded shadow-sm whitespace-nowrap">
+          ${stationName}
+        </div>
+      `,
+      className: 'station-label-container',
+      iconSize: [100, 20],
+      iconAnchor: [-50, 10],
+    });
+  };
+
+  // Simulate train positions - only on main line by default
   const getTrainPositions = () => {
-    return rotationData.train_schedules.slice(0, 6).map((train, index) => {
-      const progress = (index * 20) + 10;
+    return rotationData.train_schedules.slice(0, 4).map((train, index) => {
+      const progress = (index * 25) + 10;
       const stationIndex = Math.floor(progress / 8) % kochiMetroStations.length;
       const station = kochiMetroStations[stationIndex];
       
-      // Add some random offset to make trains visible
-      const offsetLat = station.position[0] + (Math.random() * 0.002 - 0.001);
-      const offsetLng = station.position[1] + (Math.random() * 0.002 - 0.001);
+      // Add slight offset for visual clarity
+      const offsetLat = station.position[0] + (Math.random() * 0.001 - 0.0005);
+      const offsetLng = station.position[1] + (Math.random() * 0.001 - 0.0005);
       
       return {
         id: train.train_id,
@@ -281,24 +336,76 @@ const MetroMap: React.FC<{ rotationData: RotationData; onStationSelect: (station
     return hasRecentEvents ? 'active' : 'inactive';
   };
 
-  // Auto-fit map to show all stations with horizontal emphasis
+  // Auto-zoom to main line
   const MapController = () => {
     const map = useMap();
     useEffect(() => {
-      // Combine all lines for bounds calculation
-      const allStations = [...metroLine, ...kakkanadLine, ...airportLine];
-      const bounds = L.latLngBounds(allStations);
-      
-      map.fitBounds(bounds, { 
-        padding: [10, 20] 
-      });
-    }, [map]);
+      setTimeout(() => {
+        map.fitBounds(getMainLineBounds(), { 
+          padding: [80, 120], // Increased right padding for labels
+          maxZoom: 14
+        });
+      }, 100);
+    }, [map, selectedLine]);
     return null;
   };
 
   const handleStationClick = (stationId: string) => {
     setSelectedStation(stationId);
     onStationSelect(stationId);
+  };
+
+  // Function to render stations with labels
+  const renderStationsWithLabels = (stations: typeof kochiMetroStations, line: 'main' | 'kakkanad' | 'airport') => {
+    return stations.map(station => {
+      const status = getStationStatus(station.name);
+      const isActive = status === 'active';
+      
+      return (
+        <div key={station.id}>
+          {/* Station Dot */}
+          <Marker
+            position={station.position}
+            icon={createStationIcon(line, isActive, station.isTerminal || false)}
+            eventHandlers={{
+              click: () => handleStationClick(station.id),
+            }}
+          >
+            <Popup>
+              <div className="text-slate-800 p-2 min-w-[180px]">
+                <h3 className={`font-bold text-lg ${
+                  line === 'main' ? 'text-teal-700' : 
+                  line === 'kakkanad' ? 'text-pink-700' : 
+                  'text-yellow-700'
+                }`}>
+                  {station.name}
+                </h3>
+                <p className="text-sm text-slate-600 flex items-center gap-1">
+                  {station.isTerminal ? '🚉 Terminal Station' : '🚉 Station'}
+                  <span className={`ml-2 px-2 py-0.5 text-xs rounded ${
+                    line === 'main' ? 'bg-teal-100 text-teal-800' : 
+                    line === 'kakkanad' ? 'bg-pink-100 text-pink-800' : 
+                    'bg-yellow-100 text-yellow-800'
+                  }`}>
+                    {line === 'main' ? 'Main' : line === 'kakkanad' ? 'Kakkanad' : 'Airport'}
+                  </span>
+                </p>
+                <p className={`text-sm font-medium ${isActive ? 'text-emerald-600' : 'text-slate-500'}`}>
+                  Status: {isActive ? 'Active' : 'Quiet'}
+                </p>
+              </div>
+            </Popup>
+          </Marker>
+          
+          {/* Station Label (positioned to the left) */}
+          <Marker
+            position={station.position}
+            icon={createStationLabel(station.name, line)}
+            zIndexOffset={-1000} // Place labels behind dots
+          />
+        </div>
+      );
+    });
   };
 
   return (
@@ -309,186 +416,113 @@ const MetroMap: React.FC<{ rotationData: RotationData; onStationSelect: (station
           Kochi Metro Live Map
         </h3>
         <div className="flex gap-2">
-          {/* Line Selector Buttons */}
-          <div className="flex gap-2">
+          {/* Simplified Line Selector */}
+          <div className="flex gap-2 bg-slate-700/50 p-1 rounded-lg">
             {[
-              { key: 'all', label: 'All Lines', color: 'teal' },
-              { key: 'main', label: 'Main Line', color: 'teal' },
-              { key: 'kakkanad', label: 'Kakkanad', color: 'pink' },
-              { key: 'airport', label: 'Airport', color: 'yellow' }
+              { key: 'main' as const, label: 'Main', color: 'teal', icon: '●' },
+              { key: 'kakkanad' as const, label: 'Kakkanad', color: 'pink', icon: '●' },
+              { key: 'airport' as const, label: 'Airport', color: 'yellow', icon: '●' },
+              { key: 'all' as const, label: 'All', color: 'slate', icon: '●' },
             ].map(line => (
               <button
                 key={line.key}
-                onClick={() => setSelectedLine(line.key as any)}
-                className={`px-3 py-2 text-sm rounded-lg border transition ${
+                onClick={() => setSelectedLine(line.key)}
+                className={`px-3 py-1.5 text-sm rounded-md transition-all flex items-center gap-1.5 ${
                   selectedLine === line.key
-                    ? line.key === 'all' 
-                      ? 'bg-teal-500/20 border-teal-500 text-teal-300'
-                      : line.key === 'main'
-                      ? 'bg-teal-500/20 border-teal-500 text-teal-300'
+                    ? line.key === 'main' 
+                      ? 'bg-teal-500 text-white shadow-md' 
                       : line.key === 'kakkanad'
-                      ? 'bg-pink-500/20 border-pink-500 text-pink-300'
-                      : 'bg-yellow-500/20 border-yellow-500 text-yellow-300'
-                    : 'bg-slate-700/50 border-slate-600 text-slate-300 hover:border-teal-500/50'
+                      ? 'bg-pink-500 text-white shadow-md'
+                      : line.key === 'airport'
+                      ? 'bg-yellow-500 text-white shadow-md'
+                      : 'bg-slate-600 text-white shadow-md'
+                    : 'text-slate-300 hover:bg-slate-600/50'
                 }`}
               >
-                {line.label}
+                <span className={`${selectedLine === line.key ? 'text-white' : 
+                  line.key === 'main' ? 'text-teal-400' : 
+                  line.key === 'kakkanad' ? 'text-pink-400' : 
+                  line.key === 'airport' ? 'text-yellow-400' : 
+                  'text-slate-400'
+                }`}>{line.icon}</span>
+                <span>{line.label}</span>
               </button>
             ))}
           </div>
           
           <button 
             onClick={() => setShowTrains(!showTrains)}
-            className={`px-4 py-2 text-sm rounded-lg border transition-all ${
+            className={`px-3 py-1.5 text-sm rounded-lg border transition-all flex items-center gap-2 ${
               showTrains 
                 ? 'bg-teal-500/20 border-teal-500 text-teal-300' 
                 : 'bg-slate-700/50 border-slate-600 text-slate-300 hover:border-teal-500/50'
             }`}
           >
-            {showTrains ? '🚆 Trains: On' : '🚆 Trains: Off'}
+            <span className="text-sm">🚆</span>
+            <span>{showTrains ? 'On' : 'Off'}</span>
           </button>
         </div>
       </div>
 
       <div className="relative bg-gradient-to-br from-slate-900/80 to-slate-800/80 rounded-xl p-4 border border-slate-600/30 h-[400px] lg:h-[700px]">
-        {/* Leaflet Map Container - WIDER Layout */}
         <div className="h-full rounded-lg overflow-hidden">
           <MapContainer
             center={[10.0160, 76.2990]}
-            zoom={11}
+            zoom={13}
             style={{ height: '100%', width: '100%' }}
             className="rounded-lg"
             zoomControl={true}
+            scrollWheelZoom={true}
           >
             <MapController />
-            {/* Light theme tile layer - WHITE BACKGROUND MAP */}
+            
+            {/* Cleaner tile layer */}
             <TileLayer
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             />
             
             {/* Main Metro Line - Teal */}
-            <Polyline
-              positions={metroLine}
-              color="#2dd4bf"
-              weight={selectedLine === 'main' || selectedLine === 'all' ? 8 : 4}
-              opacity={selectedLine === 'main' || selectedLine === 'all' ? 0.9 : 0.3}
-              smoothFactor={1}
-              eventHandlers={{
-                click: () => setSelectedLine('main')
-              }}
-            />
+            {(selectedLine === 'main' || selectedLine === 'all') && (
+              <>
+                <Polyline
+                  positions={metroLine}
+                  color="#2dd4bf"
+                  weight={6}
+                  opacity={0.9}
+                  smoothFactor={1}
+                />
+                {renderStationsWithLabels(kochiMetroStations, 'main')}
+              </>
+            )}
             
             {/* Kakkanad Extension Line - Pink */}
-            <Polyline
-              positions={kakkanadLine}
-              color="#ec4899"
-              weight={selectedLine === 'kakkanad' || selectedLine === 'all' ? 6 : 4}
-              opacity={selectedLine === 'kakkanad' || selectedLine === 'all' ? 0.9 : 0.3}
-              smoothFactor={1}
-              eventHandlers={{
-                click: () => setSelectedLine('kakkanad')
-              }}
-            />
+            {(selectedLine === 'kakkanad' || selectedLine === 'all') && (
+              <>
+                <Polyline
+                  positions={kakkanadLine}
+                  color="#ec4899"
+                  weight={4}
+                  opacity={0.7}
+                  smoothFactor={1}
+                />
+                {renderStationsWithLabels(kakkanadExtensionStations, 'kakkanad')}
+              </>
+            )}
             
             {/* Airport Extension Line - Yellow */}
-            <Polyline
-              positions={airportLine}
-              color="#eab308"
-              weight={selectedLine === 'airport' || selectedLine === 'all' ? 6 : 4}
-              opacity={selectedLine === 'airport' || selectedLine === 'all' ? 0.9 : 0.3}
-              smoothFactor={1}
-              eventHandlers={{
-                click: () => setSelectedLine('airport')
-              }}
-            />
-            
-            {/* Main Line Stations */}
-            {(selectedLine === 'all' || selectedLine === 'main') && kochiMetroStations.map(station => {
-              const status = getStationStatus(station.name);
-              const isActive = status === 'active';
-              
-              return (
-                <Marker
-                  key={station.id}
-                  position={station.position}
-                  icon={createStationIcon(isActive, station.isTerminal || false)}
-                  eventHandlers={{
-                    click: () => handleStationClick(station.id),
-                  }}
-                >
-                  <Popup>
-                    <div className="text-slate-800 p-2 min-w-[200px]">
-                      <h3 className="font-bold text-lg text-teal-700">{station.name}</h3>
-                      <p className="text-sm text-slate-600">
-                        {station.isTerminal ? '🚉 Terminal Station' : '🚉 Station'}
-                      </p>
-                      <p className={`text-sm font-medium ${isActive ? 'text-emerald-600' : 'text-slate-500'}`}>
-                        Status: {isActive ? 'Active' : 'Quiet'}
-                      </p>
-                    </div>
-                  </Popup>
-                </Marker>
-              );
-            })}
-            
-            {/* Kakkanad Extension Stations */}
-            {(selectedLine === 'all' || selectedLine === 'kakkanad') && kakkanadExtensionStations.map(station => {
-              const status = getStationStatus(station.name);
-              const isActive = status === 'active';
-              
-              return (
-                <Marker
-                  key={station.id}
-                  position={station.position}
-                  icon={createStationIcon(isActive, station.isTerminal || false)}
-                  eventHandlers={{
-                    click: () => handleStationClick(station.id),
-                  }}
-                >
-                  <Popup>
-                    <div className="text-slate-800 p-2 min-w-[200px]">
-                      <h3 className="font-bold text-lg text-pink-700">{station.name}</h3>
-                      <p className="text-sm text-slate-600">
-                        {station.isTerminal ? '🚉 Terminal Station' : '🚉 Kakkanad Extension'}
-                      </p>
-                      <p className={`text-sm font-medium ${isActive ? 'text-emerald-600' : 'text-slate-500'}`}>
-                        Status: {isActive ? 'Active' : 'Quiet'}
-                      </p>
-                    </div>
-                  </Popup>
-                </Marker>
-              );
-            })}
-            
-            {/* Airport Extension Stations */}
-            {(selectedLine === 'all' || selectedLine === 'airport') && airportExtensionStations.map(station => {
-              const status = getStationStatus(station.name);
-              const isActive = status === 'active';
-              
-              return (
-                <Marker
-                  key={station.id}
-                  position={station.position}
-                  icon={createStationIcon(isActive, station.isTerminal || false)}
-                  eventHandlers={{
-                    click: () => handleStationClick(station.id),
-                  }}
-                >
-                  <Popup>
-                    <div className="text-slate-800 p-2 min-w-[200px]">
-                      <h3 className="font-bold text-lg text-yellow-700">{station.name}</h3>
-                      <p className="text-sm text-slate-600">
-                        {station.isTerminal ? '🚉 Terminal Station' : '🚉 Airport Extension'}
-                      </p>
-                      <p className={`text-sm font-medium ${isActive ? 'text-emerald-600' : 'text-slate-500'}`}>
-                        Status: {isActive ? 'Active' : 'Quiet'}
-                      </p>
-                    </div>
-                  </Popup>
-                </Marker>
-              );
-            })}
+            {(selectedLine === 'airport' || selectedLine === 'all') && (
+              <>
+                <Polyline
+                  positions={airportLine}
+                  color="#eab308"
+                  weight={4}
+                  opacity={0.7}
+                  smoothFactor={1}
+                />
+                {renderStationsWithLabels(airportExtensionStations, 'airport')}
+              </>
+            )}
             
             {/* Trains */}
             {showTrains && getTrainPositions().map(train => (
@@ -498,7 +532,7 @@ const MetroMap: React.FC<{ rotationData: RotationData; onStationSelect: (station
                 icon={train.status === 'delayed' ? delayedTrainIcon : trainIcon}
               >
                 <Popup>
-                  <div className="text-slate-800 p-2 min-w-[200px]">
+                  <div className="text-slate-800 p-2 min-w-[180px]">
                     <h3 className="font-bold text-lg">{train.id}</h3>
                     <p className={`text-sm font-medium ${
                       train.status === 'delayed' ? 'text-rose-600' : 'text-emerald-600'
@@ -515,39 +549,27 @@ const MetroMap: React.FC<{ rotationData: RotationData; onStationSelect: (station
           </MapContainer>
         </div>
 
-        {/* Legend */}
-        <div className="flex flex-wrap justify-center gap-4 mt-6 text-sm">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-teal-400 animate-pulse"></div>
-            <span className="text-slate-300">Active Station</span>
+        {/* Compact Legend */}
+        <div className="flex flex-wrap justify-center gap-3 mt-4 text-xs">
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded-full bg-teal-400"></div>
+            <span className="text-slate-300">Main Line</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-slate-500"></div>
-            <span className="text-slate-300">Inactive</span>
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded-full bg-pink-400"></div>
+            <span className="text-slate-300">Kakkanad</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
+            <span className="text-slate-300">Airport</span>
+          </div>
+          <div className="flex items-center gap-1.5">
             <div className="w-3 h-3 rounded-full border-2 border-amber-400 bg-amber-400/20"></div>
             <span className="text-slate-300">Terminal</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-3 bg-emerald-400 rounded-sm"></div>
-            <span className="text-slate-300">Train On Time</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-3 bg-rose-400 rounded-sm"></div>
-            <span className="text-slate-300">Train Delayed</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-1 bg-teal-400 rounded-sm"></div>
-            <span className="text-slate-300">Main Line</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-1 bg-pink-400 rounded-sm"></div>
-            <span className="text-slate-300">Kakkanad Extension</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-1 bg-yellow-400 rounded-sm"></div>
-            <span className="text-slate-300">Airport Extension</span>
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-2 bg-emerald-400 rounded-sm"></div>
+            <span className="text-slate-300">Train</span>
           </div>
         </div>
       </div>
@@ -567,7 +589,7 @@ const RotationPage: React.FC = () => {
     showDelaysOnly: false,
     timeRange: 'All Day'
   });
-  const [currentView, setCurrentView] = useState<'timeline' | 'table' | 'stations' | 'overview'>('overview');
+  const [currentView, setCurrentView] = useState<'timeline'| 'stations' | 'overview'>('overview');
   const [selectedTimeRange, setSelectedTimeRange] = useState<[string, string]>(['06:00', '22:00']);
   const [expandedTrains, setExpandedTrains] = useState<Set<string>>(new Set());
   const [currentTime, setCurrentTime] = useState<string>('');
@@ -779,7 +801,7 @@ const RotationPage: React.FC = () => {
                 <h3 className="text-xl font-bold text-teal-200">Stations</h3>
               </div>
               
-              <div className="flex-1 overflow-y-auto space-y-2 max-h-[300px] mb-4">
+              <div className="flex-1 overflow-y-auto space-y-2 max-h-[200px] mb-4">
   {(rotationData?.stations || []).map((station, index) => (
     <div 
       key={station}
@@ -957,16 +979,15 @@ const RotationPage: React.FC = () => {
         </div>
 
         {/* Main Dashboard Area */}
-        <div className="space-y-6">
-          {/* View Controls */}
-          <div className="bg-slate-800/60 backdrop-blur-sm rounded-2xl p-6 border-0">
+<div className="space-y-6 min-h-[500px]"> {/* Add min-height here */}
+  {/* View Controls */}
+  <div className="bg-slate-800/60 backdrop-blur-sm rounded-2xl p-6 border-0">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
               <div className="flex gap-2">
                 {[
                   { key: 'overview' as const, label: 'Overview', icon: '🌐' },
                   { key: 'timeline' as const, label: 'Timeline', icon: '📅' },
                   { key: 'stations' as const, label: 'Stations', icon: '🚉' },
-                  { key: 'table' as const, label: 'Table', icon: '📊' }
                 ].map(view => (
                   <button
                     key={view.key}
@@ -1070,21 +1091,18 @@ const RotationPage: React.FC = () => {
             {currentView === 'timeline' && (
               <TimelineView 
                 events={filteredEvents} 
-                trains={rotationData.train_schedules}
-                expandedTrains={expandedTrains}
-                onToggleTrain={toggleTrainExpansion}
-                getDelayColor={getDelayColor}
-                getDelayBgColor={getDelayBgColor}
-                getDelayAnalysis={getDelayAnalysis}
+    trains={rotationData.train_schedules}
+    expandedTrains={expandedTrains}
+    onToggleTrain={toggleTrainExpansion}
+    getDelayColor={getDelayColor}
+    getDelayBgColor={getDelayBgColor}
+    getDelayAnalysis={getDelayAnalysis}
+    selectedTrain={filters.train}
               />
             )}
 
             {currentView === 'stations' && (
               <StationsView rotationData={rotationData} />
-            )}
-
-            {currentView === 'table' && (
-              <TableView events={filteredEvents} />
             )}
           </div>
         </div>
@@ -1195,6 +1213,8 @@ const OverviewView: React.FC<{
   );
 };
 
+// Replace the TimelineView component with this simpler version:
+
 const TimelineView: React.FC<{
   events: StationEvent[];
   trains: TrainSchedule[];
@@ -1203,331 +1223,318 @@ const TimelineView: React.FC<{
   getDelayColor: (delay: number) => string;
   getDelayBgColor: (delay: number) => string;
   getDelayAnalysis: (train: TrainSchedule) => DelayAnalysis;
-}> = ({ events, trains, expandedTrains, onToggleTrain, getDelayColor, getDelayBgColor, getDelayAnalysis }) => {
-  const eventsByTrain = events.reduce((acc, event) => {
-    const train = trains.find(t => t.station_events.includes(event));
-    if (!train) return acc;
-    
-    if (!acc[train.train_id]) {
-      acc[train.train_id] = { train, events: [] };
-    }
-    acc[train.train_id].events.push(event);
-    return acc;
-  }, {} as Record<string, { train: TrainSchedule, events: StationEvent[] }>);
+  selectedTrain?: string;
+}> = ({ events, trains, getDelayColor, getDelayBgColor, getDelayAnalysis, selectedTrain: propSelectedTrain = 'All Trains' }) => {
+  const [selectedTrain, setSelectedTrain] = useState<string>(propSelectedTrain);
+  const [selectedStation, setSelectedStation] = useState<string | null>(null);
+  const [currentTrainPosition, setCurrentTrainPosition] = useState<string | null>(null);
 
-  // Helper to get current station for a train
-  const getCurrentStation = (trainEvents: StationEvent[]) => {
+  // Get all unique stations in order
+  const allStations = useMemo(() => {
+    if (trains.length === 0) return [];
+    
+    const stationMap = new Map<string, number>();
+    
+    trains.forEach(train => {
+      train.station_events.forEach(event => {
+        if (!stationMap.has(event.station)) {
+          stationMap.set(event.station, event.sequence);
+        }
+      });
+    });
+    
+    return Array.from(stationMap.entries())
+      .sort((a, b) => a[1] - b[1])
+      .map(([station]) => station);
+  }, [trains]);
+
+  // Get current train's position
+  const getTrainPosition = useMemo(() => {
+    if (selectedTrain === 'All Trains' || trains.length === 0) {
+      return null;
+    }
+    
+    const train = trains.find(t => t.train_id === selectedTrain);
+    if (!train || !train.station_events || train.station_events.length === 0) return null;
+
     const now = new Date();
-    return trainEvents.find(event => {
-      const [hours, minutes] = event.expected_arrival.split(':').map(Number);
+    const events = train.station_events;
+    
+    // Find current station
+    let currentStation = events[0].station;
+    for (let i = 0; i < events.length; i++) {
+      const [hours, minutes] = events[i].expected_arrival.split(':').map(Number);
       const eventTime = new Date();
       eventTime.setHours(hours, minutes, 0, 0);
-      return Math.abs(now.getTime() - eventTime.getTime()) < 30 * 60 * 1000; // Within 30 minutes
-    }) || trainEvents[0];
+      
+      if (eventTime > now) {
+        currentStation = i > 0 ? events[i - 1].station : events[0].station;
+        break;
+      }
+      if (i === events.length - 1) {
+        currentStation = events[i].station;
+      }
+    }
+    
+    return currentStation;
+  }, [selectedTrain, trains]);
+
+  // Update current train position when selectedTrain changes
+  useEffect(() => {
+    if (selectedTrain !== 'All Trains') {
+      const position = getTrainPosition;
+      setCurrentTrainPosition(position);
+    } else {
+      setCurrentTrainPosition(null);
+    }
+  }, [selectedTrain, getTrainPosition]);
+
+  // Get events for selected station
+  const getStationEvents = (stationName: string) => {
+    if (!selectedStation || selectedStation !== stationName) return [];
+    
+    const stationEvents: Array<{
+      time: string;
+      delay: number;
+      rotation: number;
+      direction: string;
+      trainId: string;
+      scheduled: string;
+    }> = [];
+    
+    trains.forEach(train => {
+      train.station_events.forEach(event => {
+        if (event.station === stationName) {
+          stationEvents.push({
+            time: event.expected_arrival,
+            delay: event.delay_minutes,
+            rotation: event.rotation,
+            direction: event.direction,
+            trainId: train.train_id,
+            scheduled: event.scheduled_arrival
+          });
+        }
+      });
+    });
+    
+    return stationEvents.sort((a, b) => a.time.localeCompare(b.time));
   };
 
-  // Helper to get next stations
-  const getNextStations = (trainEvents: StationEvent[], currentIndex: number) => {
-    return trainEvents.slice(currentIndex + 1, currentIndex + 4);
+  const handleStationClick = (station: string) => {
+    setSelectedStation(selectedStation === station ? null : station);
   };
 
   return (
-    <div className="space-y-6">
-      {Object.entries(eventsByTrain).map(([trainId, { train, events }]) => {
-        const delayAnalysis = getDelayAnalysis(train);
-        const isExpanded = expandedTrains.has(trainId);
-        const currentStation = getCurrentStation(events);
-        const currentIndex = events.findIndex(e => e === currentStation);
-        const nextStations = getNextStations(events, currentIndex);
-        const onTimeStations = events.filter(e => e.delay_minutes === 0).length;
-        const delayedStations = events.filter(e => e.delay_minutes > 0).length;
-        
-        return (
-          <div 
-            key={trainId} 
-            className="bg-gradient-to-br from-slate-800/50 to-slate-700/50 backdrop-blur-lg rounded-3xl shadow-2xl overflow-hidden transition-all duration-500 hover:shadow-cyan-500/10"
-          >
-            {/* Enhanced Train Header - Much more informative when collapsed */}
-            <div 
-              className="p-8 cursor-pointer transition-all duration-500 group relative overflow-hidden"
-              onClick={() => onToggleTrain(trainId)}
-            >
-              {/* Animated Background Gradient */}
-              <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/5 via-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              
-              <div className="relative z-10">
-                {/* Main Header Row */}
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center gap-6">
-                    <div className="p-4 bg-gradient-to-br from-cyan-500/20 to-blue-600/20 rounded-2xl border border-cyan-500/30 shadow-lg transition-all duration-300">
-                      <span className="text-3xl">🚄</span>
-                    </div>
-                    <div>
-                      <h3 className="text-2xl font-bold bg-gradient-to-r from-cyan-300 to-blue-300 bg-clip-text text-transparent">
-                        {trainId}
-                      </h3>
-                      <p className="text-slate-400 text-sm mt-2">
-                        Rotation {events[0]?.rotation} • {train.total_rotations} rotations • {train.train_config?.high_critical_jobs || 0} critical jobs
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-4">
-                    <div className={`px-6 py-3 rounded-2xl border backdrop-blur-sm shadow-lg transition-all duration-300 ${getDelayBgColor(delayAnalysis.total_delay)}`}>
-                      <span className={`font-black text-sm tracking-wide ${getDelayColor(delayAnalysis.total_delay)}`}>
-                        +{delayAnalysis.total_delay.toFixed(1)}m total delay
-                      </span>
-                    </div>
-                    <div className="text-cyan-300 text-2xl transform transition-all duration-300">
-                      {isExpanded ? '▼' : '▶'}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Enhanced Status Dashboard - Shows when collapsed */}
-                {!isExpanded && (
-                  <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mt-6">
-                    {/* Current Station */}
-                    <div className="bg-gradient-to-br from-slate-700/40 to-slate-800/40 rounded-2xl p-4 border border-slate-600/30">
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="w-3 h-3 bg-emerald-400 rounded-full animate-pulse shadow-lg shadow-emerald-400/50"></div>
-                        <span className="text-slate-400 text-sm font-medium">CURRENT STATION</span>
-                      </div>
-                      <div className="text-lg font-bold text-white mb-1">{currentStation?.station || 'En Route'}</div>
-                      <div className="text-cyan-300 font-mono text-sm">{currentStation?.expected_arrival || '--:--'}</div>
-                    </div>
-
-                    {/* Next Stations Preview */}
-                    <div className="bg-gradient-to-br from-slate-700/40 to-slate-800/40 rounded-2xl p-4 border border-slate-600/30">
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="w-3 h-3 bg-amber-400 rounded-full shadow-lg shadow-amber-400/50"></div>
-                        <span className="text-slate-400 text-sm font-medium">NEXT STOPS</span>
-                      </div>
-                      <div className="space-y-2">
-                        {nextStations.slice(0, 2).map((station, idx) => (
-                          <div key={idx} className="flex justify-between items-center text-sm">
-                            <span className="text-slate-300 truncate">{station.station}</span>
-                            <span className="text-cyan-300 font-mono text-xs">{station.expected_arrival}</span>
-                          </div>
-                        ))}
-                        {nextStations.length === 0 && (
-                          <div className="text-slate-500 text-sm">End of line</div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Performance Stats */}
-                    <div className="bg-gradient-to-br from-slate-700/40 to-slate-800/40 rounded-2xl p-4 border border-slate-600/30">
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="w-3 h-3 bg-blue-400 rounded-full shadow-lg shadow-blue-400/50"></div>
-                        <span className="text-slate-400 text-sm font-medium">PERFORMANCE</span>
-                      </div>
-                      <div className="grid grid-cols-2 gap-3 text-center">
-                        <div>
-                          <div className="text-emerald-400 font-bold text-lg">{onTimeStations}</div>
-                          <div className="text-slate-500 text-xs">On Time</div>
-                        </div>
-                        <div>
-                          <div className="text-rose-400 font-bold text-lg">{delayedStations}</div>
-                          <div className="text-slate-500 text-xs">Delayed</div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Route Progress */}
-                    <div className="bg-gradient-to-br from-slate-700/40 to-slate-800/40 rounded-2xl p-4 border border-slate-600/30">
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="w-3 h-3 bg-purple-400 rounded-full shadow-lg shadow-purple-400/50"></div>
-                        <span className="text-slate-400 text-sm font-medium">ROUTE PROGRESS</span>
-                      </div>
-                      <div className="text-center mb-2">
-                        <div className="text-cyan-300 font-bold text-lg">
-                          {currentIndex + 1}/{events.length}
-                        </div>
-                        <div className="text-slate-500 text-xs">Stations</div>
-                      </div>
-                      <div className="w-full bg-slate-600/30 rounded-full h-2">
-                        <div 
-                          className="bg-gradient-to-r from-cyan-500 to-blue-500 h-2 rounded-full transition-all duration-1000"
-                          style={{ width: `${((currentIndex + 1) / events.length) * 100}%` }}
-                        ></div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Quick Stats Row */}
-                {!isExpanded && (
-                  <div className="flex items-center justify-between mt-6 pt-6 border-t border-slate-600/30">
-                    <div className="flex items-center gap-6 text-sm">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-emerald-400 rounded-full"></div>
-                        <span className="text-slate-400">
-                          <span className="text-emerald-300 font-semibold">{onTimeStations}</span> on time
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-amber-400 rounded-full"></div>
-                        <span className="text-slate-400">
-                          <span className="text-amber-300 font-semibold">{events.filter(e => e.delay_minutes > 0 && e.delay_minutes <= 5).length}</span> minor delays
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-rose-400 rounded-full"></div>
-                        <span className="text-slate-400">
-                          <span className="text-rose-300 font-semibold">{events.filter(e => e.delay_minutes > 5).length}</span> major delays
-                        </span>
-                      </div>
-                    </div>
-                    
-                    <div className="text-slate-400 text-sm">
-                      Click to view full timeline →
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Subtle Shimmer Effect - No movement */}
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/3 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 -z-10"></div>
-            </div>
-
-            {/* Enhanced Events Timeline - Only shows when expanded */}
-            {isExpanded && (
-              <div className="px-8 pb-8">
-                <div className="space-y-6">
-                  {events.map((event, index) => (
-                    <div 
-                      key={index} 
-                      className="relative pl-12 group"
-                      style={{ animationDelay: `${index * 100}ms` }}
-                    >
-                      {/* Timeline connector */}
-                      {index < events.length - 1 && (
-                        <div className="absolute left-[22px] top-12 bottom-0 w-1 bg-gradient-to-b from-cyan-500/20 to-blue-500/20 rounded-full">
-                          <div className="absolute top-0 left-0 w-full h-4 bg-gradient-to-b from-cyan-400 to-transparent animate-pulse"></div>
-                        </div>
-                      )}
-                      
-                      {/* Timeline dot */}
-                      <div className={`absolute left-0 top-2 w-10 h-10 rounded-full flex items-center justify-center border-2 backdrop-blur-sm shadow-lg transition-all duration-300 ${
-                        event.delay_minutes > 0 
-                          ? 'bg-rose-500/10 border-rose-500/40' 
-                          : 'bg-emerald-500/10 border-emerald-500/40'
-                      }`}>
-                        <div className={`w-4 h-4 rounded-full ${
-                          event.delay_minutes > 0 
-                            ? 'bg-gradient-to-br from-rose-400 to-rose-500 shadow-lg shadow-rose-400/50' 
-                            : 'bg-gradient-to-br from-emerald-400 to-emerald-500 shadow-lg shadow-emerald-400/50'
-                        }`}></div>
-                        
-                        {/* Pulsing ring for current/active events */}
-                        {event === currentStation && (
-                          <div className="absolute inset-0 rounded-full border-2 border-cyan-400/40 animate-ping"></div>
-                        )}
-                      </div>
-
-                      {/* Event Card */}
-                      <div className="bg-gradient-to-r from-slate-700/40 to-slate-800/40 rounded-3xl p-6 border border-slate-600/20 transition-all duration-300 backdrop-blur-sm">
-                        <div className="flex items-start justify-between gap-6">
-                          {/* Left: Time & Station */}
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-4 mb-4">
-                              <span className="font-mono text-cyan-300 font-black text-xl bg-cyan-500/10 px-3 py-1 rounded-lg border border-cyan-500/20">
-                                {event.expected_arrival}
-                              </span>
-                              <span className={`px-4 py-2 rounded-xl text-sm font-bold border backdrop-blur-sm ${
-                                event.direction === 'forward' 
-                                  ? 'bg-blue-500/10 text-blue-300 border-blue-500/30' 
-                                  : 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30'
-                              }`}>
-                                {event.direction === 'forward' ? '→ PETTAH' : '← ALUVA'}
-                              </span>
-                              {event === currentStation && (
-                                <span className="px-3 py-1 bg-cyan-500/20 text-cyan-300 rounded-lg text-xs font-bold border border-cyan-500/30">
-                                  CURRENT
-                                </span>
-                              )}
-                            </div>
-                            <h4 className="text-slate-200 font-bold text-xl mb-3">
-                              {event.station}
-                            </h4>
-                            <div className="flex items-center gap-6 text-sm">
-                              <div className="flex items-center gap-2">
-                                <div className="w-2 h-2 bg-amber-400 rounded-full shadow-lg shadow-amber-400/50"></div>
-                                <span className="text-slate-300">
-                                  Next: <span className="text-amber-300 font-bold">{event.next_station_duration}min</span>
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <div className="w-2 h-2 bg-cyan-400 rounded-full shadow-lg shadow-cyan-400/50"></div>
-                                <span className="text-slate-300">
-                                  Total: <span className="text-cyan-300 font-bold">{event.cumulative_time}min</span>
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Right: Delay info */}
-                          <div className="text-right">
-                            {event.delay_minutes > 0 ? (
-                              <div>
-                                <div className={`px-4 py-3 rounded-2xl border backdrop-blur-sm shadow-lg mb-3 ${getDelayBgColor(event.delay_minutes)}`}>
-                                  <span className={`font-black text-lg tracking-wide ${getDelayColor(event.delay_minutes)}`}>
-                                    +{event.delay_minutes}m
-                                  </span>
-                                </div>
-                                {event.delay_reasons.length > 0 && (
-                                  <p className="text-sm text-slate-400 max-w-[200px] font-medium bg-slate-700/30 px-3 py-2 rounded-lg border border-slate-600/30">
-                                    {event.delay_reasons[0]}
-                                  </p>
-                                )}
-                              </div>
-                            ) : (
-                              <div className="px-4 py-3 bg-emerald-500/10 rounded-2xl border border-emerald-500/30 shadow-lg">
-                                <span className="text-emerald-400 font-black text-lg tracking-wide">
-                                  ON TIME
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Enhanced Footer for expanded train */}
-                <div className="mt-8 pt-6 border-t border-slate-600/30">
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div className="text-center p-4 bg-gradient-to-br from-cyan-500/10 to-blue-500/10 rounded-2xl border border-cyan-500/20">
-                      <div className="text-2xl font-black text-cyan-300">{events.length}</div>
-                      <div className="text-slate-400 text-sm font-medium">TOTAL STOPS</div>
-                    </div>
-                    <div className="text-center p-4 bg-gradient-to-br from-emerald-500/10 to-teal-500/10 rounded-2xl border border-emerald-500/20">
-                      <div className="text-2xl font-black text-emerald-300">
-                        {events.filter(e => e.delay_minutes === 0).length}
-                      </div>
-                      <div className="text-slate-400 text-sm font-medium">ON TIME</div>
-                    </div>
-                    <div className="text-center p-4 bg-gradient-to-br from-amber-500/10 to-orange-500/10 rounded-2xl border border-amber-500/20">
-                      <div className="text-2xl font-black text-amber-300">
-                        {events.filter(e => e.delay_minutes > 0 && e.delay_minutes <= 5).length}
-                      </div>
-                      <div className="text-slate-400 text-sm font-medium">MINOR DELAYS</div>
-                    </div>
-                    <div className="text-center p-4 bg-gradient-to-br from-rose-500/10 to-pink-500/10 rounded-2xl border border-rose-500/20">
-                      <div className="text-2xl font-black text-rose-300">
-                        {events.filter(e => e.delay_minutes > 5).length}
-                      </div>
-                      <div className="text-slate-400 text-sm font-medium">MAJOR DELAYS</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
+    <div className="w-full p-6 bg-gradient-to-br from-slate-800/50 to-slate-700/50 backdrop-blur-lg rounded-2xl min-h-[400px]">
+      {/* Header */}
+      <div className="mb-8">
+        <div className="flex items-center gap-4 mb-4">
+          <div className="p-3 bg-gradient-to-br from-cyan-500/20 to-blue-600/20 rounded-xl border border-cyan-500/30">
+            <span className="text-2xl">🚄</span>
           </div>
-        );
-      })}
+          <div>
+            <h3 className="text-xl font-bold text-cyan-300">Metro Timeline View</h3>
+            <p className="text-slate-400 text-sm">Select a train to see its current position on the line</p>
+          </div>
+        </div>
+        
+        {/* Train Selector */}
+        <div className="mb-6">
+          <label className="block text-sm font-semibold text-teal-200 mb-2">Select Train</label>
+          <select
+            value={selectedTrain}
+            onChange={(e) => setSelectedTrain(e.target.value)}
+            className="w-full max-w-md bg-slate-700/50 border border-slate-600 text-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500"
+          >
+            <option value="All Trains">All Trains (View Stations Only)</option>
+            {trains.map(train => (
+              <option key={train.train_id} value={train.train_id}>
+                {train.train_id}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* Simple Horizontal Metro Line */}
+      <div className="relative mb-8">
+        {/* The horizontal metro line */}
+        <div className="relative h-1 bg-gradient-to-r from-slate-600 via-slate-500 to-slate-600 rounded-full mb-12"></div>
+        
+        {/* Station Dots and Names */}
+        <div className="flex justify-between items-start">
+          {allStations.map((station, index) => {
+            const isSelected = selectedStation === station;
+            const isTrainHere = currentTrainPosition === station;
+            
+            return (
+              <div key={station} className="flex flex-col items-center -mt-6">
+                {/* Station Dot and Line Connection */}
+                <div className="relative flex flex-col items-center">
+                  {/* Vertical line connecting dot to station name */}
+                  <div className={`h-8 w-0.5 mb-2 ${
+                    isSelected ? 'bg-cyan-400' : 'bg-slate-600'
+                  }`}></div>
+                  
+                  {/* Station Dot */}
+                  <button
+                    onClick={() => handleStationClick(station)}
+                    className={`relative w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
+                      isSelected 
+                        ? 'bg-cyan-500 border-cyan-400 scale-125 shadow-lg shadow-cyan-500/30' 
+                        : isTrainHere
+                        ? 'bg-emerald-500 border-emerald-400 shadow-lg shadow-emerald-500/30'
+                        : 'bg-slate-700 border-slate-600 hover:border-teal-400 hover:scale-110'
+                    }`}
+                  >
+                    <div className={`w-2 h-2 rounded-full ${
+                      isSelected ? 'bg-white' : isTrainHere ? 'bg-white' : 'bg-slate-400'
+                    }`}></div>
+                    
+                    {/* Train indicator */}
+                    {isTrainHere && selectedTrain !== 'All Trains' && (
+                      <>
+                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-800 px-2 py-1 rounded border border-emerald-500 text-xs text-emerald-300 whitespace-nowrap">
+                          {selectedTrain}
+                        </div>
+                        <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-2xl">↓</div>
+                      </>
+                    )}
+                    
+                    {/* Selected indicator */}
+                    {isSelected && (
+                      <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-2xl text-cyan-400">↓</div>
+                    )}
+                  </button>
+                </div>
+                
+                {/* Station Name */}
+                <div className={`mt-2 text-center max-w-[80px] ${
+                  isSelected ? 'text-cyan-300 font-semibold' : 'text-slate-300'
+                }`}>
+                  <p className="text-xs truncate">{station}</p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Selected Station Info */}
+      {selectedStation && (
+        <div className="mt-12 p-6 bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl border border-cyan-500/30 shadow-xl">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center">
+                <span className="text-white">🚉</span>
+              </div>
+              <h4 className="text-xl font-bold text-cyan-300">{selectedStation}</h4>
+            </div>
+            <button 
+              onClick={() => setSelectedStation(null)}
+              className="px-3 py-1 text-sm text-slate-400 hover:text-white hover:bg-slate-700/50 rounded-lg transition"
+            >
+              Close
+            </button>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Train Visits */}
+            <div>
+              <h5 className="text-teal-200 font-semibold mb-3">Train Visits Today</h5>
+              <div className="space-y-2 max-h-60 overflow-y-auto">
+                {getStationEvents(selectedStation).map((visit, idx) => (
+                  <div key={idx} className="flex items-center justify-between p-3 bg-slate-700/40 rounded-lg">
+                    <div>
+                      <span className="font-bold text-cyan-300">{visit.trainId}</span>
+                      <div className="text-xs text-slate-400">
+                        Rotation {visit.rotation} • {visit.direction === 'forward' ? '→ PETTAH' : '← ALUVA'}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className={`font-mono font-bold ${
+                        visit.delay > 0 ? 'text-rose-300' : 'text-emerald-300'
+                      }`}>
+                        {visit.time}
+                        {visit.delay > 0 && (
+                          <span className="text-xs ml-2">(+{visit.delay}m)</span>
+                        )}
+                      </div>
+                      <div className="text-xs text-slate-500">sched: {visit.scheduled}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            {/* Station Stats */}
+            <div>
+              <h5 className="text-teal-200 font-semibold mb-3">Station Statistics</h5>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 bg-slate-700/40 rounded-lg">
+                  <div className="text-2xl font-bold text-cyan-300">
+                    {getStationEvents(selectedStation).length}
+                  </div>
+                  <div className="text-xs text-slate-400">Total Visits</div>
+                </div>
+                <div className="p-3 bg-slate-700/40 rounded-lg">
+                  <div className="text-2xl font-bold text-emerald-300">
+                    {getStationEvents(selectedStation).filter(v => v.delay === 0).length}
+                  </div>
+                  <div className="text-xs text-slate-400">On Time</div>
+                </div>
+                <div className="p-3 bg-slate-700/40 rounded-lg">
+                  <div className="text-2xl font-bold text-amber-300">
+                    {getStationEvents(selectedStation).filter(v => v.delay > 0).length}
+                  </div>
+                  <div className="text-xs text-slate-400">Delayed</div>
+                </div>
+                <div className="p-3 bg-slate-700/40 rounded-lg">
+                  <div className="text-2xl font-bold text-rose-300">
+                    {getStationEvents(selectedStation).length > 0 
+                      ? (getStationEvents(selectedStation).reduce((sum, v) => sum + v.delay, 0) / getStationEvents(selectedStation).length).toFixed(1)
+                      : '0'
+                    }m
+                  </div>
+                  <div className="text-xs text-slate-400">Avg Delay</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Current Train Info */}
+      {selectedTrain !== 'All Trains' && currentTrainPosition && (
+        <div className="mt-6 p-4 bg-gradient-to-r from-emerald-500/10 to-teal-500/10 rounded-xl border border-emerald-500/30">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-emerald-300 font-bold">{selectedTrain}</div>
+              <div className="text-slate-400 text-sm">Currently at: {currentTrainPosition}</div>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
+              <span className="text-emerald-300 text-sm">LIVE</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Legend */}
+      <div className="flex items-center justify-center gap-6 mt-8 pt-6 border-t border-slate-600/30">
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 rounded-full bg-slate-700 border-2 border-slate-600"></div>
+          <span className="text-slate-400 text-sm">Station</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 rounded-full bg-emerald-500 border-2 border-emerald-400"></div>
+          <span className="text-slate-400 text-sm">Train Here</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 rounded-full bg-cyan-500 border-2 border-cyan-400"></div>
+          <span className="text-slate-400 text-sm">Selected Station</span>
+        </div>
+      </div>
     </div>
   );
 };
@@ -1740,238 +1747,6 @@ const StationsView: React.FC<{ rotationData: RotationData }> = ({ rotationData }
           }
         }
       `}</style>
-    </div>
-  );
-};
-
-// Table View Component
-// Table View Component - Card Based Design
-const TableView: React.FC<{ events: StationEvent[] }> = ({ events }) => {
-  const [sortBy, setSortBy] = useState<'time' | 'station' | 'delay'>('time');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
-
-  const handleSort = (column: 'time' | 'station' | 'delay') => {
-    if (sortBy === column) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortBy(column);
-      setSortOrder('asc');
-    }
-  };
-
-  const sortedEvents = [...events].sort((a, b) => {
-    let aValue, bValue;
-    
-    switch (sortBy) {
-      case 'time':
-        aValue = a.expected_arrival;
-        bValue = b.expected_arrival;
-        break;
-      case 'station':
-        aValue = a.station;
-        bValue = b.station;
-        break;
-      case 'delay':
-        aValue = a.delay_minutes;
-        bValue = b.delay_minutes;
-        break;
-      default:
-        return 0;
-    }
-    
-    if (sortOrder === 'asc') {
-      return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
-    } else {
-      return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
-    }
-  });
-
-  const getDelayColor = (delay: number) => {
-    if (delay === 0) return 'text-emerald-400';
-    if (delay <= 2) return 'text-amber-400';
-    if (delay <= 5) return 'text-orange-400';
-    return 'text-rose-400';
-  };
-
-  const getDelayBg = (delay: number) => {
-    if (delay === 0) return 'bg-emerald-500/20';
-    if (delay <= 2) return 'bg-amber-500/20';
-    if (delay <= 5) return 'bg-orange-500/20';
-    return 'bg-rose-500/20';
-  };
-
-  // Group events by train for card view
-  const eventsByTrain = sortedEvents.reduce((acc, event) => {
-    const trainId = (window as any).__rotationDataTrainMap?.get?.(
-      event.expected_arrival + '|' + event.station + '|' + event.direction + '|' + event.rotation
-    ) || findTrainIdForEvent(event);
-    
-    if (!acc[trainId]) {
-      acc[trainId] = [];
-    }
-    acc[trainId].push(event);
-    return acc;
-  }, {} as Record<string, StationEvent[]>);
-
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="p-3 bg-gradient-to-br from-cyan-500/20 to-blue-500/20 rounded-2xl border border-cyan-400/30">
-            <span className="text-2xl">🚇</span>
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
-              Metro Operations
-            </h2>
-            <p className="text-slate-400 text-sm">
-              {Object.keys(eventsByTrain).length} active trains • {events.length} scheduled stops
-            </p>
-          </div>
-        </div>
-
-        {/* Sort Controls */}
-        <div className="flex gap-2">
-          {[
-            { key: 'time', label: 'Time', icon: '🕒' },
-            { key: 'station', label: 'Station', icon: '📍' },
-            { key: 'delay', label: 'Delay', icon: '⚠️' }
-          ].map(({ key, label, icon }) => (
-            <button
-              key={key}
-              onClick={() => handleSort(key as any)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-all ${
-                sortBy === key
-                  ? 'bg-cyan-500/20 border-cyan-500 text-cyan-300'
-                  : 'bg-slate-700/50 border-slate-600 text-slate-300 hover:border-cyan-500/50'
-              }`}
-            >
-              <span>{icon}</span>
-              <span className="text-sm font-medium">{label}</span>
-              {sortBy === key && (
-                <span className="text-xs">{sortOrder === 'asc' ? '↑' : '↓'}</span>
-              )}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Train Cards Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        {Object.entries(eventsByTrain).map(([trainId, trainEvents]) => {
-          const currentEvent = trainEvents[0];
-          const totalStops = trainEvents.length;
-          const delayedStops = trainEvents.filter(e => e.delay_minutes > 0).length;
-          const avgDelay = trainEvents.reduce((sum, e) => sum + e.delay_minutes, 0) / trainEvents.length;
-          
-          return (
-            <div
-              key={trainId}
-              className="group relative bg-gradient-to-br from-slate-800/40 to-slate-900/60 backdrop-blur-sm rounded-2xl border border-slate-700/50 hover:border-cyan-500/30 transition-all duration-300 overflow-hidden"
-            >
-              {/* Header */}
-              <div className="p-5 border-b border-slate-700/50">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-xl ${
-                      avgDelay > 5 ? 'bg-rose-500/20' : 
-                      avgDelay > 2 ? 'bg-amber-500/20' : 
-                      'bg-emerald-500/20'
-                    }`}>
-                      <span className="text-xl">🚆</span>
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-bold text-cyan-200">{trainId}</h3>
-                      <p className="text-slate-400 text-sm">
-                        Rotation {currentEvent.rotation} • {totalStops} stops
-                      </p>
-                    </div>
-                  </div>
-                  <div className={`px-3 py-1 rounded-lg ${getDelayBg(avgDelay)}`}>
-                    <span className={`text-sm font-bold ${getDelayColor(avgDelay)}`}>
-                      +{avgDelay.toFixed(1)}m
-                    </span>
-                  </div>
-                </div>
-
-                {/* Progress Bar */}
-                <div className="w-full bg-slate-700/50 rounded-full h-2">
-                  <div 
-                    className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full transition-all duration-1000"
-                    style={{ width: `${(trainEvents.filter(e => e.delay_minutes === 0).length / totalStops) * 100}%` }}
-                  ></div>
-                </div>
-              </div>
-
-              {/* Current Station */}
-              <div className="p-5">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <div className="text-xs text-slate-500 mb-1">Current Station</div>
-                    <div className="text-lg font-bold text-white">{currentEvent.station}</div>
-                    <div className="text-sm text-slate-400 mt-1">
-                      {currentEvent.expected_arrival} • {currentEvent.direction === 'forward' ? '→ Pettah' : '← Aluva'}
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-xs text-slate-500 mb-1">Next Stop</div>
-                    <div className="text-amber-400 font-bold">{currentEvent.next_station_duration}m</div>
-                  </div>
-                </div>
-
-                {/* Delay Sparkline */}
-                <div className="flex items-center justify-between text-xs text-slate-400 mb-3">
-                  <span>Recent delays:</span>
-                  <span>{delayedStops}/{totalStops} stops affected</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  {trainEvents.slice(0, 8).map((event, idx) => (
-                    <div
-                      key={idx}
-                      className={`flex-1 h-2 rounded-full transition-all ${
-                        event.delay_minutes > 3 
-                          ? 'bg-rose-500' 
-                          : event.delay_minutes > 0
-                          ? 'bg-amber-500'
-                          : 'bg-emerald-500'
-                      }`}
-                    ></div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Upcoming Stations */}
-              <div className="p-5 bg-slate-800/30 border-t border-slate-700/50">
-                <div className="text-xs text-slate-500 mb-3">Upcoming Stations</div>
-                <div className="space-y-2">
-                  {trainEvents.slice(1, 4).map((event, idx) => (
-                    <div key={idx} className="flex items-center justify-between text-sm">
-                      <div className="flex items-center gap-2">
-                        <div className={`w-2 h-2 rounded-full ${
-                          event.delay_minutes > 0 ? 'bg-rose-400' : 'bg-emerald-400'
-                        }`}></div>
-                        <span className="text-slate-300">{event.station}</span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className="text-slate-500 text-xs">{event.expected_arrival}</span>
-                        {event.delay_minutes > 0 && (
-                          <span className="text-rose-400 text-xs font-bold">+{event.delay_minutes}m</span>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                  {trainEvents.length > 4 && (
-                    <div className="text-center text-slate-500 text-xs pt-2">
-                      +{trainEvents.length - 4} more stations
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
     </div>
   );
 };
