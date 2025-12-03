@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { generateData, optimize, getResults } from './api';
 import { OptimizationResponse, ReadinessScore, CleaningAssignment } from './types';
 import ParkingMapComponent from './ParkingMap';
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/routing";
+import { useTranslations } from "next-intl";
 
 // Simplified styles to improve performance
 const styles = {
@@ -328,9 +329,10 @@ const styles = {
 };
 
 function ReadinessList({ scores }: { scores: ReadinessScore[] }) {
+  const t = useTranslations("Layer1Dashboard");
   return (
     <div style={styles.card}>
-      <h3 style={styles.cardTitle}>Readiness Scores</h3>
+      <h3 style={styles.cardTitle}>{t('readinessScores')}</h3>
       <div style={styles.scrollContainer}>
         <div style={styles.grid}>
           {scores.map(s => (
@@ -360,11 +362,12 @@ function ReadinessList({ scores }: { scores: ReadinessScore[] }) {
 }
 
 function CleaningSchedule({ assignments }: { assignments: CleaningAssignment[] }) {
+  const t = useTranslations("Layer1Dashboard");
   return (
     <div style={styles.fullWidthCard}>
-      <h3 style={styles.cardTitle}>Cleaning Schedule</h3>
+      <h3 style={styles.cardTitle}>{t('cleaningSchedule')}</h3>
       {assignments.length === 0 ? (
-        <div style={styles.empty}>No cleaning required</div>
+        <div style={styles.empty}>{t('noCleaningRequired')}</div>
       ) : (
         <ul style={styles.cleaningList}>
           {assignments.map(a => (
@@ -375,7 +378,7 @@ function CleaningSchedule({ assignments }: { assignments: CleaningAssignment[] }
               </div>
               <div style={styles.itemRight}>
                 <div>{a.start_time} → {a.end_time}</div>
-                <div style={styles.small}>Crew {a.crew_assigned} • Priority {a.priority}</div>
+                <div style={styles.small}>{t('crew')} {a.crew_assigned} • {t('priority')} {a.priority}</div>
               </div>
             </li>
           ))}
@@ -386,6 +389,7 @@ function CleaningSchedule({ assignments }: { assignments: CleaningAssignment[] }
 }
 
 export default function Layer1Dashboard() {
+  const t = useTranslations("Layer1Dashboard");
   const router = useRouter();
   const [data, setData] = useState<OptimizationResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -407,39 +411,25 @@ export default function Layer1Dashboard() {
     }
   }
 
-  async function handleFetch() {
-    setError(null);
-    setLoading(true);
-    try {
-      const res = await getResults();
-      setData(res);
-      router.push("/parking");
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e);
-      setError(msg);
-    } finally {
-      setLoading(false);
-    }
-  }
 
   return (
     <div style={styles.container}>
       <header style={styles.header}>
-        <h1 style={styles.title}>Tonight's Parking + Cleaning Schedule</h1>
+        <h1 style={styles.title}>{t('title')}</h1>
         <div>
           <button
             style={{ ...styles.btn, ...(loading ? { opacity: 0.6, cursor: 'not-allowed' } : {}) }}
             onClick={handleGenerate}
             disabled={loading}
           >
-            Get today's schedule
+            {t('getSchedule')}
           </button>
           <button
             style={{ ...styles.btnOutline, ...(loading ? { opacity: 0.6, cursor: 'not-allowed' } : {}) }}
-            onClick={handleFetch}
+            onClick={() => router.push('/parking')}
             disabled={loading}
           >
-            Set final Parking
+            {t('setFinalParking')}
           </button>
         </div>
       </header>
@@ -451,7 +441,7 @@ export default function Layer1Dashboard() {
           {/* Service and IBL lists */}
           <div style={styles.rowList}>
             <div style={styles.smallCard}>
-              <h4 style={styles.smallCardTitle}>Service (selected)</h4>
+              <h4 style={styles.smallCardTitle}>{t('serviceSelected')}</h4>
               <div style={styles.listScroll}>
                 <div style={styles.badgeGrid}>
                   {(data?.trains_to_service || []).map(t => {
@@ -471,7 +461,7 @@ export default function Layer1Dashboard() {
               </div>
             </div>
             <div style={styles.smallCard}>
-              <h4 style={styles.smallCardTitle}>IBL (maintenance)</h4>
+              <h4 style={styles.smallCardTitle}>{t('iblMaintenance')}</h4>
               <div style={styles.listScroll}>
                 <div style={styles.badgeGrid}>
                   {(data?.trains_to_ibl || []).map(t => {
@@ -504,7 +494,7 @@ export default function Layer1Dashboard() {
           />
 
           <div style={styles.detailsCard}>
-            <h3 style={styles.cardTitle}>Details</h3>
+            <h3 style={styles.cardTitle}>{t('details')}</h3>
             {selectedTrain ? (
               (() => {
                 const trainScore = data?.readiness_scores?.find(r => r.train_id === selectedTrain);
@@ -532,12 +522,12 @@ export default function Layer1Dashboard() {
                     <div style={styles.summaryRow}>
                       <strong>{selectedTrain}</strong>
                       <span style={styles.scoreBadge}>
-                        Priority Score: <strong>{trainScore?.score ?? 'N/A'}</strong>
+                        {t('priorityScore')}: <strong>{trainScore?.score ?? 'N/A'}</strong>
                       </span>
                     </div>
 
                     <div style={{ marginTop: '1rem' }}>
-                      <div style={styles.detailHeader}>Key Points</div>
+                      <div style={styles.detailHeader}>{t('keyPoints')}</div>
                       <ul style={styles.detailsList}>
                         {shown.map((m, i) => (
                           <li key={i} style={styles.detailItem}>{m}</li>
@@ -549,7 +539,7 @@ export default function Layer1Dashboard() {
                     </div>
 
                     <div style={{ marginTop: '1rem' }}>
-                      <div style={styles.detailHeader}>Reasons</div>
+                      <div style={styles.detailHeader}>{t('reasons')}</div>
                       <div>
                         {reasons && typeof reasons === 'object' ? (
                           Object.entries(reasons as Record<string, string>).slice(0, 4).map(([k, v]) => (
@@ -558,7 +548,7 @@ export default function Layer1Dashboard() {
                             </div>
                           ))
                         ) : (
-                          <div style={styles.muted}>No specific reasons provided</div>
+                          <div style={styles.muted}>{t('noSpecificReasons')}</div>
                         )}
                       </div>
                     </div>
@@ -566,7 +556,7 @@ export default function Layer1Dashboard() {
                 );
               })()
             ) : (
-              <div style={styles.empty}>Select a train to view explanation and shunting steps</div>
+              <div style={styles.empty}>{t('selectTrain')}</div>
             )}
           </div>
         </div>
