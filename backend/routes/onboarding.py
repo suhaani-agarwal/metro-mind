@@ -8,10 +8,31 @@ from datetime import datetime
 
 router = APIRouter()
 
+from pydantic import BaseModel
+
+class DepotDeleteRequest(BaseModel):
+    name: str
+
+@router.get("/depot")
+async def get_all_depots():
+    """Get all depots"""
+    from utils import get_depots
+    return get_depots()
+
 @router.post("/depot")
 async def save_depot_metadata(depot: DepotMetadata):
+    """Save a new depot"""
     saved_depot = save_depot_data(depot.dict())
-    return {"message": "Depot data saved separately ✅", "depot": saved_depot}
+    return {"message": "Depot added successfully ✅", "depot": saved_depot}
+
+@router.delete("/depot")
+async def remove_depot(request: DepotDeleteRequest):
+    """Delete a depot by name"""
+    from utils import delete_depot
+    success = delete_depot(request.name)
+    if success:
+        return {"message": "Depot deleted successfully"}
+    return {"error": "Depot not found"}, 404
 
 @router.post("/upload")
 async def upload_historical_files(

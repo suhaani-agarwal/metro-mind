@@ -350,10 +350,47 @@ def build_final_unified_schema(parsed_data: dict):
 
     return final_data
 
+def get_depots():
+    """Read all depots from the JSON file"""
+    if not os.path.exists(DEPOT_JSON_PATH):
+        return []
+    
+    try:
+        with open(DEPOT_JSON_PATH, "r") as f:
+            data = json.load(f)
+            # Ensure we return a list
+            if isinstance(data, list):
+                return data
+            elif isinstance(data, dict) and data: # Handle single object case
+                return [data]
+            else:
+                return []
+    except json.JSONDecodeError:
+        return []
+
 def save_depot_data(depot: dict):
+    """Save a new depot to the JSON file (append to list)"""
+    depots = get_depots()
+    depots.append(depot)
+    
     with open(DEPOT_JSON_PATH, "w") as f:
-        json.dump(depot, f, indent=2)
+        json.dump(depots, f, indent=2)
     return depot
+
+def delete_depot(name: str):
+    """Delete a depot by name"""
+    depots = get_depots()
+    initial_count = len(depots)
+    
+    # Filter out the depot with the matching name
+    depots = [d for d in depots if d.get("name") != name]
+    
+    if len(depots) == initial_count:
+        return False # Nothing was deleted
+        
+    with open(DEPOT_JSON_PATH, "w") as f:
+        json.dump(depots, f, indent=2)
+    return True
 
 def update_cleaning_slots(cleaning_crew_available: int):
     """Update cleaning slots based on available cleaning crew"""

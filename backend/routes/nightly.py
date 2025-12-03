@@ -4,7 +4,7 @@ from config import UNIFIED_JSON_PATH, HISTORICAL_JSON_PATH, DEPOT_JSON_PATH, PAR
 import json
 import os
 from datetime import datetime, timedelta
-from utils import utils_update_train_data
+from utils import utils_update_train_data, update_cleaning_slots
 
 router = APIRouter()
 
@@ -239,22 +239,39 @@ def add_branding(append_req: BrandingAppendModel):
 def update_deep_cleaning(body: DepotDeepCleaningInput):
     try:
         # Update unified.json with cleaning crew available and cleaning slots
-        from utils import update_cleaning_slots
+
         
         # Update cleaning slots based on available crew
         cleaning_slots = update_cleaning_slots(body.manual_labour_available_today)
         
         # Also update depot.json if needed
         with open(DEPOT_JSON_PATH, "r") as f:
-            depot = json.load(f)
-    except FileNotFoundError:
-        depot = {}
+            data = json.load(f)
+            
+        # Handle both list and dict formats (normalize to list)
+        if isinstance(data, list):
+            depots = data
+        else:
+            depots = [data] if data else []
+            
+    except (FileNotFoundError, json.JSONDecodeError):
+        depots = []
 
-    depot["deep_cleaning_labour_available_today"] = body.manual_labour_available_today
-    depot["updated_at"] = datetime.now().isoformat()
+    if not depots:
+        # Create a default depot if none exists
+        depots.append({
+            "name": "Default Depot",
+            "location": "Unknown",
+            "deep_cleaning_labour_available_today": body.manual_labour_available_today,
+            "updated_at": datetime.now().isoformat()
+        })
+    else:
+        # Update the first depot
+        depots[0]["deep_cleaning_labour_available_today"] = body.manual_labour_available_today
+        depots[0]["updated_at"] = datetime.now().isoformat()
 
     with open(DEPOT_JSON_PATH, "w") as f:
-        json.dump(depot, f, indent=2)
+        json.dump(depots, f, indent=2)
 
     return {
         "message": "Depot deep cleaning updated", 
