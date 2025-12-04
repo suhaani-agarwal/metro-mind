@@ -21,35 +21,43 @@ import { collection, query, where, getDocs } from "firebase/firestore";
 const getDesignations = (t) => [
   {
     id: "station-master",
-    label: t('stationMaster'),
+    label: t("stationMaster"),
     icon: Users,
-    description: t('stationMasterDesc'),
+    description: t("stationMasterDesc"),
   },
   {
     id: "control-operator",
-    label: t('controlOperator'),
+    label: t("controlOperator"),
     icon: Shield,
-    description: t('controlOperatorDesc'),
+    description: t("controlOperatorDesc"),
   },
   {
     id: "maintenance-lead",
-    label: t('maintenanceLead'),
+    label: t("maintenanceLead"),
     icon: KeyRound,
-    description: t('maintenanceLeadDesc'),
+    description: t("maintenanceLeadDesc"),
   },
   {
     id: "safety-officer",
-    label: t('safetyOfficer'),
+    label: t("safetyOfficer"),
     icon: AlertTriangle,
-    description: t('safetyOfficerDesc'),
+    description: t("safetyOfficerDesc"),
   },
 ];
 
 // Steps configuration function
-const getStepsConfig = (formData, isLoading, timeLeft, otpSent, handlers, t, error) => [
+const getStepsConfig = (
+  formData,
+  isLoading,
+  timeLeft,
+  otpSent,
+  handlers,
+  t,
+  error
+) => [
   {
-    title: t('roleAuthentication'),
-    subtitle: t('roleSubtitle'),
+    title: t("roleAuthentication"),
+    subtitle: t("roleSubtitle"),
     content: (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {getDesignations(t).map((designation) => (
@@ -84,7 +92,7 @@ const getStepsConfig = (formData, isLoading, timeLeft, otpSent, handlers, t, err
                 {designation.description}
               </p>
               <div className="text-xs text-emerald-400 font-medium">
-                {t('authorizedPersonnel')}
+                {t("authorizedPersonnel")}
               </div>
             </div>
             <div className="absolute inset-0 bg-gradient-to-r from-sky-400/10 to-emerald-400/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl" />
@@ -97,8 +105,8 @@ const getStepsConfig = (formData, isLoading, timeLeft, otpSent, handlers, t, err
     ),
   },
   {
-    title: t('identityVerification'),
-    subtitle: t('identitySubtitle'),
+    title: t("identityVerification"),
+    subtitle: t("identitySubtitle"),
     content: (
       <div className="space-y-6">
         <div className="space-y-3">
@@ -106,7 +114,7 @@ const getStepsConfig = (formData, isLoading, timeLeft, otpSent, handlers, t, err
             htmlFor="employeeId"
             className="block text-sm font-semibold text-slate-300"
           >
-            {t('employeeIdLabel')}
+            {t("employeeIdLabel")}
           </label>
           <div className="relative group">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -128,9 +136,7 @@ const getStepsConfig = (formData, isLoading, timeLeft, otpSent, handlers, t, err
               maxLength={12}
             />
           </div>
-          <p className="text-xs text-slate-400 ml-1">
-            {t('formatHint')}
-          </p>
+          <p className="text-xs text-slate-400 ml-1">{t("formatHint")}</p>
           {error && <p className="text-xs text-red-400 ml-1">{error}</p>}
         </div>
         <button
@@ -152,15 +158,14 @@ const getStepsConfig = (formData, isLoading, timeLeft, otpSent, handlers, t, err
                 : "0 10px 25px -5px rgba(56, 189, 248, 0.3)",
           }}
         >
-          {isLoading ? t('verifying') : t('verifyButton')}
+          {isLoading ? t("verifying") : t("verifyButton")}
         </button>
       </div>
     ),
   },
   {
-    title: t('mfaTitle'),
-    subtitle:
-      t('mfaSubtitle'),
+    title: t("mfaTitle"),
+    subtitle: t("mfaSubtitle"),
     content: (
       <div className="space-y-6">
         <motion.div
@@ -178,12 +183,8 @@ const getStepsConfig = (formData, isLoading, timeLeft, otpSent, handlers, t, err
           >
             <Smartphone className="h-8 w-8 text-slate-50" />
           </div>
-          <p className="text-emerald-400 font-bold text-lg">
-            {t('otpSent')}
-          </p>
-          <p className="text-sm text-slate-400 mt-2">
-            {t('otpSentDesc')}
-          </p>
+          <p className="text-emerald-400 font-bold text-lg">{t("otpSent")}</p>
+          <p className="text-sm text-slate-400 mt-2">{t("otpSentDesc")}</p>
         </motion.div>
 
         <div className="space-y-3">
@@ -191,7 +192,7 @@ const getStepsConfig = (formData, isLoading, timeLeft, otpSent, handlers, t, err
             htmlFor="otp"
             className="block text-sm font-semibold text-slate-300"
           >
-            {t('otpLabel')}
+            {t("otpLabel")}
           </label>
           <div className="relative group">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -218,7 +219,7 @@ const getStepsConfig = (formData, isLoading, timeLeft, otpSent, handlers, t, err
             <div className="flex items-center space-x-2 text-slate-400">
               <Clock className="h-4 w-4" />
               <span>
-                {t('timeRemaining')}{" "}
+                {t("timeRemaining")}{" "}
                 <span className="text-amber-400 font-mono">{timeLeft}s</span>
               </span>
             </div>
@@ -226,7 +227,7 @@ const getStepsConfig = (formData, isLoading, timeLeft, otpSent, handlers, t, err
               className="text-sky-400 hover:text-sky-300 transition-colors duration-300 font-medium"
               disabled={timeLeft > 0}
             >
-              {timeLeft > 0 ? t('resendSoon') : t('resendOtp')}
+              {timeLeft > 0 ? t("resendSoon") : t("resendOtp")}
             </button>
           </div>
         </div>
@@ -250,15 +251,14 @@ const getStepsConfig = (formData, isLoading, timeLeft, otpSent, handlers, t, err
                 : "0 10px 25px -5px rgba(6, 214, 160, 0.3)",
           }}
         >
-          {isLoading ? t('authenticating') : t('completeAuth')}
+          {isLoading ? t("authenticating") : t("completeAuth")}
         </button>
       </div>
     ),
   },
   {
-    title: t('accessGranted'),
-    subtitle:
-      t('accessSubtitle'),
+    title: t("accessGranted"),
+    subtitle: t("accessSubtitle"),
     content: (
       <div className="text-center space-y-8">
         <motion.div
@@ -279,14 +279,12 @@ const getStepsConfig = (formData, isLoading, timeLeft, otpSent, handlers, t, err
           transition={{ delay: 0.5 }}
         >
           <h3 className="text-2xl font-bold text-emerald-400 mb-3">
-            {t('authSuccess')}
+            {t("authSuccess")}
           </h3>
-          <p className="text-slate-300 mb-4">
-            {t('authSuccessDesc')}
-          </p>
+          <p className="text-slate-300 mb-4">{t("authSuccessDesc")}</p>
           <div className="flex justify-center items-center space-x-2 text-slate-400">
             <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
-            <span className="text-sm">{t('redirecting')}</span>
+            <span className="text-sm">{t("redirecting")}</span>
           </div>
         </motion.div>
       </div>
@@ -295,7 +293,7 @@ const getStepsConfig = (formData, isLoading, timeLeft, otpSent, handlers, t, err
 ];
 
 export default function SecurityPage() {
-  const t = useTranslations('Security');
+  const t = useTranslations("Security");
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState({
@@ -320,10 +318,13 @@ export default function SecurityPage() {
         if (formData.employeeId) {
           setIsLoading(true);
           setError("");
-          
+
           try {
             // 1. Check if employee exists in Firestore
-            const q = query(collection(db, "employees"), where("employeeId", "==", formData.employeeId));
+            const q = query(
+              collection(db, "employees"),
+              where("employeeId", "==", formData.employeeId)
+            );
             const querySnapshot = await getDocs(q);
 
             if (querySnapshot.empty) {
@@ -334,7 +335,7 @@ export default function SecurityPage() {
 
             const employeeData = querySnapshot.docs[0].data();
             console.log("Found Employee Data:", employeeData); // Debug log
-            
+
             // Handle case sensitivity (Email vs email)
             const email = employeeData.email || employeeData.Email;
 
@@ -357,7 +358,7 @@ export default function SecurityPage() {
             if (!response.ok) {
               throw new Error(data.error || "Failed to send OTP");
             }
-            
+
             setOtpSent(true);
             setTimeLeft(300); // 5 minutes
             setCurrentStep(2);
@@ -374,11 +375,11 @@ export default function SecurityPage() {
         if (formData.otp.length === 6) {
           setIsLoading(true);
           setError("");
-          
+
           try {
             // Verify OTP via API
             const response = await fetch(
-              `/api/send-otp?employeeId=${formData.employeeId}&otp=${formData.otp}`
+              `/api/verify-otp?employeeId=${formData.employeeId}&otp=${formData.otp}`
             );
 
             const data = await response.json();
@@ -419,7 +420,16 @@ export default function SecurityPage() {
 
   // Memoized steps configuration
   const steps = useMemo(
-    () => getStepsConfig(formData, isLoading, timeLeft, otpSent, handlers, t, error),
+    () =>
+      getStepsConfig(
+        formData,
+        isLoading,
+        timeLeft,
+        otpSent,
+        handlers,
+        t,
+        error
+      ),
     [formData, isLoading, timeLeft, otpSent, handlers, t, error]
   );
 
@@ -477,12 +487,10 @@ export default function SecurityPage() {
             </div>
           </div>
           <h1 className="text-4xl font-bold text-slate-50 mb-2 drop-shadow-lg">
-            {t('title')}
+            {t("title")}
           </h1>
           <div className="w-24 h-1 mx-auto rounded-full bg-gradient-to-r from-sky-400 to-emerald-400 mb-4"></div>
-          <p className="text-slate-300">
-            {t('subtitle')}
-          </p>
+          <p className="text-slate-300">{t("subtitle")}</p>
         </motion.div>
 
         {/* Progress Indicator */}
@@ -537,29 +545,27 @@ export default function SecurityPage() {
           <div className="flex justify-center space-x-6 text-sm">
             <div className="flex items-center space-x-2 text-slate-400">
               <Shield className="h-4 w-4 text-emerald-400" />
-              <span>{t('encryption')}</span>
+              <span>{t("encryption")}</span>
             </div>
             <div className="flex items-center space-x-2 text-slate-400">
               <Clock className="h-4 w-4 text-sky-400" />
-              <span>{t('sessionTimeout')}</span>
+              <span>{t("sessionTimeout")}</span>
             </div>
             <div className="flex items-center space-x-2 text-slate-400">
               <Train className="h-4 w-4 text-amber-400" />
-              <span>{t('metroOperations')}</span>
+              <span>{t("metroOperations")}</span>
             </div>
           </div>
           <div
             className="mx-auto max-w-md p-4 rounded-lg border border-slate-600/50 backdrop-blur-sm"
             style={{ backgroundColor: "rgba(30, 41, 59, 0.6)" }}
           >
-            <p className="text-slate-400 text-sm mb-2">
-              {t('kmrlPortal')}
-            </p>
+            <p className="text-slate-400 text-sm mb-2">{t("kmrlPortal")}</p>
             <Link
               href="/"
               className="text-sky-400 hover:text-sky-300 transition-colors duration-300 text-sm font-medium"
             >
-              {t('returnHome')}
+              {t("returnHome")}
             </Link>
           </div>
         </div>

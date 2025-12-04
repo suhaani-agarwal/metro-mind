@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException, UploadFile, File
+from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from app.services.layer1_service import ScheduleOptimizer
 from app.services.data_generator import DataGenerator
@@ -9,12 +10,16 @@ import os
 import logging
 from typing import Dict, Any, List, Optional
 from pathlib import Path
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
+import random
 from fastapi.responses import FileResponse
 
 # Load environment variables
 from dotenv import load_dotenv
-load_dotenv()
+
+# Get the base directory (backend/)
+BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(os.path.join(BASE_DIR, ".env"))
 
 # CORS Configuration
 CORS_ORIGINS = os.getenv("CORS_ORIGINS", '["*","http://localhost:3000"]')
@@ -1103,6 +1108,174 @@ async def get_schedule_pdf():
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching PDF: {str(e)}")
+# OTP Storage (In-memory for now)
+otp_store = {}
+
+class OTPRequest(BaseModel):
+    email: str
+    employeeId: str
+
+import resend
+
+# Configure Resend
+resend.api_key = os.getenv("RESEND_API_KEY")
+
+@app.post("/api/send-otp")
+async def send_otp(request: OTPRequest):
+    try:
+        # Generate 6-digit OTP
+        otp = str(random.randint(100000, 999999))
+        
+        # Store OTP with expiration (5 minutes)
+        otp_store[request.employeeId] = {
+            "otp": otp,
+            "expires_at": datetime.now() + timedelta(minutes=5)
+        }
+        
+        # Send email using Resend
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <style>
+              body {{
+                font-family: 'Arial', sans-serif;
+                background-color: #f4f4f4;
+                margin: 0;
+                padding: 0;
+              }}
+              .container {{
+                max-width: 600px;
+                margin: 40px auto;
+                background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+                border-radius: 16px;
+                overflow: hidden;
+                box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+              }}
+              .header {{
+                background: linear-gradient(135deg, #38bdf8 0%, #06d6a0 100%);
+                padding: 30px;
+                text-align: center;
+              }}
+              .header h1 {{
+                margin: 0;
+                color: #0f172a;
+                font-size: 28px;
+                font-weight: bold;
+              }}
+              .content {{
+                padding: 40px 30px;
+                color: #e2e8f0;
+              }}
+              .otp-box {{
+                background: rgba(56, 189, 248, 0.1);
+                border: 2px solid #38bdf8;
+                border-radius: 12px;
+                padding: 30px;
+                text-align: center;
+                margin: 30px 0;
+              }}
+              .otp-code {{
+                font-size: 48px;
+                font-weight: bold;
+                color: #38bdf8;
+                letter-spacing: 8px;
+                font-family: 'Courier New', monospace;
+              }}
+              .info {{
+                color: #94a3b8;
+                font-size: 14px;
+                line-height: 1.6;
+              }}
+              .footer {{
+                background: rgba(15, 23, 42, 0.5);
+                padding: 20px;
+                text-align: center;
+                color: #64748b;
+                font-size: 12px;
+              }}
+              .warning {{
+                background: rgba(239, 68, 68, 0.1);
+                border-left: 4px solid #ef4444;
+                padding: 15px;
+                margin: 20px 0;
+                border-radius: 4px;
+                color: #fca5a5;
+              }}
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="header">
+                <h1>🚇 MetroMind Security</h1>
+              </div>
+              <div class="content">
+                <h2 style="color: #e2e8f0; margin-top: 0;">Your One-Time Password</h2>
+                <p class="info">
+                  Hello! You've requested access to the MetroMind system. Use the code below to complete your authentication:
+                </p>
+                <div class="otp-box">
+                  <div class="otp-code">{otp}</div>
+                  <p style="margin: 10px 0 0 0; color: #94a3b8; font-size: 14px;">
+                    Valid for 5 minutes
+                  </p>
+                </div>
+                <div class="warning">
+                  <strong>⚠️ Security Notice:</strong> Never share this code with anyone. MetroMind staff will never ask for your OTP.
+                </div>
+                <p class="info">
+                  <strong>Employee ID:</strong> {request.employeeId}<br>
+                  <strong>Requested at:</strong> {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+                </p>
+              </div>
+              <div class="footer">
+                <p>This is an automated message from MetroMind Security System.</p>
+                <p>If you didn't request this code, please contact your administrator immediately.</p>
+              </div>
+            </div>
+          </body>
+        </html>
+        """
+
+        r = resend.Emails.send({
+            "from": "MetroMind <onboarding@resend.dev>",
+            "to": [request.email],
+            "subject": "Your MetroMind Security Code",
+            "html": html_content
+        })
+        
+        print(f"📧 Email sent to {request.email} (ID: {r.get('id')})")
+        
+        return {"success": True, "message": "OTP sent successfully", "messageId": r.get('id')}
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        print(f"Error sending OTP: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/verify-otp")
+async def verify_otp(employeeId: str, otp: str):
+    try:
+        if employeeId not in otp_store:
+            raise HTTPException(status_code=400, detail="OTP not found or expired")
+            
+        stored_data = otp_store[employeeId]
+        
+        if datetime.now() > stored_data["expires_at"]:
+            del otp_store[employeeId]
+            raise HTTPException(status_code=400, detail="OTP expired")
+            
+        if stored_data["otp"] != otp:
+            raise HTTPException(status_code=400, detail="Invalid OTP")
+            
+        # OTP is valid, remove it
+        del otp_store[employeeId]
+        
+        return {"success": True, "valid": True}
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
     import uvicorn
