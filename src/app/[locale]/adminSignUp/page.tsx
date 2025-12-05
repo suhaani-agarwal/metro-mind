@@ -232,7 +232,9 @@ export default function AdminSignup() {
                 onClick={handleSignup}
                 disabled={loading || !isFormValid()}
                 className={`w-full px-8 py-4 text-lg font-semibold text-slate-50 rounded-2xl border border-transparent transition-all duration-300 hover:transform hover:-translate-y-1 hover:shadow-2xl focus:outline-none focus:ring-4 focus:ring-emerald-400/20 backdrop-blur-sm ${
-                  loading || !isFormValid() ? "opacity-50 cursor-not-allowed" : ""
+                  loading || !isFormValid()
+                    ? "opacity-50 cursor-not-allowed"
+                    : ""
                 }`}
                 style={{
                   background:

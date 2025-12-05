@@ -121,8 +121,9 @@ export default function AdminLogin() {
               <button
                 onClick={handleLogin}
                 disabled={loading}
-                className={`w-full px-8 py-4 text-lg font-semibold text-slate-50 rounded-2xl border border-transparent transition-all duration-300 hover:transform hover:-translate-y-1 hover:shadow-2xl focus:outline-none focus:ring-4 focus:ring-sky-400/20 backdrop-blur-sm ${loading ? "opacity-50 cursor-not-allowed" : ""
-                  }`}
+                className={`w-full px-8 py-4 text-lg font-semibold text-slate-50 rounded-2xl border border-transparent transition-all duration-300 hover:transform hover:-translate-y-1 hover:shadow-2xl focus:outline-none focus:ring-4 focus:ring-sky-400/20 backdrop-blur-sm ${
+                  loading ? "opacity-50 cursor-not-allowed" : ""
+                }`}
                 style={{
                   background: loading
                     ? "rgba(100, 116, 139, 0.5)"

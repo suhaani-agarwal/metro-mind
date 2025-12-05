@@ -36,7 +36,8 @@
         "tableNotes": "Notes",
         "train": "Train",
         "maintenanceIBL": "Maintenance IBL",
-        "fixedForMaintenance": "Fixed for maintenance"
+        "fixedForMaintenance": "Fixed for maintenance",
+        "holdingArea": "Trains Needing Parking"
     },
     "Landing": {
         "features": "Features",
