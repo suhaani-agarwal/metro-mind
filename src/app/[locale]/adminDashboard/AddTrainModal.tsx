@@ -4,6 +4,9 @@ import { useState, useEffect } from "react";
 import { X, Plus, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 
+const API_BASE =
+  process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5005";
+
 interface AddTrainModalProps {
     onClose: () => void;
 }
@@ -32,7 +35,7 @@ export default function AddTrainModal({ onClose }: AddTrainModalProps) {
     useEffect(() => {
         async function fetchDepots() {
             try {
-                const res = await fetch("http://127.0.0.1:5005/api/onboarding/depot");
+                const res = await fetch(`${API_BASE}/api/onboarding/depot`);
                 const data = await res.json();
                 if (Array.isArray(data)) {
                     setDepots(data.map((d: any) => d.name));

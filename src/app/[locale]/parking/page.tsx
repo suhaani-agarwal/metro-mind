@@ -17,6 +17,9 @@ import {
   DragStartEvent,
 } from "@dnd-kit/core";
 
+const API_BASE =
+  process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5005";
+
 interface TrainParking {
   train_id: string;
   bay: string;
@@ -185,7 +188,7 @@ export default function TrainParkingPage() {
   const fetchTrains = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:5005/api/nightly/trains"
+        `${API_BASE}/api/nightly/trains`
       );
       // Convert all train IDs to TM format for display
       const tmTrains = response.data.trains.map((train: string) =>
@@ -200,7 +203,7 @@ export default function TrainParkingPage() {
   const fetchParkingData = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:5005/api/nightly/parking/assignments"
+        `${API_BASE}/api/nightly/parking/assignments`
       );
       // Convert all train IDs in parking data to TM format
       const tmParkingData =
@@ -316,12 +319,12 @@ export default function TrainParkingPage() {
 
       if (isEditing) {
         await axios.put(
-          `http://localhost:5005/api/nightly/parking/assignment/${editingTrain}`,
+          `${API_BASE}/api/nightly/parking/assignment/${editingTrain}`,
           payload
         );
       } else {
         await axios.post(
-          "http://localhost:5005/api/nightly/parking/assignment",
+          `${API_BASE}/api/nightly/parking/assignment`,
           payload
         );
       }

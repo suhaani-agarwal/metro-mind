@@ -8,7 +8,7 @@ import 'leaflet/dist/leaflet.css';
 
 let L: any;
 
-
+const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5005";
 // Dynamically import leaflet only on client side
 if (typeof window !== 'undefined') {
   try {
@@ -122,13 +122,13 @@ interface StationEvent {
   expected_arrival: string;
   delay_minutes: number;
   delay_reasons: string[];
-  delay_probability?: number | null;
+  delay_probability?: number;
   direction: string;
   rotation: number;
   sequence: number;
   next_station_duration: number;
   cumulative_time: number;
-  significant_delay: boolean;
+  significant_delay: number; // Changed from boolean to number (0 or 1)
 }
 
 interface DelayAnalysis {
@@ -139,6 +139,10 @@ interface DelayAnalysis {
     job_cards: number;
     maintenance: number;
     weather: number;
+    crowd?: number;
+    anomaly?: number;
+    cascading?: number;
+    other?: number;
   };
   delay_reasons: string[];
 }
@@ -149,7 +153,7 @@ interface TrainSchedule {
   departure_slot: number;
   readiness: number;
   station_events: StationEvent[];
-  delay_analysis: DelayAnalysis;
+  delay_analysis: DelayAnalysis; // Directly use DelayAnalysis
   train_config: {
     job_cards_count: number;
     high_critical_jobs: number;
@@ -192,7 +196,7 @@ const dmsToDecimal = (degrees: number, minutes: number, seconds: number, directi
 
 // Kochi Metro stations with actual geographic coordinates
 const kochiMetroStations = [
-  { id: 'aluva', name: 'Aluva', position: [dmsToDecimal(10, 6, 35, 'N'), dmsToDecimal(76, 20, 59, 'E')] as [number, number], isTerminal: true },
+  { id: 'aluva', name: 'Aluva', position: [dmsToDecimal(10, 6, 35, 'N'), dmsToDecimal(76, 20, 59, 'E')] as [number, number] },
   { id: 'pulinchodu', name: 'Pulinchodu', position: [dmsToDecimal(10, 5, 42, 'N'), dmsToDecimal(76, 20, 48, 'E')] as [number, number] },
   { id: 'companypady', name: 'Companypady', position: [dmsToDecimal(10, 5, 14, 'N'), dmsToDecimal(76, 20, 34, 'E')] as [number, number] },
   { id: 'ambattukavu', name: 'Ambattukavu', position: [dmsToDecimal(10, 4, 46, 'N'), dmsToDecimal(76, 20, 20, 'E')] as [number, number] },
@@ -206,14 +210,17 @@ const kochiMetroStations = [
   { id: 'jln-stadium', name: 'JLN Stadium', position: [dmsToDecimal(10, 0, 2, 'N'), dmsToDecimal(76, 17, 56, 'E')] as [number, number] },
   { id: 'kaloor', name: 'Kaloor', position: [dmsToDecimal(9, 59, 41, 'N'), dmsToDecimal(76, 17, 30, 'E')] as [number, number] },
   { id: 'town-hall', name: 'Town Hall', position: [dmsToDecimal(9, 59, 28, 'N'), dmsToDecimal(76, 17, 17, 'E')] as [number, number] },
-  { id: 'mg-road', name: 'MG Road', position: [dmsToDecimal(9, 59, 3, 'N'), dmsToDecimal(76, 16, 55, 'E')] as [number, number] },
+  { id: 'mg-road', name: 'M.G Road', position: [dmsToDecimal(9, 59, 3, 'N'), dmsToDecimal(76, 16, 55, 'E')] as [number, number] },
   { id: 'maharajas', name: `Maharaja's College`, position: [dmsToDecimal(9, 58, 24, 'N'), dmsToDecimal(76, 17, 6, 'E')] as [number, number] },
   { id: 'ernakulam-south', name: 'Ernakulam South', position: [dmsToDecimal(9, 58, 4, 'N'), dmsToDecimal(76, 17, 29, 'E')] as [number, number] },
   { id: 'kadavanthra', name: 'Kadavanthra', position: [dmsToDecimal(9, 57, 60, 'N'), dmsToDecimal(76, 17, 54, 'E')] as [number, number] },
   { id: 'elamkulam', name: 'Elamkulam', position: [dmsToDecimal(9, 58, 1, 'N'), dmsToDecimal(76, 18, 30, 'E')] as [number, number] },
-  { id: 'vytilla', name: 'Vyttila', position: [dmsToDecimal(9, 58, 3, 'N'), dmsToDecimal(76, 19, 14, 'E')] as [number, number] },
-  { id: 'thykoodam', name: 'Thykoodam', position: [dmsToDecimal(9, 57, 36, 'N'), dmsToDecimal(76, 19, 25, 'E')] as [number, number] },
-  { id: 'pettah', name: 'Pettah', position: [dmsToDecimal(9, 57, 4, 'N'), dmsToDecimal(76, 19, 52, 'E')] as [number, number], isTerminal: true }
+  { id: 'vytilla', name: 'Vytilla', position: [dmsToDecimal(9, 58, 3, 'N'), dmsToDecimal(76, 19, 14, 'E')] as [number, number] },
+  { id: 'thaikoodam', name: 'Thaikoodam', position: [dmsToDecimal(9, 57, 36, 'N'), dmsToDecimal(76, 19, 25, 'E')] as [number, number] },
+  { id: 'pettah', name: 'Pettah', position: [dmsToDecimal(9, 57, 4, 'N'), dmsToDecimal(76, 19, 52, 'E')] as [number, number] },
+  { id: 'vadakkekotta', name: 'Vadakkekotta', position: [dmsToDecimal(9, 57, 15, 'N'), dmsToDecimal(76, 20, 25, 'E')] as [number, number] },
+  { id: 'sn-junction', name: 'SN Junction', position: [dmsToDecimal(9, 57, 17, 'N'), dmsToDecimal(76, 20, 46, 'E')] as [number, number] },
+  { id: 'tripunithura', name: 'Tripunithura Terminal', position: [dmsToDecimal(9, 57, 1, 'N'), dmsToDecimal(76, 21, 6, 'E')] as [number, number], isTerminal: true }
 ];
 
 // Kakkanad extension line stations (pink line)
@@ -293,7 +300,7 @@ const airportExtensionStations = [
 // NEW: Improved Metro Map Component
 
 // NEW: Metro Map Component with Station Labels
-const MetroMap: React.FC<{ rotationData: RotationData; onStationSelect: (stationId: string | null) => void; t: any }> = ({ rotationData, onStationSelect, t }) => {
+const MetroMap: React.FC<{ rotationData: RotationData; onStationSelect: (stationId: string | null) => void; t: any; }> = ({ rotationData, onStationSelect, t }) => {
   const [icons, setIcons] = useState<{ trainIcon: any; delayedTrainIcon: any } | null>(null);
   const [selectedStation, setSelectedStation] = useState<string | null>(null);
   const [showTrains, setShowTrains] = useState(true);
@@ -375,35 +382,105 @@ const MetroMap: React.FC<{ rotationData: RotationData; onStationSelect: (station
     });
   };
 
-  // Simulate train positions - only on main line by default
-  const getTrainPositions = () => {
-    return rotationData.train_schedules.slice(0, 4).map((train, index) => {
-      const progress = (index * 25) + 10;
-      const stationIndex = Math.floor(progress / 8) % kochiMetroStations.length;
-      const station = kochiMetroStations[stationIndex];
+  // Simulate train positions - now based on actual station events and time
+  const getTrainPositions = useMemo(() => {
+    if (!rotationData || !rotationData.train_schedules || !L) return [];
 
-      // Add slight offset for visual clarity
-      const offsetLat = station.position[0] + (Math.random() * 0.001 - 0.0005);
-      const offsetLng = station.position[1] + (Math.random() * 0.001 - 0.0005);
+    const now = new Date();
+    const trainPositions = rotationData.train_schedules.map(train => {
+      let currentStation: typeof kochiMetroStations[0] | undefined;
+      let nextStation: typeof kochiMetroStations[0] | undefined;
+      let progressBetweenStations = 0;
+      let totalDelay = 0; // Initialize total delay
+      let isDelayed = false; // Initialize delay status
+
+      const relevantStations = kochiMetroStations.concat(kakkanadExtensionStations, airportExtensionStations);
+      
+      // Find the current or upcoming station event for this train
+      for (let i = 0; i < train.station_events.length; i++) {
+        const event = train.station_events[i];
+        const [eventHours, eventMinutes] = event.expected_arrival.split(':').map(Number);
+        const eventTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), eventHours, eventMinutes, 0);
+
+        // Find the actual station object using the station name
+        const stationObj = relevantStations.find(s => s.name === event.station);
+        if (!stationObj) continue;
+
+        if (eventTime < now) {
+          currentStation = stationObj; // This event is in the past
+          totalDelay = event.delay_minutes; // Use the latest delay for the current station
+          isDelayed = event.significant_delay === 1; // Check significant_delay
+        } else {
+          nextStation = stationObj; // This event is in the future
+          if (currentStation) {
+            // Calculate progress between currentStation and nextStation
+            const [prevEventHours, prevEventMinutes] = train.station_events[i - 1].expected_arrival.split(':').map(Number);
+            const prevEventTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), prevEventHours, prevEventMinutes, 0);
+
+            const durationBetween = eventTime.getTime() - prevEventTime.getTime();
+            const timeElapsed = now.getTime() - prevEventTime.getTime();
+
+            if (durationBetween > 0) {
+              progressBetweenStations = timeElapsed / durationBetween;
+            }
+            break; // Found current segment
+          } else {
+            // Train has not departed yet, or is at the very first station
+            currentStation = stationObj; // Assume at first station if no past events
+            break;
+          }
+        }
+      }
+
+      let finalPosition = currentStation ? currentStation.position : [0, 0]; // Default if no events
+      if (currentStation && nextStation && progressBetweenStations > 0 && progressBetweenStations < 1) {
+        // Interpolate position between current and next station
+        const lat = currentStation.position[0] + (nextStation.position[0] - currentStation.position[0]) * progressBetweenStations;
+        const lng = currentStation.position[1] + (nextStation.position[1] - currentStation.position[1]) * progressBetweenStations;
+        finalPosition = [lat, lng];
+      } else if (nextStation && !currentStation) {
+        // If only nextStation is found (train hasn't departed current yet), position it at nextStation
+        finalPosition = nextStation.position;
+      } else if (currentStation && !nextStation) {
+        // If only currentStation is found (end of the line), position it at currentStation
+        finalPosition = currentStation.position;
+      }
+
+      // Add slight offset for visual clarity (random for now, could be direction-based)
+      const offsetLat = finalPosition[0] + (Math.random() * 0.0005 - 0.00025);
+      const offsetLng = finalPosition[1] + (Math.random() * 0.0005 - 0.00025);
 
       return {
         id: train.train_id,
         position: [offsetLat, offsetLng] as [number, number],
-        status: train.delay_analysis?.total_delay > 2 ? 'delayed' : 'on_time',
-        delay: train.delay_analysis?.total_delay || 0,
-        currentStation: station.name
+        status: isDelayed ? 'delayed' : 'on_time',
+        delay: totalDelay,
+        currentStation: currentStation?.name || nextStation?.name || 'Unknown',
       };
     });
-  };
+    return trainPositions;
+  }, [rotationData, L]);
 
   const getStationStatus = (stationName: string) => {
-    const hasRecentEvents = rotationData.train_schedules.some(train =>
-      train.station_events.some(event =>
-        event.station.toLowerCase().includes(stationName.toLowerCase().split(' ')[0]) &&
-        Math.abs(event.delay_minutes) < 15
-      )
+    if (!rotationData) return 'inactive';
+
+    const now = new Date();
+    // Consider a station 'active' if any train is expected to arrive or depart within the last 15 minutes or next 15 minutes
+    const isActive = rotationData.train_schedules.some(train =>
+      train.station_events.some(event => {
+        const [eventHours, eventMinutes] = event.expected_arrival.split(':').map(Number);
+        const eventTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), eventHours, eventMinutes, 0);
+
+        const fifteenMinutes = 15 * 60 * 1000; // 15 minutes in milliseconds
+        const timeDiff = Math.abs(eventTime.getTime() - now.getTime());
+
+        return (
+          event.station.toLowerCase().includes(stationName.toLowerCase().split(' ')[0]) &&
+          timeDiff <= fifteenMinutes
+        );
+      })
     );
-    return hasRecentEvents ? 'active' : 'inactive';
+    return isActive ? 'active' : 'inactive';
   };
 
   // Auto-zoom to main line
@@ -437,13 +514,17 @@ const MetroMap: React.FC<{ rotationData: RotationData; onStationSelect: (station
   };
 
   // Function to render stations with labels
-  const renderStationsWithLabels = (stations: typeof kochiMetroStations, line: 'main' | 'kakkanad' | 'airport') => {
+  const renderStationsWithLabels = (
+    stations: typeof kochiMetroStations,
+    line: 'main' | 'kakkanad' | 'airport',
+    getStationStatus: (stationName: string) => 'active' | 'inactive'
+  ) => {
     if (!L) return null;
 
     return stations.map(station => {
-      const status = getStationStatus(station.name);
-      const isActive = status === 'active';
-      const stationIcon = createStationIcon(line, isActive, station.isTerminal || false);
+      // Use the getStationStatus from props directly
+      const isActive = getStationStatus(station.name);
+      const stationIcon = createStationIcon(line, isActive === 'active', station.isTerminal || false);
       const labelIcon = createStationLabel(station.name, line);
 
       if (!stationIcon || !labelIcon) return null;
@@ -575,7 +656,7 @@ const MetroMap: React.FC<{ rotationData: RotationData; onStationSelect: (station
                   opacity={0.9}
                   smoothFactor={1}
                 />
-                {renderStationsWithLabels(kochiMetroStations, 'main')}
+                {renderStationsWithLabels(kochiMetroStations, 'main', getStationStatus)}
               </>
             )}
 
@@ -589,7 +670,7 @@ const MetroMap: React.FC<{ rotationData: RotationData; onStationSelect: (station
                   opacity={0.7}
                   smoothFactor={1}
                 />
-                {renderStationsWithLabels(kakkanadExtensionStations, 'kakkanad')}
+                {renderStationsWithLabels(kakkanadExtensionStations, 'kakkanad', getStationStatus)}
               </>
             )}
 
@@ -603,12 +684,12 @@ const MetroMap: React.FC<{ rotationData: RotationData; onStationSelect: (station
                   opacity={0.7}
                   smoothFactor={1}
                 />
-                {renderStationsWithLabels(airportExtensionStations, 'airport')}
+                {renderStationsWithLabels(airportExtensionStations, 'airport', getStationStatus)}
               </>
             )}
 
             {/* Trains */}
-            {showTrains && icons && getTrainPositions().map(train => (
+            {showTrains && icons && getTrainPositions.map((train: { id: string; position: [number, number]; status: string; delay: number; currentStation: string; }) => (
               <Marker
                 key={train.id}
                 position={train.position}
@@ -691,7 +772,7 @@ const RotationPage: React.FC = () => {
   const fetchRotationData = async () => {
     try {
       setLoading(true);
-      const endpoint = usePredictions ? 'http://localhost:5005/rotation/predictions' : 'http://localhost:5005/rotation/schedule';
+      const endpoint = usePredictions ? `${API_BASE}/rotation/predictions` : `${API_BASE}/rotation/schedule`;
       const response = await fetch(endpoint);
       if (!response.ok) throw new Error('Failed to fetch rotation data');
       const data: RotationData = await response.json();
@@ -762,14 +843,14 @@ const RotationPage: React.FC = () => {
 
   const getDelayColor = (delay: number) => {
     if (delay === 0) return 'text-emerald-400';
-    if (delay <= 2) return 'text-amber-400';
-    if (delay <= 5) return 'text-orange-400';
-    return 'text-rose-400';
+    if (delay <= 1) return 'text-amber-400'; // Minor delay
+    if (delay <= 5) return 'text-orange-400'; // Moderate delay
+    return 'text-rose-500'; // Significant delay
   };
 
   const getDelayBgColor = (delay: number) => {
     if (delay === 0) return 'bg-emerald-500/20';
-    if (delay <= 2) return 'bg-amber-500/20';
+    if (delay <= 1) return 'bg-amber-500/20';
     if (delay <= 5) return 'bg-orange-500/20';
     return 'bg-rose-500/20';
   };
@@ -792,21 +873,36 @@ const RotationPage: React.FC = () => {
       delay_breakdown: {
         job_cards: 0,
         maintenance: 0,
-        weather: 0
+        weather: 0,
+        crowd: 0,
+        anomaly: 0,
+        cascading: 0,
+        other: 0,
       },
-      delay_reasons: []
+      delay_reasons: [],
     };
   };
 
   const getStationStatus = (stationName: string) => {
     if (!rotationData) return 'inactive';
-    const hasRecentEvents = rotationData.train_schedules.some(train =>
-      train.station_events.some(event =>
-        event.station.toLowerCase().includes(stationName.toLowerCase().split(' ')[0]) &&
-        Math.abs(event.delay_minutes) < 15
-      )
+
+    const now = new Date();
+    // Consider a station 'active' if any train is expected to arrive or depart within the last 15 minutes or next 15 minutes
+    const isActive = rotationData.train_schedules.some(train =>
+      train.station_events.some(event => {
+        const [eventHours, eventMinutes] = event.expected_arrival.split(':').map(Number);
+        const eventTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), eventHours, eventMinutes, 0);
+
+        const fifteenMinutes = 15 * 60 * 1000; // 15 minutes in milliseconds
+        const timeDiff = Math.abs(eventTime.getTime() - now.getTime());
+
+        return (
+          event.station.toLowerCase().includes(stationName.toLowerCase().split(' ')[0]) &&
+          timeDiff <= fifteenMinutes
+        );
+      })
     );
-    return hasRecentEvents ? 'active' : 'inactive';
+    return isActive ? 'active' : 'inactive';
   };
 
   if (loading) {
@@ -1201,7 +1297,7 @@ const OverviewView: React.FC<{
   onToggleTrain: (trainId: string) => void;
   getDelayColor: (delay: number) => string;
   getDelayBgColor: (delay: number) => string;
-  getDelayAnalysis: (train: TrainSchedule) => DelayAnalysis;
+  getDelayAnalysis: (train: TrainSchedule) => TrainSchedule['delay_analysis'];
 }> = ({ rotationData, expandedTrains, onToggleTrain, getDelayColor, getDelayBgColor, getDelayAnalysis }) => {
   const t = useTranslations('Rotation');
   return (
@@ -1254,21 +1350,18 @@ const OverviewView: React.FC<{
 
               {expandedTrains.has(train.train_id) && (
                 <div className="mt-4 space-y-4 pt-4 border-t border-slate-600/50">
-                  <div className="grid grid-cols-3 gap-3 text-sm">
-                    <div className="text-center p-3 bg-slate-700/50 rounded-lg">
-                      <div className="text-amber-400 font-bold">{delayAnalysis.delay_breakdown.job_cards.toFixed(1)}m</div>
-                      <div className="text-slate-400">{t('trainCard.jobCards')}</div>
-                    </div>
-                    <div className="text-center p-3 bg-slate-700/50 rounded-lg">
-                      <div className="text-rose-300 font-bold">{delayAnalysis.delay_breakdown.maintenance.toFixed(1)}m</div>
-                      <div className="text-slate-400">{t('trainCard.maintenance')}</div>
-                    </div>
-                    <div className="text-center p-3 bg-slate-700/50 rounded-lg">
-                      <div className="text-blue-300 font-bold">{delayAnalysis.delay_breakdown.weather.toFixed(1)}m</div>
-                      <div className="text-slate-400">{t('trainCard.weather')}</div>
-                    </div>
+                  <div className="text-sm text-slate-300">
+                    <div className="font-semibold text-teal-200 mb-2">{t('trainCard.overallDelayBreakdown')}</div>
+                    <ul className="list-disc list-inside text-slate-500 text-xs space-y-1">
+                      {delayAnalysis.delay_reasons && delayAnalysis.delay_reasons.length > 0 ? (
+                        delayAnalysis.delay_reasons.map((reason, idx) => (
+                          <li key={idx}>{reason}</li>
+                        ))
+                      ) : (
+                        <li>{t('trainCard.noSpecificReasons')}</li>
+                      )}
+                    </ul>
                   </div>
-
                   <div className="text-sm text-slate-300">
                     <div className="font-semibold text-teal-200 mb-2">{t('trainCard.nextStations')}</div>
                     <div className="space-y-2">
@@ -1304,7 +1397,7 @@ const TimelineView: React.FC<{
   onToggleTrain: (trainId: string) => void;
   getDelayColor: (delay: number) => string;
   getDelayBgColor: (delay: number) => string;
-  getDelayAnalysis: (train: TrainSchedule) => DelayAnalysis;
+  getDelayAnalysis: (train: TrainSchedule) => TrainSchedule['delay_analysis'];
   selectedTrain?: string;
 }> = ({ events, trains, getDelayColor, getDelayBgColor, getDelayAnalysis, selectedTrain: propSelectedTrain = 'All Trains' }) => {
   const t = useTranslations('Rotation');
@@ -1383,6 +1476,8 @@ const TimelineView: React.FC<{
       direction: string;
       trainId: string;
       scheduled: string;
+      delayReasons: string[];
+      delayProbability?: number;
     }> = [];
 
     trains.forEach(train => {
@@ -1394,7 +1489,9 @@ const TimelineView: React.FC<{
             rotation: event.rotation,
             direction: event.direction,
             trainId: train.train_id,
-            scheduled: event.scheduled_arrival
+            scheduled: event.scheduled_arrival,
+            delayReasons: event.delay_reasons || [],
+            delayProbability: event.delay_probability || 0
           });
         }
       });
@@ -1455,8 +1552,7 @@ const TimelineView: React.FC<{
                 {/* Station Dot and Line Connection */}
                 <div className="relative flex flex-col items-center">
                   {/* Vertical line connecting dot to station name */}
-                  <div className={`h-8 w-0.5 mb-2 ${isSelected ? 'bg-cyan-400' : 'bg-slate-600'
-                    }`}></div>
+                  <div className={`h-8 w-0.5 mb-2 ${isSelected ? 'bg-cyan-400' : 'bg-slate-600'}`}></div>
 
                   {/* Station Dot */}
                   <button
@@ -1468,8 +1564,7 @@ const TimelineView: React.FC<{
                         : 'bg-slate-700 border-slate-600 hover:border-teal-400 hover:scale-110'
                       }`}
                   >
-                    <div className={`w-2 h-2 rounded-full ${isSelected ? 'bg-white' : isTrainHere ? 'bg-white' : 'bg-slate-400'
-                      }`}></div>
+                    <div className={`w-2 h-2 rounded-full ${isSelected ? 'bg-white' : isTrainHere ? 'bg-white' : 'bg-slate-400'}`}></div>
 
                     {/* Train indicator */}
                     {isTrainHere && selectedTrain !== 'All Trains' && (
@@ -1489,8 +1584,7 @@ const TimelineView: React.FC<{
                 </div>
 
                 {/* Station Name */}
-                <div className={`mt-2 text-center max-w-[80px] ${isSelected ? 'text-cyan-300 font-semibold' : 'text-slate-300'
-                  }`}>
+                <div className={`mt-2 text-center max-w-[80px] ${isSelected ? 'text-cyan-300 font-semibold' : 'text-slate-300'}`}>
                   <p className="text-xs truncate">{station}</p>
                 </div>
               </div>
@@ -1523,23 +1617,38 @@ const TimelineView: React.FC<{
               <h5 className="text-teal-200 font-semibold mb-3">{t('stationDetails.trainVisits')}</h5>
               <div className="space-y-2 max-h-60 overflow-y-auto">
                 {getStationEvents(selectedStation).map((visit, idx) => (
-                  <div key={idx} className="flex items-center justify-between p-3 bg-slate-700/40 rounded-lg">
-                    <div>
-                      <span className="font-bold text-cyan-300">{visit.trainId}</span>
-                      <div className="text-xs text-slate-400">
-                        Rotation {visit.rotation} • {visit.direction === 'forward' ? '→ PETTAH' : '← ALUVA'}
+                  <div key={idx} className="p-3 bg-slate-700/40 rounded-lg mb-2 border border-slate-600/30 transition-all duration-200 hover:bg-slate-700/60">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-bold text-cyan-300 flex items-center gap-2">
+                        {visit.trainId}
+                        {visit.delay > 1 && <span className="text-rose-400 text-xs font-medium">(Delayed)</span>}
+                      </span>
+                      <div className="text-right">
+                        <div className={`font-mono font-bold ${getDelayColor(visit.delay)}`}>
+                          {visit.time}
+                          {visit.delay > 0.1 && (<span className="text-xs ml-2">(+{visit.delay}m)</span>)}
+                        </div>
+                        <div className="text-xs text-slate-500">sched: {visit.scheduled}</div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className={`font-mono font-bold ${visit.delay > 0 ? 'text-rose-300' : 'text-emerald-300'
-                        }`}>
-                        {visit.time}
-                        {visit.delay > 0 && (
-                          <span className="text-xs ml-2">(+{visit.delay}m)</span>
-                        )}
-                      </div>
-                      <div className="text-xs text-slate-500">sched: {visit.scheduled}</div>
+                    <div className="text-xs text-slate-400 flex items-center justify-between">
+                      <span>Rotation {visit.rotation} • {visit.direction === 'forward' ? '→ TRIPUNITHRA' : '← ALUVA'}</span>
+                      {visit.delayProbability !== undefined && visit.delayProbability > 0 && (
+                        <span className="px-2 py-0.5 bg-purple-500/20 text-purple-300 rounded-md font-medium">
+                          Risk: {Math.round(visit.delayProbability * 100)}%
+                        </span>
+                      )}
                     </div>
+                    {visit.delayReasons && visit.delayReasons.length > 0 && (
+                      <div className="mt-2 pt-2 border-t border-slate-600/50">
+                        <p className="text-slate-400 text-xs font-semibold mb-1">Reasons:</p>
+                        <ul className="list-disc list-inside text-slate-500 text-xs space-y-0.5">
+                          {visit.delayReasons.map((reason, rIdx) => (
+                            <li key={rIdx}>{reason}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

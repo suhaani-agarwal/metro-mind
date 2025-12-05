@@ -4,6 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 
+const API_BASE =
+  process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5005";
+
 interface DepotMetadata {
   name: string;
   location: string;
@@ -194,7 +197,7 @@ export default function OnboardingPage() {
   const submitDepot = async () => {
     setLoading(true);
     try {
-      await axios.post("http://127.0.0.1:5005/api/onboarding/depot", depot);
+      await axios.post(`${API_BASE}/api/onboarding/depot`, depot);
       setStep(2);
     } catch (error) {
       console.error(error);
@@ -212,7 +215,7 @@ export default function OnboardingPage() {
     setLoading(true);
     try {
       await axios.post(
-        "http://127.0.0.1:5005/api/onboarding/upload",
+        `${API_BASE}/api/onboarding/upload`,
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },

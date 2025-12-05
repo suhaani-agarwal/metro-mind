@@ -6,6 +6,9 @@ import axios from "axios";
 import { useRouter } from "@/i18n/routing";
 import { useTranslations } from "next-intl";
 
+const API_BASE =
+  process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5005";
+
 type FitnessCertificate = {
   department: string;
   issue_date: string;
@@ -82,7 +85,7 @@ export default function MetroMindPage() {
       try {
         setLoading(true);
         const response = await axios.get(
-          "http://localhost:5005/api/nightly/unified-data"
+          `${API_BASE}/api/nightly/unified-data`
         );
 
         let trainsData = response.data.trains || [];
