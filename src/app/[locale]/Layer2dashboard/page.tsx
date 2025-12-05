@@ -6,6 +6,9 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import autoTable from 'jspdf-autotable';
 
+const API_BASE =
+  process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5005";
+
 interface TrainAssignment {
   train_id: string;
   bay: string;
@@ -192,7 +195,7 @@ const Layer2Dashboard: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`http://localhost:5005/schedule/test?service_date=${selectedDate}`);
+      const response = await fetch(`${API_BASE}/schedule/test?service_date=${selectedDate}`);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
@@ -218,7 +221,7 @@ const Layer2Dashboard: React.FC = () => {
   const fetchStandbyTrains = async () => {
     try {
       setLoadingWhatIf(true);
-      const response = await fetch('http://localhost:5005/whatif/standby-trains');
+      const response = await fetch(`${API_BASE}/whatif/standby-trains`);
       if (!response.ok) throw new Error(t('errors.fetchStandby'));
 
       const result = await response.json();
@@ -233,7 +236,7 @@ const Layer2Dashboard: React.FC = () => {
   const analyzeSwap = async () => {
     try {
       setLoadingWhatIf(true);
-      const response = await fetch('http://localhost:5005/whatif/analyze', {
+      const response = await fetch(`${API_BASE}/whatif/analyze`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -272,7 +275,7 @@ const Layer2Dashboard: React.FC = () => {
 
   const fetchSuggestedOverrides = async () => {
     try {
-      const response = await fetch('http://localhost:5005/overrides/suggestions');
+      const response = await fetch(`${API_BASE}/overrides/suggestions`);
       const result = await response.json();
       setSuggestedOverrides(result.suggestions || []);
     } catch (err) {
@@ -282,7 +285,7 @@ const Layer2Dashboard: React.FC = () => {
 
   const loadLatestSuggestions = async () => {
     try {
-      const response = await fetch('http://localhost:5005/overrides/suggestions/latest');
+      const response = await fetch(`${API_BASE}/overrides/suggestions/latest`);
       const result = await response.json();
       setSuggestedOverrides(result.suggestions || []);
     } catch (err) {
@@ -303,7 +306,7 @@ const Layer2Dashboard: React.FC = () => {
       };
       const scheduled_train_config = findTrain(selectedScheduledTrain);
       const standby_train_config = findTrain(selectedStandbyTrain);
-      const res = await fetch('http://localhost:5005/overrides/submit', {
+      const res = await fetch(`${API_BASE}/overrides/submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -337,7 +340,7 @@ const Layer2Dashboard: React.FC = () => {
 
   const fetchTimetableData = async () => {
     try {
-      const response = await fetch(`http://localhost:5005/timetable/info?service_date=${selectedDate}`);
+      const response = await fetch(`${API_BASE}/timetable/info?service_date=${selectedDate}`);
       const result = await response.json();
       setTimetableData(result);
       setShowTimetable(true);

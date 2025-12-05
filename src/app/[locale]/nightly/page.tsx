@@ -5,6 +5,9 @@ import axios from "axios";
 import { useRouter } from "@/i18n/routing";
 import { useTranslations } from "next-intl";
 
+const API_BASE =
+  process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5005";
+
 interface NightlyForm {
     fitness_certificates?: {
         issued_at: string;
@@ -62,7 +65,7 @@ export default function NightlyPage() {
 
     // Load trains and check fitness expiry
     useEffect(() => {
-        axios.get("http://localhost:5005/api/nightly/trains").then(async (res) => {
+        axios.get(`${API_BASE}/api/nightly/trains`).then(async (res) => {
             setTrains(res.data.trains);
             if (res.data.trains.length) {
                 const trainId = res.data.trains[0];
@@ -75,7 +78,7 @@ export default function NightlyPage() {
     const loadTrainFitness = async (trainId: string) => {
         try {
             const fitnessRes = await axios.get(
-                `http://localhost:5005/api/nightly/train/${trainId}/fitness`
+                `${API_BASE}/api/nightly/train/${trainId}/fitness`
             );
 
             const { has_expired, expired_certificates, certificate_details } = fitnessRes.data;
@@ -137,7 +140,7 @@ export default function NightlyPage() {
         // 1) Save depot deep cleaning labour
         try {
             await axios.post(
-                "http://localhost:5005/api/nightly/depot/deep-cleaning",
+                `${API_BASE}/api/nightly/depot/deep-cleaning`,
                 {
                     manual_labour_available_today: Number(deepCleaningLabour) || 0,
                 }
@@ -154,7 +157,7 @@ export default function NightlyPage() {
 
                 try {
                     // Send to the correct endpoint with correct structure
-                    await axios.post("http://localhost:5005/api/nightly/branding/add", {
+                    await axios.post(`${API_BASE}/api/nightly/branding/add`, {
                         train_id: selectedTrain,
                         branding: {
                             advertiser: b.advertiser,
@@ -185,7 +188,7 @@ export default function NightlyPage() {
                 };
                 try {
                     await axios.post(
-                        "http://localhost:5005/api/nightly/update/train",
+                        `${API_BASE}/api/nightly/update/train`,
                         payload
                     );
                 } catch (err) {

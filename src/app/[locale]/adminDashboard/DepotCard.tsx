@@ -5,6 +5,9 @@ import { db } from "@/firebase/config";
 import { collection, doc, writeBatch, query, where, getDocs, limit } from "firebase/firestore";
 import * as XLSX from "xlsx";
 
+const API_BASE =
+  process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5005";
+
 interface Depot {
     name: string;
     location: string;
@@ -53,7 +56,7 @@ export default function DepotCard({ depot, onDelete }: DepotCardProps) {
 
         setDeleting(true);
         try {
-            const res = await fetch("http://127.0.0.1:5005/api/onboarding/depot", {
+            const res = await fetch(`${API_BASE}/api/onboarding/depot`, {
                 method: "DELETE",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ name: depot.name }),

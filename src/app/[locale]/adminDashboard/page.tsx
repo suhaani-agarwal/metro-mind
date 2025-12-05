@@ -9,6 +9,9 @@ import DepotCard from "./DepotCard";
 import AddTrainModal from "./AddTrainModal";
 import { useTranslations } from "next-intl";
 
+const API_BASE =
+  process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5005";
+
 interface Depot {
   name: string;
   location: string;
@@ -43,7 +46,7 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     async function fetchDepots() {
       try {
-        const res = await fetch("http://127.0.0.1:5005/api/onboarding/depot");
+        const res = await fetch(`${API_BASE}/api/onboarding/depot`);
         const data = await res.json();
         setDepots(Array.isArray(data) ? data : []);
       } catch (err) {
