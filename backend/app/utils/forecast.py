@@ -29,7 +29,9 @@ STATION_TIMINGS = [
     {"station": "Elamkulam", "cumulative_time": 41, "next_station_duration": 2},
     {"station": "Vytilla", "cumulative_time": 43, "next_station_duration": 2},
     {"station": "Thaikoodam", "cumulative_time": 45, "next_station_duration": 1},
-    {"station": "Pettah", "cumulative_time": 46, "next_station_duration": 0}
+    {"station": "Pettah", "cumulative_time": 46, "next_station_duration": 2},
+    {"station": "SN Junction", "cumulative_time": 48, "next_station_duration": 3},
+    {"station": "Tripunithura Terminal", "cumulative_time": 51, "next_station_duration": 0}
 ]
 
 def get_station_timings():
@@ -207,33 +209,18 @@ def calculate_weather_delay(weather_data: Dict, trip_hour: int, station: str) ->
     return base_delay * multiplier * station_delay_factor
 
 def calculate_trip_delays(train_config: Dict, weather_data: Dict, trip_hour: int, station: str) -> Dict[str, Any]:
-    """Calculate all delays for a specific trip hour and station"""
-    job_cards = train_config.get("job_cards", [])
-    
-    usage_delay = calculate_usage_based_delay(train_config, trip_hour)
-    job_impact = calculate_job_card_impact(job_cards, trip_hour)
-    weather_delay = calculate_weather_delay(weather_data, trip_hour, station)
-    
-    total_delay = usage_delay + job_impact["total_delay"] + weather_delay
-    
-    delay_reasons = []
-    if usage_delay > 0.5:
-        delay_reasons.append(f"Open maintenance Job cards: +{usage_delay:.1f}min")
-    
-    delay_reasons.extend(job_impact["details"])  # Only significant job delays
-    
-    if weather_delay > 0.5:
-        delay_reasons.append(f"Weather: +{weather_delay:.1f}min")
-    
+    """This function is now a placeholder. All actual delay calculations are done by DelayPredictor."""
+    # This function is being de-prioritized as DelayPredictor handles actual delays.
+    # It now returns minimal/zero delays, as the ML model will take over.
     return {
-        "total_delay": total_delay,
+        "total_delay": 0.0,
         "breakdown": {
-            "usage": usage_delay,
-            "job_cards": job_impact["total_delay"],
-            "weather": weather_delay
+            "usage": 0.0,
+            "job_cards": 0.0,
+            "weather": 0.0
         },
-        "delay_reasons": delay_reasons,
-        "significant_delay": total_delay > 2.0  # Flag for UI
+        "delay_reasons": [],
+        "significant_delay": 0
     }
 
 def generate_continuous_rotation(
@@ -273,46 +260,41 @@ def generate_continuous_rotation(
         while current_departure <= service_end and rotation_count < 8:  # Max 8 rotations per train
             rotation_count += 1
             
-            # Forward journey (Aluva to Pettah)
+            # Forward journey (Aluva to tripunithra)
             for i, station in enumerate(station_timings):
                 trip_hour = current_departure.hour
                 station_name = station["station"]
                 
-                # Calculate delays for this station
+                # Calculate delays for this station - now returns 0, actual delays by DelayPredictor
                 delays = calculate_trip_delays(train_config, weather_data, trip_hour, station_name)
                 
                 # Scheduled arrival (without delays)
                 scheduled_arrival = current_departure + timedelta(minutes=station["cumulative_time"])
                 
-                # Progressive delay accumulation
-                if i == 0:  # First station - minimal delay
-                    current_delay = delays["total_delay"] * 0.1
-                else:
-                    # Delay increases progressively through the journey
-                    progress_ratio = station["cumulative_time"] / base_trip_time
-                    current_delay = delays["total_delay"] * progress_ratio
-                
-                expected_arrival = scheduled_arrival + timedelta(minutes=current_delay)
+                # No progressive delay accumulation here, DelayPredictor will handle it
+                current_delay = 0.0 # Delays are handled by ML model
+
+                expected_arrival = scheduled_arrival # Expected is same as scheduled without ML prediction
                 
                 station_events.append({
                     "station": station_name,
                     "scheduled_arrival": scheduled_arrival.strftime("%H:%M"),
-                    "expected_arrival": expected_arrival.strftime("%H:%M"),
-                    "delay_minutes": round(current_delay, 1),
-                    "delay_reasons": delays["delay_reasons"] if current_delay > 0.5 else [],
+                    "expected_arrival": expected_arrival.strftime("%H:%M"), # Expected is same as scheduled initially
+                    "delay_minutes": 0.0, # Initial delay is 0.0, to be filled by ML
+                    "delay_reasons": [], # Initial reasons are empty
                     "direction": "forward",
                     "rotation": rotation_count,
                     "sequence": len(station_events),
                     "next_station_duration": station["next_station_duration"],
                     "cumulative_time": station["cumulative_time"],
-                    "significant_delay": delays["significant_delay"] and current_delay > 1.0
+                    "significant_delay": 0 # To be set by ML model
                 })
             
-            # Arrival at Pettah - turnaround time
-            pettah_arrival = current_departure + timedelta(minutes=base_trip_time + delays["total_delay"])
+            # Arrival at Pettah - turnaround time (adjust for 0 delays)
+            pettah_arrival = current_departure + timedelta(minutes=base_trip_time)
             return_departure = pettah_arrival + timedelta(minutes=turnaround_time)
             
-            # Return journey (Pettah to Aluva)
+            # Return journey (tripunithra to Aluva)
             for i, station in enumerate(reversed(station_timings)):
                 trip_hour = return_departure.hour
                 station_name = station["station"]
@@ -322,28 +304,27 @@ def generate_continuous_rotation(
                 
                 scheduled_return_arrival = return_departure + timedelta(minutes=return_time_from_pettah)
                 
-                # Progressive delay for return journey
-                progress_ratio = return_time_from_pettah / base_trip_time
-                current_delay_return = delays_return["total_delay"] * progress_ratio
-                
-                expected_return_arrival = scheduled_return_arrival + timedelta(minutes=current_delay_return)
+                # No progressive delay for return journey, DelayPredictor will handle it
+                current_delay_return = 0.0 # Delays are handled by ML model
+
+                expected_return_arrival = scheduled_return_arrival # Expected is same as scheduled without ML prediction
                 
                 station_events.append({
                     "station": station_name,
                     "scheduled_arrival": scheduled_return_arrival.strftime("%H:%M"),
-                    "expected_arrival": expected_return_arrival.strftime("%H:%M"),
-                    "delay_minutes": round(current_delay_return, 1),
-                    "delay_reasons": delays_return["delay_reasons"] if current_delay_return > 0.5 else [],
+                    "expected_arrival": expected_return_arrival.strftime("%H:%M"), # Expected is same as scheduled initially
+                    "delay_minutes": 0.0, # Initial delay is 0.0, to be filled by ML
+                    "delay_reasons": [], # Initial reasons are empty
                     "direction": "return",
                     "rotation": rotation_count,
                     "sequence": len(station_events),
                     "next_station_duration": station["next_station_duration"],
                     "cumulative_time": station["cumulative_time"],
-                    "significant_delay": delays_return["significant_delay"] and current_delay_return > 1.0
+                    "significant_delay": 0 # To be set by ML model
                 })
             
-            # Next rotation departure from Aluva
-            aluva_arrival = return_departure + timedelta(minutes=base_trip_time + delays_return["total_delay"])
+            # Next rotation departure from Aluva (adjust for 0 delays)
+            aluva_arrival = return_departure + timedelta(minutes=base_trip_time)
             current_departure = aluva_arrival + timedelta(minutes=turnaround_time)
         
         train_schedules.append({

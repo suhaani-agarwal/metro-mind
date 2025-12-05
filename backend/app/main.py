@@ -1009,6 +1009,8 @@ def get_station_schedule(station_name: str, service_date: str = None):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+# In your main.py - update the get_rotation_predictions endpoint
+
 @app.get("/rotation/predictions")
 def get_rotation_predictions(service_date: str = None):
     """ML-based delay predictions per train and station using history-trained models"""
@@ -1027,17 +1029,28 @@ def get_rotation_predictions(service_date: str = None):
         # Station timings
         station_timings = get_station_timings()
 
-        # Hardcoded weather map for realism (can be replaced by live feed)
-        weather_by_station = {
-            s["station"]: ("rain" if s["station"] in ["Vytilla", "Thaikoodam", "Pettah"] else "clear")
-            for s in station_timings
-        }
-        # Add a couple of stormy/foggy hotspots to showcase variety
-        weather_by_station["Edappally"] = "foggy"
-        weather_by_station["M.G Road"] = "storm"
-
-        # First, build the baseline rotation using the existing non-ML function for full-day rotations
+        # Get weather forecast
         weather_data = get_weather_forecast(service_date)
+        
+        # Create weather by station mapping
+        weather_by_station = {}
+        for station in station_timings:
+            station_name = station["station"]
+            # Use overall condition or hourly forecast
+            if weather_data.get("hourly_forecast"):
+                # Use most common condition for the day
+                conditions = []
+                for hour_forecast in weather_data["hourly_forecast"].values():
+                    if isinstance(hour_forecast, dict):
+                        conditions.append(hour_forecast.get("condition", "clear"))
+                if conditions:
+                    weather_by_station[station_name] = max(set(conditions), key=conditions.count)
+                else:
+                    weather_by_station[station_name] = "clear"
+            else:
+                weather_by_station[station_name] = weather_data.get("overall_condition", "clear")
+
+        # Generate baseline rotation
         baseline_rotation = generate_rotation_schedule(
             scheduled_trains=scheduled_trains,
             train_configs=train_configs,
@@ -1046,19 +1059,36 @@ def get_rotation_predictions(service_date: str = None):
             service_date=service_date,
         )
 
-        # Run predictor on the baseline to only adjust delays/expectations, preserving rotations
-        models_dir = str(Path(__file__).resolve().parents[2])  # project root where pkl files exist
+        # Initialize predictor
+        models_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "models")
         predictor = DelayPredictor(models_dir=models_dir)
+        
+        # Get ML predictions
         prediction = predictor.predict_on_schedule(
             baseline_rotation=baseline_rotation,
-            train_configs=train_configs,
+            train_configs=train_configs.get("trains", []),
             weather_by_station=weather_by_station,
+            service_date=service_date
         )
+
+        # Save predicted delays to a JSON file
+        predicted_delays_path = os.path.join(STORAGE_DIR, "predicted_delays.json")
+        with open(predicted_delays_path, "w") as f:
+            json.dump(prediction, f, indent=2)
+        logger.info(f"Predicted delays saved to {predicted_delays_path}")
+        
+        # Log major delays if any
+        major_delays = prediction.get("summary", {}).get("major_delays", [])
+        if major_delays:
+            logger.info(f"Found {len(major_delays)} major delays causing cascading effects")
+            for delay in major_delays:
+                logger.info(f"Major delay: Train {delay.get('train_id')} at {delay.get('station')} "
+                           f"({delay.get('delay_minutes')}min) affecting {delay.get('affected_trains_count')} trains")
 
         # Wrap with metadata to match frontend expectations
         result = {
             "service_date": service_date,
-            "weather_conditions": {"overall_condition": "variable"},
+            "weather_conditions": weather_data, # Use the full weather_data object
             "total_trains": len(prediction.get("train_schedules", [])),
             **prediction
         }
@@ -1066,7 +1096,7 @@ def get_rotation_predictions(service_date: str = None):
     except Exception as e:
         logger.error(f"Error generating ML predictions: {e}")
         raise HTTPException(status_code=500, detail=str(e))
-
+        
 
 @app.post("/save-schedule-pdf")
 async def save_schedule_pdf(file: UploadFile = File(...)):
