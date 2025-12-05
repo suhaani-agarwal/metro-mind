@@ -93,7 +93,7 @@ export default function AdvancedDepotMap({
   );
 
   // Build comprehensive node graph
-  const buildNodeGraph = () => {
+  const buildNodeGraph = React.useCallback(() => {
     const nodes: Record<string, NodePos> = {};
     const connections: Record<string, string[]> = {};
 
@@ -183,9 +183,9 @@ export default function AdvancedDepotMap({
     connections['MAIN_LINE'] = [];
 
     return { nodes, connections };
-  };
+  }, [iblBays, parkingTracks]);
   // Memoize node graph to avoid recreating objects each render (prevents infinite effect loops)
-  const { nodes: depotNodes, connections: depotConnections } = React.useMemo(() => buildNodeGraph(), [JSON.stringify(depotLayout)]);
+  const { nodes: depotNodes, connections: depotConnections } = React.useMemo(() => buildNodeGraph(), [buildNodeGraph]);
 
   // Build reverse connections map for undirected path searches
   const reverseConnections = React.useMemo(() => {
@@ -200,7 +200,7 @@ export default function AdvancedDepotMap({
   }, [depotConnections]);
 
   // ========== BFS SHORTEST PATH ==========
-  const bfsShortestPath = (start: string, end: string = 'MAIN_LINE'): string[] => {
+  const bfsShortestPath = React.useCallback((start: string, end: string = 'MAIN_LINE'): string[] => {
     const queue: [string, string[]][] = [[start, [start]]];
     const visited = new Set<string>();
     visited.add(start);
@@ -222,7 +222,7 @@ export default function AdvancedDepotMap({
       }
     }
     return [start]; // Fallback
-  };
+  }, [depotConnections, reverseConnections]);
 
   // ========== COMPUTE INITIAL TRAIN POSITIONS FROM unified.json ==========
   useEffect(() => {
@@ -239,6 +239,7 @@ export default function AdvancedDepotMap({
     const trackOccupancy: Record<string, Array<{ id: string; slot?: number }>> = {};
 
     if (unifiedData?.trains) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       unifiedData.trains.forEach((train: any) => {
         if (!train.id) return;
         // Treat null/empty current_position as MAIN_LINE (they originate from main line)
@@ -335,6 +336,7 @@ export default function AdvancedDepotMap({
     });
 
     // For each parking assignment, compute final pos based on slot
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     outputData.parking_assignments.forEach((p: any) => {
       const trackId = p.track_id;
       const slot = p.position_in_track || 1;
@@ -354,12 +356,14 @@ export default function AdvancedDepotMap({
     // For any trains not in parking_assignments, place them at MAIN_LINE or known current positions
     // Use union of assignment train ids and provided `assignments` prop to ensure coverage
     const knownTrainIds = new Set<string>();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     outputData.parking_assignments.forEach((p: any) => knownTrainIds.add(p.train_id));
     assignments.forEach((a) => knownTrainIds.add(a.train_id));
 
     Array.from(knownTrainIds).forEach((tid) => {
       if (!finalStates[tid]) {
         // try to place at their assignment if present
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const assn = outputData.parking_assignments?.find((a: any) => a.train_id === tid);
         if (assn) {
           const startNode = `${assn.track_id}_START`;
@@ -371,6 +375,7 @@ export default function AdvancedDepotMap({
     });
 
     // fallback: ensure every assigned train has a state
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     outputData.parking_assignments.forEach((p: any) => {
       if (!finalStates[p.train_id]) {
         finalStates[p.train_id] = { ...depotNodes['MAIN_LINE'], moving: false };
@@ -401,6 +406,7 @@ export default function AdvancedDepotMap({
 
     const trackOccupancy: Record<string, Array<{ id: string; slot?: number }>> = {};
     if (unifiedData?.trains) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       unifiedData.trains.forEach((train: any) => {
         if (!train.id) return;
         // If current_position is null/empty, treat as MAIN_LINE
@@ -606,7 +612,7 @@ export default function AdvancedDepotMap({
     }
 
     setSimMoves(orderedMoves);
-  }, [outputData, unifiedData, selected, bfsShortestPath, depotNodes]);
+  }, [outputData, unifiedData, selected]);
 
   // ========== ANIMATION LOOP ==========
   useEffect(() => {
@@ -670,7 +676,7 @@ export default function AdvancedDepotMap({
     return () => {
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
     };
-  }, [isSimulating, simMoves, selected, trainStates]);
+  }, [isSimulating, simMoves]);
 
   // ========== RENDER FUNCTIONS ==========
 
