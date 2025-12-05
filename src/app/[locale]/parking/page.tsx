@@ -418,7 +418,7 @@ export default function TrainParkingPage() {
       if (occupant && occupant.train_id !== trainId) {
         // Displace occupant
         await axios.delete(
-          `http://localhost:5005/api/nightly/parking/assignment/${occupant.train_id}`
+          `${API_BASE}/api/nightly/parking/assignment/${occupant.train_id}`
         );
       }
 
@@ -435,7 +435,7 @@ export default function TrainParkingPage() {
           notes: currentAssignment.notes,
         };
         await axios.put(
-          `http://localhost:5005/api/nightly/parking/assignment/${trainId}`,
+          `${API_BASE}/api/nightly/parking/assignment/${trainId}`,
           payload
         );
       } else {
@@ -449,7 +449,7 @@ export default function TrainParkingPage() {
           notes: "",
         };
         await axios.post(
-          `http://localhost:5005/api/nightly/parking/assignment`,
+          `${API_BASE}/api/nightly/parking/assignment`,
           payload
         );
       }
