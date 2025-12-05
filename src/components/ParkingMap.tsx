@@ -1,6 +1,26 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ParkingAssignment } from './types';
 
+type Train = {
+  id: string;
+  current_position?: string | null;
+};
+
+type UnifiedData = {
+  trains?: Train[];
+};
+
+type ParkingAssignmentOutput = {
+  train_id: string;
+  track_id: string;
+  position_in_track?: number;
+  moves_required?: number;
+};
+
+type OutputData = {
+  parking_assignments?: ParkingAssignmentOutput[];
+};
+
 type DepotLayoutType = {
   ibl_bays?: string[];
   parking_tracks?: Array<{ id?: string; capacity?: number }>;
@@ -25,8 +45,8 @@ type SimulationMove = {
 type Props = {
   assignments: ParkingAssignment[];
   depotLayout?: DepotLayoutType;
-  unifiedData?: any;
-  outputData?: any;
+  unifiedData?: UnifiedData;
+  outputData?: OutputData;
   selected?: string | null;
   onSelect?: (trainId: string | null) => void;
 };
@@ -58,7 +78,7 @@ export default function AdvancedDepotMap({
 
   const TRACK_SPACING = 35; // smaller spacing so tracks fit vertically
   const PARKING_START_Y = 5; // move parking start up to reduce overall height
-  const IBL_END_Y = PARKING_START_Y + 5 * TRACK_SPACING; // IBL in continuity (y=310)
+  // const IBL_END_Y = PARKING_START_Y + 5 * TRACK_SPACING; // IBL in continuity (y=310)
 
   const iblBays = depotLayout?.ibl_bays || [
     'IBL01',
@@ -359,14 +379,14 @@ export default function AdvancedDepotMap({
 
     // Merge with existing trainStates to preserve the selected train's current position
     setTrainStates((prev) => {
-      const merged: Record<string, { x: number; y: number; moving: boolean }> = {
-        ...finalStates,
-      };
-      if (selected && prev && prev[selected]) {
-        merged[selected] = prev[selected];
-      }
-      return merged;
-    });
+  const merged: Record<string, { x: number; y: number; moving: boolean }> = {
+    ...finalStates,
+  };
+  if (selected && prev[selected]) {
+    merged[selected] = prev[selected];
+  }
+  return merged;
+});
   }, [isSimulating, outputData, depotNodes]);
 
   // When simulation starts, reset train positions to the initial positions from unified.json
@@ -586,7 +606,7 @@ export default function AdvancedDepotMap({
     }
 
     setSimMoves(orderedMoves);
-  }, [outputData, unifiedData, selected]);
+  }, [outputData, unifiedData, selected, bfsShortestPath, depotNodes]);
 
   // ========== ANIMATION LOOP ==========
   useEffect(() => {
@@ -650,7 +670,7 @@ export default function AdvancedDepotMap({
     return () => {
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
     };
-  }, [isSimulating, simMoves]);
+  }, [isSimulating, simMoves, selected, trainStates]);
 
   // ========== RENDER FUNCTIONS ==========
 
@@ -862,11 +882,11 @@ export default function AdvancedDepotMap({
   const renderTrains = () => {
     const TRAIN_LENGTH = 110;
     const TRAIN_HEIGHT = 28;
-    const POSITION_OFFSET = 35; // Spacing between trains on same track
+    // const POSITION_OFFSET = 35; // Spacing between trains on same track
 
     return (
       <g>
-        {assignments.map((assignment, idx) => {
+        {assignments.map((assignment) => {
           const state = trainStates[assignment.train_id];
           if (!state) return null;
 

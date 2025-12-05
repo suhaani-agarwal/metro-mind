@@ -1,6 +1,6 @@
 "use client";
 import { useTranslations } from 'next-intl';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -180,43 +180,50 @@ const Layer2Dashboard: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [showValidation, setShowValidation] = useState(false);
   const [showTimetable, setShowTimetable] = useState(false);
-  const [showDebug, setShowDebug] = useState(false);
+  const [showDebug] = useState(false);
   const [showWhatIf, setShowWhatIf] = useState(false);
   const [showSwapAnalysis, setShowSwapAnalysis] = useState(false);
   const [selectedScheduledTrain, setSelectedScheduledTrain] = useState<string>('');
   const [selectedStandbyTrain, setSelectedStandbyTrain] = useState<string>('');
 
+
+  const fetchScheduleData = useCallback(async () => {
+  try {
+    setLoading(true);
+    setError(null);
+
+    const response = await fetch(`${API_BASE}/schedule/test?service_date=${selectedDate}`);
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      throw new Error(errorData?.detail || `HTTP error! status: ${response.status}`);
+    }
+
+    const result: OptimizationResult = await response.json();
+
+    if (
+      result.status &&
+      !['OPTIMAL', 'FEASIBLE'].includes(result.status) &&
+      result.solver_status !== 'OPTIMAL' &&
+      result.solver_status !== 'FEASIBLE'
+    ) {
+      throw new Error(result.error || result.status);
+    }
+
+    setData(result);
+
+  } catch (err) {
+    console.error('Error fetching schedule:', err);
+    setError(err instanceof Error ? err.message : t('errors.loadSchedule'));
+  } finally {
+    setLoading(false);
+  }
+}, [selectedDate]); // 👈 dependency here is mandatory
+
   useEffect(() => {
     fetchScheduleData();
   }, [selectedDate]);
 
-  const fetchScheduleData = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const response = await fetch(`${API_BASE}/schedule/test?service_date=${selectedDate}`);
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(errorData?.detail || `HTTP error! status: ${response.status}`);
-      }
-
-      const result: OptimizationResult = await response.json();
-
-      if (result.status && !['OPTIMAL', 'FEASIBLE'].includes(result.status) && result.solver_status !== 'OPTIMAL' && result.solver_status !== 'FEASIBLE') {
-        throw new Error(result.error || result.status);
-      }
-
-      setData(result);
-
-    } catch (err) {
-      console.error('Error fetching schedule:', err);
-      setError(err instanceof Error ? err.message : t('errors.loadSchedule'));
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const fetchStandbyTrains = async () => {
     try {
@@ -330,13 +337,13 @@ const Layer2Dashboard: React.FC = () => {
     }
   };
 
-  const fetchValidationData = async () => {
-    try {
-      await fetchSuggestedOverrides();
-    } catch (err) {
-      console.error('Error generating suggestions:', err);
-    }
-  };
+  // const fetchValidationData = async () => {
+  //   try {
+  //     await fetchSuggestedOverrides();
+  //   } catch (err) {
+  //     console.error('Error generating suggestions:', err);
+  //   }
+  // };
 
   const fetchTimetableData = async () => {
     try {
@@ -357,23 +364,23 @@ const Layer2Dashboard: React.FC = () => {
     return 'bg-red-900/50 text-red-300 border-red-700';
   };
 
-  const getServiceTypeColor = (serviceType: string): string => {
-    switch (serviceType) {
-      case 'public_holiday': return 'bg-purple-900/50 text-purple-300 border-purple-700';
-      case 'sunday': return 'bg-indigo-900/50 text-indigo-300 border-indigo-700';
-      case 'weekday': return 'bg-teal-900/50 text-teal-300 border-teal-700';
-      default: return 'bg-gray-900/50 text-gray-300 border-gray-700';
-    }
-  };
+  // const getServiceTypeColor = (serviceType: string): string => {
+  //   switch (serviceType) {
+  //     case 'public_holiday': return 'bg-purple-900/50 text-purple-300 border-purple-700';
+  //     case 'sunday': return 'bg-indigo-900/50 text-indigo-300 border-indigo-700';
+  //     case 'weekday': return 'bg-teal-900/50 text-teal-300 border-teal-700';
+  //     default: return 'bg-gray-900/50 text-gray-300 border-gray-700';
+  //   }
+  // };
 
-  const getSolverStatusColor = (status: string): string => {
-    switch (status) {
-      case 'OPTIMAL': return 'bg-emerald-900/50 text-emerald-300 border-emerald-700';
-      case 'FEASIBLE': return 'bg-yellow-900/50 text-yellow-300 border-yellow-700';
-      case 'INFEASIBLE': return 'bg-red-900/50 text-red-300 border-red-700';
-      default: return 'bg-gray-900/50 text-gray-300 border-gray-700';
-    }
-  };
+  // const getSolverStatusColor = (status: string): string => {
+  //   switch (status) {
+  //     case 'OPTIMAL': return 'bg-emerald-900/50 text-emerald-300 border-emerald-700';
+  //     case 'FEASIBLE': return 'bg-yellow-900/50 text-yellow-300 border-yellow-700';
+  //     case 'INFEASIBLE': return 'bg-red-900/50 text-red-300 border-red-700';
+  //     default: return 'bg-gray-900/50 text-gray-300 border-gray-700';
+  //   }
+  // };
 
   const getRecommendationColor = (decision: string): string => {
     switch (decision) {
@@ -473,7 +480,7 @@ const Layer2Dashboard: React.FC = () => {
 
   const assignments = data.optimized_assignments || [];
   const sortedAssignments = [...assignments].sort((a, b) => (a.departure_order || 0) - (b.departure_order || 0));
-  const holidayStatus = getHolidayStatus();
+  // const holidayStatus = getHolidayStatus();
 
   const generatePDF = () => {
     const doc = new jsPDF();
@@ -951,7 +958,7 @@ const Layer2Dashboard: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-700">
-                    {sortedAssignments.map((train, index) => (
+                    {sortedAssignments.map((train) => (
                       <tr key={train.train_id} className="hover:bg-slate-700/30 transition-colors duration-150">
                         <td className="px-6 py-4">
                           <div className="inline-flex items-center justify-center px-3 py-1.5 bg-teal-500/20 border border-teal-500/40 rounded-lg">
