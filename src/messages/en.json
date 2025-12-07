@@ -568,7 +568,8 @@
         "addDepot": "Add New Depot",
         "yourDepots": "Your Depots",
         "addAnotherDepot": "Add Another Depot",
-        "addTrain": "Add New Train"
+        "addTrain": "Add New Train",
+        "addEmployee": "Add Employee"
     },
     "AddTrainModal": {
         "title": "Add New Train",
@@ -593,6 +594,26 @@
         "cancel": "Cancel",
         "submit": "Submit",
         "successMessage": "Train added successfully!",
+        "fillRequired": "Please fill all required fields."
+    },
+    "AddEmployeeModal": {
+        "title": "Add New Employee",
+        "employeeDetails": "Employee Details",
+        "fullName": "Full Name",
+        "fullNamePlaceholder": "Enter full name",
+        "employeeId": "Employee ID",
+        "employeeIdPlaceholder": "Enter employee ID (e.g. EMP-001)",
+        "email": "Email",
+        "emailPlaceholder": "Enter email address",
+        "phoneNumber": "Phone Number (Optional)",
+        "phoneNumberPlaceholder": "Enter phone number",
+        "role": "Role",
+        "selectRole": "Select Role",
+        "depot": "Assigned Depot",
+        "selectDepot": "Select Depot",
+        "cancel": "Cancel",
+        "submit": "Submit",
+        "successMessage": "Employee added successfully!",
         "fillRequired": "Please fill all required fields."
     },
     "Rotation": {
