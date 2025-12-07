@@ -324,9 +324,13 @@ def get_parking_assignments():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error reading parking data: {str(e)}")
 
+def normalize_id(tid: str) -> str:
+    """Normalize train ID for comparison (remove spaces, hyphens, uppercase)"""
+    return tid.replace("-", "").replace(" ", "").upper()
+
 @router.post("/parking/assignment")
 def create_parking_assignment(assignment: ParkingAssignmentModel):
-    """Create a new parking assignment"""
+    """Create a new parking assignment or update existing one"""
     try:
         os.makedirs(os.path.dirname(PARKING_JSON_PATH), exist_ok=True)
         
@@ -339,26 +343,68 @@ def create_parking_assignment(assignment: ParkingAssignmentModel):
         else:
             assignments = []
         
-        for existing in assignments:
-            if existing["train_id"] == assignment.train_id and not existing.get("departure_time"):
-                raise HTTPException(status_code=400, detail=f"Train {assignment.train_id} already has an active parking assignment")
+        # Find ALL assignments for this train (using normalized ID)
+        input_id_norm = normalize_id(assignment.train_id)
+        matching_indices = []
         
-        for existing in assignments:
+        for i, existing in enumerate(assignments):
+            existing_id_norm = normalize_id(existing["train_id"])
+            if existing_id_norm == input_id_norm:
+                matching_indices.append(i)
+        
+        # Check target position occupancy (skip if we're updating to same position)
+        for i, existing in enumerate(assignments):
+            # Skip if this is one of the train's own assignments
+            if i in matching_indices:
+                continue
+                
             if (existing["bay"] == assignment.bay and 
                 existing["position"] == assignment.position and 
                 not existing.get("departure_time")):
                 raise HTTPException(status_code=400, detail=f"Position {assignment.bay}-{assignment.position} is already occupied")
         
         assignment_dict = assignment.dict()
-        if not assignment_dict.get("arrival_time"):
-            assignment_dict["arrival_time"] = datetime.now().isoformat()
         
-        assignments.append(assignment_dict)
+        if matching_indices:
+            # Update the MOST RECENT assignment for this train
+            # Find the one with the latest arrival_time
+            latest_index = matching_indices[0]
+            latest_time = assignments[latest_index].get("arrival_time", "")
+            
+            for idx in matching_indices[1:]:
+                current_time = assignments[idx].get("arrival_time", "")
+                if current_time > latest_time:
+                    latest_index = idx
+                    latest_time = current_time
+            
+            # Preserve arrival time from the latest assignment
+            if not assignment_dict.get("arrival_time") and assignments[latest_index].get("arrival_time"):
+                assignment_dict["arrival_time"] = assignments[latest_index]["arrival_time"]
+            
+            # Clear departure_time since this is a new/updated active assignment
+            assignment_dict["departure_time"] = None
+            
+            # Update the latest assignment
+            assignments[latest_index] = assignment_dict
+            
+            # Remove all other assignments for this train to prevent duplicates
+            for idx in sorted(matching_indices, reverse=True):
+                if idx != latest_index:
+                    del assignments[idx]
+            
+            message = "Parking assignment updated successfully"
+        else:
+            # No existing assignment - create new
+            if not assignment_dict.get("arrival_time"):
+                assignment_dict["arrival_time"] = datetime.now().isoformat()
+            assignment_dict["departure_time"] = None
+            assignments.append(assignment_dict)
+            message = "Parking assignment created successfully"
         
         with open(PARKING_JSON_PATH, "w") as f:
             json.dump(assignments, f, indent=2)
         
-        return {"message": "Parking assignment created successfully", "assignment": assignment_dict}
+        return {"message": message, "assignment": assignment_dict}
         
     except HTTPException:
         raise

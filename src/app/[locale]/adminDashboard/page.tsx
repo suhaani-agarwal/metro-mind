@@ -4,13 +4,13 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { auth } from "@/firebase/config";
 import { signOut } from "firebase/auth";
-import { LogOut, Plus, Train } from "lucide-react";
+import { LogOut, Plus, Train, UserPlus } from "lucide-react";
 import DepotCard from "./DepotCard";
 import AddTrainModal from "./AddTrainModal";
+import AddEmployeeModal from "./AddEmployeeModal";
 import { useTranslations } from "next-intl";
 
-const API_BASE =
-  process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5005";
+const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5005";
 
 interface Depot {
   name: string;
@@ -32,6 +32,7 @@ export default function AdminDashboardPage() {
   const [depots, setDepots] = useState<Depot[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddTrainModal, setShowAddTrainModal] = useState(false);
+  const [showAddEmployeeModal, setShowAddEmployeeModal] = useState(false);
 
   // 1️⃣ Firebase Auth Check
   useEffect(() => {
@@ -95,19 +96,16 @@ export default function AdminDashboardPage() {
             <p className="text-slate-300 mt-2">{t("welcome")}</p>
           </div>
           <button
-  onClick={handleLogout}
-  className="px-6 py-3 rounded-xl bg-slate-800/40 border border-slate-700/40 
+            onClick={handleLogout}
+            className="px-6 py-3 rounded-xl bg-slate-800/40 border border-slate-700/40 
              text-slate-200 backdrop-blur-sm shadow-lg 
              hover:border-red-400/50 hover:text-red-400 
              hover:shadow-red-500/20 hover:scale-[1.03] 
              transition-all duration-300 flex items-center gap-2"
->
-  <LogOut size={20} />
-  {t("logout")}
-</button>
-
-
-
+          >
+            <LogOut size={20} />
+            {t("logout")}
+          </button>
         </div>
 
         {/* Decorative Line */}
@@ -123,9 +121,7 @@ export default function AdminDashboardPage() {
               <h2 className="text-3xl font-semibold text-slate-50 mb-4">
                 {t("noDepotsTitle")}
               </h2>
-              <p className="text-slate-400 mb-8 text-lg">
-                {t("noDepotsDesc")}
-              </p>
+              <p className="text-slate-400 mb-8 text-lg">{t("noDepotsDesc")}</p>
               <div className="flex justify-center gap-4">
                 <button
                   onClick={handleAddDepot}
@@ -140,6 +136,13 @@ export default function AdminDashboardPage() {
                 >
                   <Train size={22} />
                   {t("addTrain")}
+                </button>
+                <button
+                  onClick={() => setShowAddEmployeeModal(true)}
+                  className="px-8 py-4 bg-slate-700 text-slate-50 rounded-xl hover:bg-slate-600 transition shadow-md text-lg font-semibold flex items-center gap-2 hover:scale-105 duration-200"
+                >
+                  <UserPlus size={22} />
+                  {t("addEmployee")}
                 </button>
               </div>
             </div>
@@ -159,24 +162,34 @@ export default function AdminDashboardPage() {
                     {t("addTrain")}
                   </button>
                   <button
-  onClick={handleAddDepot}
-  className="px-6 py-3 rounded-xl bg-gradient-to-r from-sky-500/80 to-emerald-500/80 
+                    onClick={() => setShowAddEmployeeModal(true)}
+                    className="px-6 py-3 bg-slate-700 text-slate-50 rounded-xl hover:bg-slate-600 transition shadow-md font-semibold flex items-center gap-2 hover:scale-105 duration-200"
+                  >
+                    <UserPlus size={20} />
+                    {t("addEmployee")}
+                  </button>
+                  <button
+                    onClick={handleAddDepot}
+                    className="px-6 py-3 rounded-xl bg-gradient-to-r from-sky-500/80 to-emerald-500/80 
              text-slate-900 font-semibold shadow-lg 
              hover:from-sky-400 hover:to-emerald-400 
              hover:shadow-xl hover:scale-[1.05] 
              transition-all duration-300 flex items-center gap-2"
->
-  <Plus size={20} />
-  {t("addAnotherDepot")}
-</button>
-
+                  >
+                    <Plus size={20} />
+                    {t("addAnotherDepot")}
+                  </button>
                 </div>
               </div>
 
               {/* Depots Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {depots.map((depot, index) => (
-                  <DepotCard key={index} depot={depot} onDelete={handleDeleteDepot} />
+                  <DepotCard
+                    key={index}
+                    depot={depot}
+                    onDelete={handleDeleteDepot}
+                  />
                 ))}
               </div>
             </div>
@@ -187,6 +200,11 @@ export default function AdminDashboardPage() {
       {/* Add Train Modal */}
       {showAddTrainModal && (
         <AddTrainModal onClose={() => setShowAddTrainModal(false)} />
+      )}
+
+      {/* Add Employee Modal */}
+      {showAddEmployeeModal && (
+        <AddEmployeeModal onClose={() => setShowAddEmployeeModal(false)} />
       )}
     </div>
   );

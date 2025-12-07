@@ -3,7 +3,6 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { useMap } from 'react-leaflet';
 import dynamic from 'next/dynamic';
-import { MapPin, Clock, ChevronUp } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
 
 let L: any;

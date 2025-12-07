@@ -17,8 +17,7 @@ import {
   DragStartEvent,
 } from "@dnd-kit/core";
 
-const API_BASE =
-  process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5005";
+const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5005";
 
 interface TrainParking {
   train_id: string;
@@ -52,9 +51,9 @@ const DraggableTrain = ({
 
   const style = transform
     ? {
-        transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
-        zIndex: 999,
-      }
+      transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+      zIndex: 999,
+    }
     : undefined;
 
   return (
@@ -66,10 +65,9 @@ const DraggableTrain = ({
       className={`
         cursor-grab active:cursor-grabbing 
         font-semibold text-sm py-1 px-3 rounded shadow-sm
-        ${
-          isOverlay
-            ? "bg-sky-500 text-white shadow-xl scale-105"
-            : "bg-sky-500/20 text-sky-300 border border-sky-500/30 hover:bg-sky-500/30"
+        ${isOverlay
+          ? "bg-sky-500 text-white shadow-xl scale-105"
+          : "bg-sky-500/20 text-sky-300 border border-sky-500/30 hover:bg-sky-500/30"
         }
         ${isDragging ? "opacity-50" : "opacity-100"}
         transition-colors duration-200
@@ -187,14 +185,13 @@ export default function TrainParkingPage() {
 
   const fetchTrains = async () => {
     try {
-      const response = await axios.get(
-        `${API_BASE}/api/nightly/trains`
-      );
+      const response = await axios.get(`${API_BASE}/api/nightly/trains`);
       // Convert all train IDs to TM format for display
       const tmTrains = response.data.trains.map((train: string) =>
         mapToTMFormat(train)
       );
-      setTrains(tmTrains);
+      // Ensure uniqueness to avoid duplicate keys
+      setTrains(Array.from(new Set(tmTrains)));
     } catch (error) {
       console.error("Error fetching trains:", error);
     }
@@ -205,13 +202,41 @@ export default function TrainParkingPage() {
       const response = await axios.get(
         `${API_BASE}/api/nightly/parking/assignments`
       );
-      // Convert all train IDs in parking data to TM format
-      const tmParkingData =
-        response.data.assignments?.map((assignment: TrainParking) => ({
+
+      const rawAssignments = response.data.assignments || [];
+      const tmParkingData: TrainParking[] = rawAssignments.map(
+        (assignment: any) => ({
           ...assignment,
-          train_id: mapToTMFormat(assignment.train_id), // Save as TM format
-        })) || [];
-      setParkingData(tmParkingData);
+          train_id: mapToTMFormat(assignment.train_id),
+        })
+      );
+
+      // First, separate historical and active assignments
+      const historicalAssignments = tmParkingData.filter(
+        (a) => a.departure_time
+      );
+      const activeAssignments = tmParkingData.filter((a) => !a.departure_time);
+
+      // Group active assignments by train_id and keep only the latest one for each train
+      const latestActiveAssignments = new Map<string, TrainParking>();
+
+      activeAssignments.forEach((assignment) => {
+        const existing = latestActiveAssignments.get(assignment.train_id);
+        if (
+          !existing ||
+          new Date(assignment.arrival_time) > new Date(existing.arrival_time)
+        ) {
+          latestActiveAssignments.set(assignment.train_id, assignment);
+        }
+      });
+
+      // Combine historical assignments with unique active assignments
+      const uniqueData = [
+        ...historicalAssignments,
+        ...Array.from(latestActiveAssignments.values()),
+      ];
+
+      setParkingData(uniqueData);
     } catch (error) {
       console.error("Error fetching parking data:", error);
       setParkingData([]);
@@ -323,10 +348,7 @@ export default function TrainParkingPage() {
           payload
         );
       } else {
-        await axios.post(
-          `${API_BASE}/api/nightly/parking/assignment`,
-          payload
-        );
+        await axios.post(`${API_BASE}/api/nightly/parking/assignment`, payload);
       }
 
       resetForm();
@@ -373,12 +395,9 @@ export default function TrainParkingPage() {
     if (!over) return;
 
     const trainId = active.data.current?.trainId;
-    const spotId = over.id as string; // Format: "track-position-type" e.g., "01-1-parking"
-    const spotData = over.data.current;
+    const spotId = over.id as string;
 
     if (!trainId || !spotId) return;
-
-    console.log(`Dropped train ${trainId} on ${spotId}`);
 
     // Parse spot ID
     // We need a consistent ID format for spots. Let's use: "TRACK_ID:POSITION:TYPE"
@@ -448,10 +467,7 @@ export default function TrainParkingPage() {
           arrival_time: new Date().toISOString(),
           notes: "",
         };
-        await axios.post(
-          `${API_BASE}/api/nightly/parking/assignment`,
-          payload
-        );
+        await axios.post(`${API_BASE}/api/nightly/parking/assignment`, payload);
       }
 
       fetchParkingData();
@@ -470,10 +486,12 @@ export default function TrainParkingPage() {
   };
 
   // Get trains that are NOT currently parked
-  const unparkedTrains = trains.filter(
-    (trainId) =>
-      !parkingData.some((p) => p.train_id === trainId && !p.departure_time)
-  );
+  const unparkedTrains = Array.from(new Set(trains)).filter((trainId) => {
+    const isParked = parkingData.some(
+      (p) => p.train_id === trainId && !p.departure_time
+    );
+    return !isParked;
+  });
 
   return (
     <DndContext
@@ -551,9 +569,9 @@ export default function TrainParkingPage() {
                     <option value="" className="bg-slate-800">
                       {t("selectTrainPlaceholder")}
                     </option>
-                    {trains.map((train) => (
+                    {Array.from(new Set(trains)).map((train, idx) => (
                       <option
-                        key={train}
+                        key={`${train}-${idx}`}
                         value={train}
                         className="bg-slate-800"
                       >
@@ -651,15 +669,14 @@ export default function TrainParkingPage() {
                             key={position}
                             value={position}
                             disabled={isOccupied && !isEditing}
-                            className={`bg-slate-800 ${
-                              isOccupied ? "text-red-400" : ""
-                            }`}
+                            className={`bg-slate-800 ${isOccupied ? "text-red-400" : ""
+                              }`}
                           >
                             {t("position")} {position}
                             {isOccupied
                               ? ` (${t("occupiedBy", {
-                                  trainId: occupyingTrain?.train_id || "",
-                                })})`
+                                trainId: occupyingTrain?.train_id || "",
+                              })})`
                               : ` (${t("available")})`}
                           </option>
                         );
@@ -682,13 +699,13 @@ export default function TrainParkingPage() {
                         <div className="text-sm text-slate-400 mt-1">
                           {isPositionOccupied(selectedTrack, 1, "maintenance")
                             ? t("occupiedBy", {
-                                trainId:
-                                  getTrainAtPosition(
-                                    selectedTrack,
-                                    1,
-                                    "maintenance"
-                                  )?.train_id || "",
-                              })
+                              trainId:
+                                getTrainAtPosition(
+                                  selectedTrack,
+                                  1,
+                                  "maintenance"
+                                )?.train_id || "",
+                            })
                             : t("available")}
                         </div>
                       )}
@@ -715,24 +732,23 @@ export default function TrainParkingPage() {
                   disabled={
                     !selectedTrain || !selectedTrack || !selectedPosition
                   }
-                  className={`w-full py-4 px-6 text-lg font-semibold text-slate-50 rounded-xl border border-transparent transition-all duration-300 hover:transform hover:-translate-y-1 hover:shadow-xl focus:outline-none focus:ring-4 backdrop-blur-sm ${
-                    !selectedTrain || !selectedTrack || !selectedPosition
+                  className={`w-full py-4 px-6 text-lg font-semibold text-slate-50 rounded-xl border border-transparent transition-all duration-300 hover:transform hover:-translate-y-1 hover:shadow-xl focus:outline-none focus:ring-4 backdrop-blur-sm ${!selectedTrain || !selectedTrack || !selectedPosition
                       ? "opacity-50 cursor-not-allowed"
                       : ""
-                  }`}
+                    }`}
                   style={{
                     background:
                       !selectedTrain || !selectedTrack || !selectedPosition
                         ? "rgba(100, 116, 139, 0.5)"
                         : isEditing
-                        ? "linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)"
-                        : "linear-gradient(135deg, #38bdf8 0%, #06d6a0 100%)",
+                          ? "linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)"
+                          : "linear-gradient(135deg, #38bdf8 0%, #06d6a0 100%)",
                     boxShadow:
                       !selectedTrain || !selectedTrack || !selectedPosition
                         ? "none"
                         : isEditing
-                        ? "0 10px 25px -5px rgba(251, 191, 36, 0.3)"
-                        : "0 10px 25px -5px rgba(56, 189, 248, 0.3)",
+                          ? "0 10px 25px -5px rgba(251, 191, 36, 0.3)"
+                          : "0 10px 25px -5px rgba(56, 189, 248, 0.3)",
                   }}
                 >
                   {isEditing
@@ -924,9 +940,9 @@ export default function TrainParkingPage() {
                     <tbody className="divide-y divide-slate-600/30">
                       {parkingData
                         .filter((assignment) => !assignment.departure_time)
-                        .map((assignment) => (
+                        .map((assignment, idx) => (
                           <tr
-                            key={assignment.train_id}
+                            key={`${assignment.train_id}-${assignment.bay}-${assignment.position}-${assignment.arrival_time}`}
                             className="hover:bg-slate-700/30 transition-colors duration-200"
                           >
                             <td className="px-6 py-4 font-medium text-slate-50">
@@ -940,11 +956,10 @@ export default function TrainParkingPage() {
                             </td>
                             <td className="px-6 py-4">
                               <span
-                                className={`px-3 py-1 text-xs rounded-full font-medium capitalize border ${
-                                  assignment.status === "parking"
+                                className={`px-3 py-1 text-xs rounded-full font-medium capitalize border ${assignment.status === "parking"
                                     ? "bg-emerald-400/20 text-emerald-300 border-emerald-400/30"
                                     : "bg-amber-400/20 text-amber-300 border-amber-400/30"
-                                }`}
+                                  }`}
                               >
                                 {assignment.status}
                               </span>
