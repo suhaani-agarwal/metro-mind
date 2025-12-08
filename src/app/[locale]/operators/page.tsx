@@ -117,16 +117,24 @@ export default function TrainOperatorsPage() {
   const [selectedOperator, setSelectedOperator] = useState<string>('');
   const [dutySchedule, setDutySchedule] = useState<DutySchedule | null>(null);
   const [dutySummary, setDutySummary] = useState<DutySummary | null>(null);
+  const [serviceDate, setServiceDate] = useState<string>(() => {
+    // Default view to "tomorrow" so that leave overrides apply to the planning day
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return tomorrow.toISOString().slice(0, 10);
+  });
   const [loading, setLoading] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [leaveLoading, setLeaveLoading] = useState(false);
+  const [leaveMessage, setLeaveMessage] = useState<string | null>(null);
 
   useEffect(() => {
     fetchOperators();
-    fetchDutySummary();
-  }, []);
+    fetchDutySummary(serviceDate);
+  }, [serviceDate]);
 
   const fetchOperators = async () => {
     try {
@@ -143,9 +151,10 @@ export default function TrainOperatorsPage() {
     }
   };
 
-  const fetchDutySummary = async () => {
+  const fetchDutySummary = async (targetDate?: string) => {
     try {
-      const response = await fetch(`${API_BASE}/api/operators/summary`);
+      const query = targetDate ? `?service_date=${encodeURIComponent(targetDate)}` : '';
+      const response = await fetch(`${API_BASE}/api/operators/summary${query}`);
       const data = await response.json();
       if (data.success) {
         setDutySummary(data.summary);
@@ -159,7 +168,8 @@ export default function TrainOperatorsPage() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${API_BASE}/api/operators/${operatorId}/duty`);
+      const query = serviceDate ? `?service_date=${encodeURIComponent(serviceDate)}` : '';
+      const response = await fetch(`${API_BASE}/api/operators/${operatorId}/duty${query}`);
       const data = await response.json();
 
       if (data.success) {
@@ -208,9 +218,50 @@ export default function TrainOperatorsPage() {
   };
 
   const getShiftColor = (shift: string) => {
+    if (shift.toUpperCase().includes('LEAVE')) return '#f97316';
     if (shift.includes('EARLY')) return '#06d6a0';
     if (shift.includes('LATE')) return '#38bdf8';
     return '#718096';
+  };
+
+  const markOnLeave = async () => {
+    if (!selectedOperator) return;
+    setLeaveLoading(true);
+    setError(null);
+    setLeaveMessage(null);
+    try {
+      const res = await fetch(`${API_BASE}/api/operators/leave`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          operator_id: selectedOperator,
+          // Align leave date with the service date currently shown in the roster
+          service_date: serviceDate,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setLeaveMessage(
+          data.message ||
+            `Marked operator ${selectedOperator} on leave for ${data.service_date}.`,
+        );
+        // Refresh roster to reflect updated schedule
+        fetchDutySummary(serviceDate);
+        // If we're looking at this operator's duty, refresh it too
+        if (dutySchedule && dutySchedule.operator_id === selectedOperator) {
+          fetchDutySchedule(selectedOperator);
+        }
+      } else {
+        setError(data.detail || 'Failed to mark operator on leave');
+      }
+    } catch (err) {
+      console.error('Error marking operator on leave:', err);
+      setError('Failed to mark operator on leave');
+    } finally {
+      setLeaveLoading(false);
+    }
   };
 
   const steps = ['Select Operator', 'View Schedule', 'Generate PDF'];
@@ -252,6 +303,12 @@ export default function TrainOperatorsPage() {
           {error && (
             <Alert severity="error" sx={{ mb: 3 }}>
               {error}
+            </Alert>
+          )}
+
+          {leaveMessage && (
+            <Alert severity="info" sx={{ mb: 3 }}>
+              {leaveMessage}
             </Alert>
           )}
 
@@ -331,14 +388,24 @@ export default function TrainOperatorsPage() {
                     </TableHead>
                     <TableBody>
                       {dutySummary.duty_assignments.map((row) => {
-                        const isOff = row.shift.includes('OFF');
-                        const isSpare = row.shift.includes('SPARE');
-                        const statusLabel = isOff ? 'OFF' : isSpare ? 'SPARE' : 'ON DUTY';
-                        const statusColor = isOff
-                          ? '#64748b'
-                          : isSpare
-                            ? '#fbbf24'
-                            : '#22c55e';
+                        const shiftUpper = (row.shift || '').toUpperCase();
+                        const isLeave = shiftUpper.includes('LEAVE');
+                        const isOff = shiftUpper.includes('OFF') || isLeave;
+                        const isSpare = shiftUpper.includes('SPARE');
+                        const statusLabel = isLeave
+                          ? 'ON LEAVE'
+                          : isOff
+                            ? 'OFF'
+                            : isSpare
+                              ? 'SPARE'
+                              : 'ON DUTY';
+                        const statusColor = isLeave
+                          ? '#f97316'
+                          : isOff
+                            ? '#64748b'
+                            : isSpare
+                              ? '#fbbf24'
+                              : '#22c55e';
 
                         return (
                           <TableRow
@@ -467,6 +534,15 @@ export default function TrainOperatorsPage() {
                     </Select>
                   </FormControl>
 
+                  {dutySummary && (
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="caption" sx={{ color: '#94a3b8' }}>
+                        Planning for service date:{' '}
+                        <strong>{serviceDate}</strong>
+                      </Typography>
+                    </Box>
+                  )}
+
                   <Button
                     variant="contained"
                     fullWidth
@@ -486,6 +562,31 @@ export default function TrainOperatorsPage() {
                     }}
                   >
                     {loading ? <CircularProgress size={24} /> : 'Generate Duty Schedule'}
+                  </Button>
+
+                  <Button
+                    variant="outlined"
+                    fullWidth
+                    size="large"
+                    onClick={markOnLeave}
+                    disabled={!selectedOperator || leaveLoading}
+                    sx={{
+                      mb: 2,
+                      py: 1.25,
+                      borderRadius: 2,
+                      borderColor: 'rgba(248, 250, 252, 0.4)',
+                      color: '#fed7aa',
+                      '&:hover': {
+                        borderColor: '#f97316',
+                        background: 'rgba(249, 115, 22, 0.1)',
+                      },
+                    }}
+                  >
+                    {leaveLoading ? (
+                      <CircularProgress size={24} />
+                    ) : (
+                      'Mark On Leave (Tomorrow) & Reassign'
+                    )}
                   </Button>
 
                   {dutySummary && (
