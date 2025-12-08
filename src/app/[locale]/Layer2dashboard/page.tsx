@@ -6,8 +6,6 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import autoTable from 'jspdf-autotable';
 
-// const API_BASE =
-//   "http://localhost:5005";
 const API_BASE =
   "http://localhost:5005";
 interface TrainAssignment {
@@ -210,6 +208,9 @@ const Layer2Dashboard: React.FC = () => {
   const [selectedScheduledTrain, setSelectedScheduledTrain] = useState<string>('');
   const [selectedStandbyTrain, setSelectedStandbyTrain] = useState<string>('');
   const [showAIAnalysis, setShowAIAnalysis] = useState(true);
+  const [selectedStandbyTrains, setSelectedStandbyTrains] = useState<string[]>([]); // Multiple selection
+  const [showStandbySelector, setShowStandbySelector] = useState(false); // Modal for selecting multiple
+  const [holidayNotification, setHolidayNotification] = useState<string | null>(null);
 
 
   const fetchScheduleData = useCallback(async () => {
@@ -234,8 +235,8 @@ const Layer2Dashboard: React.FC = () => {
       ) {
         throw new Error(result.error || result.status);
       }
-
-      setData(result);
+      const processedResult = autoAddHolidayTrains(result);
+      setData(processedResult);
 
     } catch (err) {
       console.error('Error fetching schedule:', err);
@@ -246,8 +247,14 @@ const Layer2Dashboard: React.FC = () => {
   }, [selectedDate]); // 👈 dependency here is mandatory
 
   useEffect(() => {
-    fetchScheduleData();
+    fetchTimetableData(); // Fetch timetable first to get holiday status
   }, [selectedDate]);
+
+useEffect(() => {
+    if (timetableData) {
+      fetchScheduleData();
+    }
+  }, [timetableData, fetchScheduleData]);
 
 
   const fetchStandbyTrains = async () => {
@@ -375,7 +382,7 @@ const Layer2Dashboard: React.FC = () => {
       const response = await fetch(`${API_BASE}/timetable/info?service_date=${selectedDate}`);
       const result = await response.json();
       setTimetableData(result);
-      setShowTimetable(true);
+      // setShowTimetable(true);
     } catch (err) {
       console.error('Error fetching timetable:', err);
     }
@@ -388,24 +395,6 @@ const Layer2Dashboard: React.FC = () => {
     if (score >= 65) return 'bg-orange-900/50 text-orange-300 border-orange-700';
     return 'bg-red-900/50 text-red-300 border-red-700';
   };
-
-  // const getServiceTypeColor = (serviceType: string): string => {
-  //   switch (serviceType) {
-  //     case 'public_holiday': return 'bg-purple-900/50 text-purple-300 border-purple-700';
-  //     case 'sunday': return 'bg-indigo-900/50 text-indigo-300 border-indigo-700';
-  //     case 'weekday': return 'bg-teal-900/50 text-teal-300 border-teal-700';
-  //     default: return 'bg-gray-900/50 text-gray-300 border-gray-700';
-  //   }
-  // };
-
-  // const getSolverStatusColor = (status: string): string => {
-  //   switch (status) {
-  //     case 'OPTIMAL': return 'bg-emerald-900/50 text-emerald-300 border-emerald-700';
-  //     case 'FEASIBLE': return 'bg-yellow-900/50 text-yellow-300 border-yellow-700';
-  //     case 'INFEASIBLE': return 'bg-red-900/50 text-red-300 border-red-700';
-  //     default: return 'bg-gray-900/50 text-gray-300 border-gray-700';
-  //   }
-  // };
 
   const getRecommendationColor = (decision: string): string => {
     switch (decision) {
@@ -447,6 +436,142 @@ const Layer2Dashboard: React.FC = () => {
       return { isHoliday: false, displayText: t('timetable.sundaySchedule') };
     }
     return { isHoliday: false, displayText: t('timetable.weekdaySchedule') };
+  };
+
+  const handleAddStandbyTrain = () => {
+  if (!data || !data.standby_trains || data.standby_trains.length === 0) {
+    alert(t('errors.noStandbyTrains'));
+    return;
+  }
+  
+  // Open the standby selector modal instead of adding immediately
+  setShowStandbySelector(true);
+  setSelectedStandbyTrains([]); // Clear previous selections
+};
+
+// New function to add multiple selected trains
+const handleAddSelectedStandbyTrains = () => {
+  if (selectedStandbyTrains.length === 0) {
+    alert(t('errors.selectAtLeastOneTrain'));
+    return;
+  }
+
+  setData(prevData => {
+    if (!prevData) return null;
+    
+    const updatedAssignments = [...(prevData.optimized_assignments || [])];
+    let updatedStandbyTrains = [...(prevData.standby_trains || [])];
+    const lastScheduledTrain = (prevData.optimized_assignments || []).slice().sort((a, b) => (b.departure_slot || 0) - (a.departure_slot || 0))[0];
+    let nextSlot = lastScheduledTrain ? (lastScheduledTrain.departure_slot || 0) + 1 : 1;
+    let nextOrder = lastScheduledTrain ? (lastScheduledTrain.departure_order || 0) + 1 : 1;
+
+    selectedStandbyTrains.forEach(trainId => {
+      const standbyTrain = updatedStandbyTrains.find(t => t.train_id === trainId);
+      if (standbyTrain) {
+        const newAssignment: TrainAssignment = {
+          train_id: standbyTrain.train_id,
+          bay: standbyTrain.bay,
+          bay_position: standbyTrain.bay_position,
+          readiness: standbyTrain.readiness,
+          readiness_summary: standbyTrain.readiness_summary,
+          readiness_details: standbyTrain.readiness_details,
+          departure_slot: nextSlot,
+          departure_order: nextOrder,
+          departure_time: '-',
+          optimization_score: 100,
+          needs_shunting: false,
+          is_priority_slot: true,
+        };
+        
+        updatedAssignments.push(newAssignment);
+        // Remove from standby list
+        updatedStandbyTrains = updatedStandbyTrains.filter(t => t.train_id !== trainId);
+        
+        nextSlot++;
+        nextOrder++;
+      }
+    });
+
+    return {
+      ...prevData,
+      optimized_assignments: updatedAssignments,
+      standby_trains: updatedStandbyTrains,
+      total_trains_scheduled: (prevData.total_trains_scheduled || 0) + selectedStandbyTrains.length,
+      total_standby_trains: (prevData.total_standby_trains || 0) - selectedStandbyTrains.length,
+    };
+  });
+
+  alert(t('success.standbyTrainsAdded', { count: selectedStandbyTrains.length }));
+  setShowStandbySelector(false);
+  setSelectedStandbyTrains([]);
+};
+// Add this function right after handleAddSelectedStandbyTrains
+const autoAddHolidayTrains = (scheduleData: OptimizationResult) => {
+  // Check if it's a holiday
+  const isHoliday = scheduleData?.timetable_info?.service_type === 'public_holiday' || false;
+  
+  if (!isHoliday || !scheduleData.standby_trains || scheduleData.standby_trains.length === 0) {
+    return scheduleData;
+  }
+  
+  // Get standby trains sorted by readiness (highest first)
+  const standbyTrainsSorted = [...scheduleData.standby_trains].sort((a, b) => b.readiness - a.readiness);
+  
+  // Take top 5 (or fewer if less available)
+  const topTrainsToAdd = standbyTrainsSorted.slice(0, 5);
+  
+  if (topTrainsToAdd.length === 0) {
+    return scheduleData;
+  }
+  
+  // Clone the data
+  const updatedData = { ...scheduleData };
+  const updatedAssignments = [...(updatedData.optimized_assignments || [])];
+  let updatedStandbyTrains = [...(updatedData.standby_trains || [])];
+  
+  // Find the last departure slot number
+  const lastScheduledTrain = updatedAssignments.sort((a, b) => (b.departure_slot || 0) - (a.departure_slot || 0))[0];
+  let nextSlot = lastScheduledTrain ? (lastScheduledTrain.departure_slot || 0) + 1 : 1;
+  let nextOrder = lastScheduledTrain ? (lastScheduledTrain.departure_order || 0) + 1 : 1;
+  
+  // Add each top train to the schedule
+  topTrainsToAdd.forEach(train => {
+    const newAssignment: TrainAssignment = {
+      train_id: train.train_id,
+      bay: train.bay,
+      bay_position: train.bay_position,
+      readiness: train.readiness,
+      readiness_summary: train.readiness_summary,
+      readiness_details: train.readiness_details,
+      departure_slot: nextSlot,
+      departure_order: nextOrder,
+      departure_time: '-',
+      optimization_score: 100,
+      needs_shunting: false,
+      is_priority_slot: true,
+    };
+    
+    updatedAssignments.push(newAssignment);
+    updatedStandbyTrains = updatedStandbyTrains.filter(t => t.train_id !== train.train_id);
+    
+    nextSlot++;
+    nextOrder++;
+  });
+  
+  // Update the data
+  updatedData.optimized_assignments = updatedAssignments;
+  updatedData.standby_trains = updatedStandbyTrains;
+  updatedData.total_trains_scheduled = (updatedData.total_trains_scheduled || 0) + topTrainsToAdd.length;
+  updatedData.total_standby_trains = Math.max(0, (updatedData.total_standby_trains || 0) - topTrainsToAdd.length);
+  
+  return updatedData;
+};
+  const fetchValidationData = async () => {
+    try {
+      await fetchSuggestedOverrides();
+    } catch (err) {
+      console.error('Error generating suggestions:', err);
+    }
   };
 
   if (loading) {
@@ -756,6 +881,21 @@ const Layer2Dashboard: React.FC = () => {
               />
 
 
+
+              {/* Remove this condition: timetableData?.holiday_check?.is_public_holiday && */}
+<button
+  onClick={handleAddStandbyTrain}
+  className={`px-4 py-2 text-white rounded-lg text-sm transition-all flex items-center gap-2 ${
+    data?.timetable_info?.service_type === 'public_holiday'
+      ? 'bg-purple-600 hover:bg-purple-700 animate-pulse'
+      : 'bg-purple-600 hover:bg-purple-700'
+  }`}
+>
+  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>
+  {t('button.addTrains')}{/* Updated translation key */}
+</button>
 
               <button
                 onClick={() => router.push('/rotation')}
@@ -1830,63 +1970,156 @@ const Layer2Dashboard: React.FC = () => {
         )}
       </div>
       {/* Override Modal */}
-      {showOverride && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-800 border border-gray-700 rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-2xl font-bold text-white">Override Schedule</h3>
-                <button onClick={() => setShowOverride(false)} className="text-gray-400 hover:text-gray-200 text-2xl">✕</button>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <h4 className="text-lg font-semibold text-gray-200 mb-3">Select Scheduled Train</h4>
-                  <div className="space-y-2 max-h-72 overflow-y-auto pr-2">
-                    {sortedAssignments.map((t) => (
-                      <div key={t.train_id} onClick={() => setSelectedScheduledTrain(t.train_id)}
-                        className={`p-3 border rounded cursor-pointer ${selectedScheduledTrain === t.train_id ? 'border-emerald-500 bg-emerald-900/30' : 'border-gray-600 hover:border-gray-500 bg-gray-900/30'}`}>
-                        <div className="flex justify-between">
-                          <div className="text-white font-medium">{t.train_id}</div>
-                          <div className="text-xs text-gray-400">Readiness {t.readiness}%</div>
-                        </div>
-                        <div className="text-xs text-gray-500">Bay {t.bay} • Slot {t.departure_slot}</div>
-                      </div>
-                    ))}
+{showOverride && (
+  <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div className="bg-gray-800 border border-gray-700 rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="p-6">
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-2xl font-bold text-white">Override Schedule</h3>
+          <button onClick={() => setShowOverride(false)} className="text-gray-400 hover:text-gray-200 text-2xl">✕</button>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <h4 className="text-lg font-semibold text-gray-200 mb-3">Select Scheduled Train</h4>
+            <div className="space-y-2 max-h-72 overflow-y-auto pr-2">
+              {sortedAssignments.map((t) => (
+                <div key={t.train_id} onClick={() => setSelectedScheduledTrain(t.train_id)}
+                  className={`p-3 border rounded cursor-pointer ${selectedScheduledTrain === t.train_id ? 'border-emerald-500 bg-emerald-900/30' : 'border-gray-600 hover:border-gray-500 bg-gray-900/30'}`}>
+                  <div className="flex justify-between">
+                    <div className="text-white font-medium">{t.train_id}</div>
+                    <div className="text-xs text-gray-400">Readiness {t.readiness}%</div>
                   </div>
+                  <div className="text-xs text-gray-500">Bay {t.bay} • Slot {t.departure_slot}</div>
                 </div>
-                <div>
-                  <h4 className="text-lg font-semibold text-gray-200 mb-3">Select Standby Train</h4>
-                  <div className="space-y-2 max-h-72 overflow-y-auto pr-2">
-                    {(data.standby_trains || []).map((t) => (
-                      <div key={t.train_id} onClick={() => setSelectedStandbyTrain(t.train_id)}
-                        className={`p-3 border rounded cursor-pointer ${selectedStandbyTrain === t.train_id ? 'border-emerald-500 bg-emerald-900/30' : 'border-gray-600 hover:border-gray-500 bg-gray-900/30'}`}>
-                        <div className="flex justify-between">
-                          <div className="text-white font-medium">{t.train_id}</div>
-                          <div className="text-xs text-gray-400">Readiness {t.readiness}%</div>
-                        </div>
-                        <div className="text-xs text-gray-500">Bay {t.bay} • Pos {t.bay_position}</div>
-                      </div>
-                    ))}
+              ))}
+            </div>
+          </div>
+          <div>
+            <h4 className="text-lg font-semibold text-gray-200 mb-3">Select Standby Train</h4>
+            <div className="space-y-2 max-h-72 overflow-y-auto pr-2">
+              {(data.standby_trains || []).map((t) => (
+                <div key={t.train_id} onClick={() => setSelectedStandbyTrain(t.train_id)}
+                  className={`p-3 border rounded cursor-pointer ${selectedStandbyTrain === t.train_id ? 'border-emerald-500 bg-emerald-900/30' : 'border-gray-600 hover:border-gray-500 bg-gray-900/30'}`}>
+                  <div className="flex justify-between">
+                    <div className="text-white font-medium">{t.train_id}</div>
+                    <div className="text-xs text-gray-400">Readiness {t.readiness}%</div>
                   </div>
+                  <div className="text-xs text-gray-500">Bay {t.bay} • Pos {t.bay_position}</div>
                 </div>
-              </div>
-              <div className="mt-6">
-                <label className="block text-sm font-medium text-gray-300 mb-1">Reason</label>
-                <textarea value={overrideReason} onChange={(e) => setOverrideReason(e.target.value)}
-                  className="w-full bg-gray-900 border border-gray-700 rounded-md text-white p-3 min-h-[100px] focus:outline-none focus:ring-2 focus:ring-emerald-600"></textarea>
-              </div>
-              <div className="mt-4 flex justify-end">
-                <button onClick={submitOverride} disabled={overrideSubmitting}
-                  className="px-4 py-2 bg-emerald-700 hover:bg-emerald-600 disabled:bg-gray-600 text-white rounded-md">
-                  {overrideSubmitting ? 'Saving...' : 'Save Override'}
-                </button>
-              </div>
+              ))}
             </div>
           </div>
         </div>
-      )}
+        <div className="mt-6">
+          <label className="block text-sm font-medium text-gray-300 mb-1">Reason</label>
+          <textarea value={overrideReason} onChange={(e) => setOverrideReason(e.target.value)}
+            className="w-full bg-gray-900 border border-gray-700 rounded-md text-white p-3 min-h-[100px] focus:outline-none focus:ring-2 focus:ring-emerald-600"></textarea>
+        </div>
+        <div className="mt-4 flex justify-end">
+          <button onClick={submitOverride} disabled={overrideSubmitting}
+            className="px-4 py-2 bg-emerald-700 hover:bg-emerald-600 disabled:bg-gray-600 text-white rounded-md">
+            {overrideSubmitting ? 'Saving...' : 'Save Override'}
+          </button>
+        </div>
+      </div>
     </div>
-  );
-};
+  </div>
+)}
 
+{/* Standby Train Selector Modal */}
+{showStandbySelector && data?.standby_trains && (
+  <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div className="bg-gray-800 border border-gray-700 rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="p-6">
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-2xl font-bold text-white">{t('standbySelector.title')}</h3>
+          <button 
+            onClick={() => setShowStandbySelector(false)}
+            className="text-gray-400 hover:text-gray-200 text-2xl"
+          >
+            ✕
+          </button>
+        </div>
+        
+        <p className="text-gray-400 mb-6">
+          {t('standbySelector.subtitle')} ({data.standby_trains.length} {t('standbySelector.available')})
+        </p>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-96 overflow-y-auto mb-6">
+          {data.standby_trains.map((train) => (
+            <div
+              key={train.train_id}
+              onClick={() => {
+                setSelectedStandbyTrains(prev => 
+                  prev.includes(train.train_id)
+                    ? prev.filter(id => id !== train.train_id)
+                    : [...prev, train.train_id]
+                );
+              }}
+              className={`p-4 border rounded-xl cursor-pointer transition-all ${
+                selectedStandbyTrains.includes(train.train_id)
+                  ? 'border-emerald-500 bg-emerald-900/30'
+                  : 'border-gray-600 hover:border-gray-500 bg-gray-900/30'
+              }`}
+            >
+              <div className="flex justify-between items-center">
+                <div>
+                  <div className="font-bold text-white">{train.train_id}</div>
+                  <div className="text-sm text-gray-400">
+                    {train.bay} • {t('schedule.position')} {train.bay_position}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className={`px-3 py-1 rounded text-xs font-bold border ${getReadinessColor(train.readiness)}`}>
+                    {train.readiness}%
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={selectedStandbyTrains.includes(train.train_id)}
+                    onChange={() => {}} // Handled by parent div click
+                    className="w-5 h-5 rounded border-gray-600 bg-gray-700"
+                  />
+                </div>
+              </div>
+              <div className="text-xs text-gray-500 mt-2 truncate" title={train.readiness_summary}>
+                {train.readiness_summary}
+              </div>
+            </div>
+          ))}
+        </div>
+        
+        {data.standby_trains.length === 0 && (
+          <div className="text-center py-8 text-gray-400">
+            <div className="text-4xl mb-2">🚂</div>
+            <p>{t('standbySelector.noTrains')}</p>
+          </div>
+        )}
+        
+        <div className="flex justify-between items-center mt-6">
+          <div className="text-gray-300">
+            {t('standbySelector.selected', { count: selectedStandbyTrains.length })}
+          </div>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setShowStandbySelector(false)}
+              className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg"
+            >
+              {t('buttons.cancel')}
+            </button>
+            <button
+              onClick={handleAddSelectedStandbyTrains}
+              disabled={selectedStandbyTrains.length === 0}
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg"
+            >
+              {t('buttons.addSelected', { count: selectedStandbyTrains.length })}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+</div>
+  )
+}
 export default Layer2Dashboard;
