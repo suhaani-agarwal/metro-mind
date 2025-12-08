@@ -139,10 +139,12 @@ export default function DepotCard({ depot, onDelete }: DepotCardProps) {
                     for (const chunk of chunks) {
                         const batch = writeBatch(db);
 
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         chunk.forEach((emp: any) => {
                             const newDocRef = doc(employeesRef);
 
                             // Normalize keys
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             const normalizedEmp: any = {};
                             Object.keys(emp).forEach(key => {
                                 const lowerKey = key.toLowerCase().replace(/[\s-_]/g, "");
@@ -197,6 +199,7 @@ export default function DepotCard({ depot, onDelete }: DepotCardProps) {
                     setUploadMessage("Employee database updated successfully!");
                     setHasData(true);
                     setTimeout(() => setUploadMessage(""), 3000);
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 } catch (error: any) {
                     console.error("Error processing file:", error);
                     setUploadMessage(`Error: ${error.message || "Failed to upload"}`);

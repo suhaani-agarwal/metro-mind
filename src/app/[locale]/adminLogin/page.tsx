@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, ChangeEvent } from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { useRouter, useParams } from "next/navigation";
@@ -18,7 +18,7 @@ export default function AdminLogin() {
   });
   const [loading, setLoading] = useState(false);
 
-  const handleChange = (e: any) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
@@ -42,8 +42,8 @@ export default function AdminLogin() {
 
       // 3️⃣ Redirect to admin dashboard with correct locale
       router.push(`/${locale}/adminDashboard`);
-    } catch (error: any) {
-      alert(error.message);
+    } catch (error) {
+      alert((error as Error).message);
     } finally {
       setLoading(false);
     }

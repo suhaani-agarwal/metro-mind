@@ -11,6 +11,13 @@ interface AddEmployeeModalProps {
     onClose: () => void;
 }
 
+interface Depot {
+    name: string;
+    // Add other properties if your API returns more fields
+    id?: number;
+    location?: string;
+}
+
 export default function AddEmployeeModal({ onClose }: AddEmployeeModalProps) {
     const t = useTranslations("AddEmployeeModal");
     const [depots, setDepots] = useState<string[]>([]);
@@ -35,9 +42,9 @@ export default function AddEmployeeModal({ onClose }: AddEmployeeModalProps) {
         async function fetchDepots() {
             try {
                 const res = await fetch(`${API_BASE}/api/onboarding/depot`);
-                const data = await res.json();
+                const data: Depot[] = await res.json();
                 if (Array.isArray(data)) {
-                    setDepots(data.map((d: any) => d.name));
+                    setDepots(data.map((d: Depot) => d.name));
                 }
             } catch (err) {
                 console.error("Failed to fetch depots", err);
