@@ -11,10 +11,12 @@ const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5005";
 // Dynamically import leaflet only on client side
 if (typeof window !== 'undefined') {
   try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     L = require('leaflet');
 
     // Fix for default markers in Leaflet with Next.js
     if (L && L.Icon.Default.prototype) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       delete (L.Icon.Default.prototype as any)._getIconUrl;
       L.Icon.Default.mergeOptions({
         iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
@@ -49,7 +51,9 @@ const Polyline = dynamic(() => import('react-leaflet').then(mod => mod.Polyline)
 });
 
 // Custom train icon - lazy initialization
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let trainIcon: any = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let delayedTrainIcon: any = null;
 
 const getTrainIcons = () => {
@@ -91,6 +95,7 @@ const getTrainIcons = () => {
 };
 
 // Custom station icon
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const createStationIcon = (isActive: boolean, isTerminal: boolean) => {
   if (!L) return null;
 
@@ -172,6 +177,7 @@ interface RotationData {
   base_trip_time: number;
   train_schedules: TrainSchedule[];
   stations: string[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   station_timings: any[];
   summary: {
     total_events: number;
@@ -395,7 +401,7 @@ const MetroMap: React.FC<{ rotationData: RotationData; onStationSelect: (station
       let isDelayed = false; // Initialize delay status
 
       const relevantStations = kochiMetroStations.concat(kakkanadExtensionStations, airportExtensionStations);
-      
+
       // Find the current or upcoming station event for this train
       for (let i = 0; i < train.station_events.length; i++) {
         const event = train.station_events[i];
@@ -485,31 +491,31 @@ const MetroMap: React.FC<{ rotationData: RotationData; onStationSelect: (station
 
   // Auto-zoom to main line
   const MapController = () => {
-  const map = useMap();
-  const shouldAutoZoom = useRef(true); // Only auto-zoom once
-  
-  useEffect(() => {
-    if (!map || !L || !shouldAutoZoom.current) return;
+    const map = useMap();
+    const shouldAutoZoom = useRef(true); // Only auto-zoom once
 
-    try {
-      const timer = setTimeout(() => {
-        const bounds = getMainLineBounds();
-        if (bounds && map && map.fitBounds && typeof map.fitBounds === 'function') {
-          map.fitBounds(bounds, {
-            padding: [80, 120],
-            maxZoom: 14
-          });
-          shouldAutoZoom.current = false; // Disable future auto-zooms
-        }
-      }, 100);
+    useEffect(() => {
+      if (!map || !L || !shouldAutoZoom.current) return;
 
-      return () => clearTimeout(timer);
-    } catch (error) {
-      console.error('Error fitting map bounds:', error);
-    }
-  }, [map]); // Only depends on map
-  return null;
-};
+      try {
+        const timer = setTimeout(() => {
+          const bounds = getMainLineBounds();
+          if (bounds && map && map.fitBounds && typeof map.fitBounds === 'function') {
+            map.fitBounds(bounds, {
+              padding: [80, 120],
+              maxZoom: 14
+            });
+            shouldAutoZoom.current = false; // Disable future auto-zooms
+          }
+        }, 100);
+
+        return () => clearTimeout(timer);
+      } catch (error) {
+        console.error('Error fitting map bounds:', error);
+      }
+    }, [map]); // Only depends on map
+    return null;
+  };
 
   const handleStationClick = (stationId: string) => {
     setSelectedStation(stationId);
@@ -645,10 +651,10 @@ const MetroMap: React.FC<{ rotationData: RotationData; onStationSelect: (station
 
             {/* Cleaner tile layer */}
             {/* Cleaner tile layer */}
-<TileLayer
-  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-/>
+            <TileLayer
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            />
 
             {/* Main Metro Line - Teal */}
             {(selectedLine === 'main' || selectedLine === 'all') && (

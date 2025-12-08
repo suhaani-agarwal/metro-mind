@@ -308,14 +308,16 @@
             "subtitle": "{count} ട്രെയിനുകൾ ഷെഡ്യൂൾ ചെയ്തു • AI-ഒപ്റ്റിമൈസ് ചെയ്ത അസൈൻമെന്റുകൾ",
             "location": "സ്ഥലം",
             "prioritySlot": "മുൻഗണനാ സ്ലോട്ട്",
-            "showingStandby": "{total} സ്റ്റാൻഡ്‌ബൈ ട്രെയിനുകളിൽ {count} എണ്ണം കാണിക്കുന്നു"
+            "showingStandby": "{total} സ്റ്റാൻഡ്‌ബൈ ട്രെയിനുകളിൽ {count} എണ്ണം കാണിക്കുന്നു",
+            "departureOrder": "പുറപ്പെടൽ ക്രമം"
         },
         "buttons": {
             "seeDelays": "കണക്കാക്കിയ കാലതാമസം കാണുക",
             "whatIf": "വാട്ട്-ഇഫ് അനാലിസിസ്",
             "viewTimetable": "ടൈംടേബിൾ കാണുക",
             "export": "PDF എക്സ്പോർട്ട്",
-            "share": "പങ്കിടുക"
+            "share": "പങ്കിടുക",
+            "saveToServer": "സെർവറിലേക്ക് സേവ് ചെയ്യുക"
         },
         "whatIf": {
             "title": "വാട്ട്-ഇഫ് ട്രെയിൻ സ്വാപ്പ് അനാലിസിസ്",
@@ -335,10 +337,29 @@
             "replace": "മാറ്റുക",
             "with": "ഇതിലേക്ക്",
             "readyForService": "സർവീസിന് തയ്യാറാണ്",
-            "issues": "പ്രശ്നങ്ങൾ"
+            "issues": "പ്രശ്നങ്ങൾ",
+            "issue": "{count, plural, one {പ്രശ്നം} other {പ്രശ്നങ്ങൾ}}"
         },
         "swapAnalysis": {
             "title": "സ്വാപ്പ് അനാലിസിസ് ഫലങ്ങൾ",
+            "approveSwap": "Approve Swap",
+            "rejectSwap": "Reject Swap",
+            "reviewRequired": "Review Required",
+            "neutral": "Neutral",
+            "keyFactors": "Key Factors",
+            "standbyTrain": "സ്റ്റാൻഡ്‌ബൈ ട്രെയിൻ",
+            "bay": "ബേ",
+            "shuntingMoves": "ഷണ്ടിംഗ് നീക്കങ്ങൾ",
+            "peak": "Peak",
+            "offPeak": "Off-peak",
+            "timePeriod": "Time Period",
+            "safetyWarnings": "Safety Warnings",
+            "operationalNotes": "Operational Notes",
+            "criticalIssues": "Critical Issues",
+            "recommendedActions": "Recommended Actions",
+            "analysisMethod": "Analysis Method",
+            "applyOverride": "Apply Override",
+            "close": "Close",
             "failedTitle": "അനാലിസിസ് പരാജയപ്പെട്ടു",
             "recommendation": "ശുപാർശ",
             "reasoning": "കാരണങ്ങൾ",

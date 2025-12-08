@@ -6,7 +6,7 @@ import { useRouter } from "@/i18n/routing";
 import { useTranslations } from "next-intl";
 
 const API_BASE =
-  process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5005";
+    process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5005";
 
 interface NightlyForm {
     fitness_certificates?: {
@@ -21,6 +21,7 @@ interface NightlyForm {
         advertiser: string;
         priority: string;
         exposure_hours_needed: number;
+        preferred_timing?: string;
     }[];
     cleaning?: {
         status: string;
@@ -61,7 +62,8 @@ export default function NightlyPage() {
         advertiser: string;
         priority: string;
         exposure_hours_needed: number;
-    }>({ advertiser: "", priority: "", exposure_hours_needed: 0 });
+        preferred_timing: string;
+    }>({ advertiser: "", priority: "", exposure_hours_needed: 0, preferred_timing: "" });
 
     // Load trains and check fitness expiry
     useEffect(() => {
@@ -113,7 +115,7 @@ export default function NightlyPage() {
         }
     };
 
-    const handleChange = (section: string, field: string, value: any) => {
+    const handleChange = (section: string, field: string, value: string | number | boolean) => {
         setForm((prev) => ({
             ...prev,
             [section]: {
@@ -432,7 +434,7 @@ export default function NightlyPage() {
                         </div>
                         {showAddBranding && (
                             <div className="space-y-6">
-                                <div className="grid md:grid-cols-3 gap-4">
+                                <div className="grid md:grid-cols-4 gap-4">
                                     <div className="space-y-2">
                                         <label className="block text-sm font-medium text-slate-300">
                                             {t("branding.advertiser")}
@@ -498,6 +500,38 @@ export default function NightlyPage() {
                                             style={{ backgroundColor: "rgba(30, 41, 59, 0.6)" }}
                                         />
                                     </div>
+                                    <div className="space-y-2">
+                                        <label className="block text-sm font-medium text-slate-300">
+                                            Preferred Timing
+                                        </label>
+                                        <select
+                                            value={brandingDraft.preferred_timing}
+                                            onChange={(e) =>
+                                                setBrandingDraft((d) => ({
+                                                    ...d,
+                                                    preferred_timing: e.target.value,
+                                                }))
+                                            }
+                                            className="w-full p-4 rounded-xl border border-slate-600/50 text-slate-50 transition-all duration-300 hover:border-emerald-400/50 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 outline-none backdrop-blur-sm"
+                                            style={{ backgroundColor: "rgba(30, 41, 59, 0.6)" }}
+                                        >
+                                            <option value="" className="bg-slate-800">
+                                                Any Time
+                                            </option>
+                                            <option value="office_hours" className="bg-slate-800">
+                                                Office Hours (09:00 - 17:00)
+                                            </option>
+                                            <option value="school_hours" className="bg-slate-800">
+                                                School Hours (8:00 - 14:00)
+                                            </option>
+                                            <option value="morning_peak" className="bg-slate-800">
+                                                Morning Peak
+                                            </option>
+                                            <option value="evening_peak" className="bg-slate-800">
+                                                Evening Peak
+                                            </option>
+                                        </select>
+                                    </div>
                                 </div>
                                 <div className="flex gap-3">
                                     <button
@@ -511,6 +545,7 @@ export default function NightlyPage() {
                                                     advertiser: "",
                                                     priority: "",
                                                     exposure_hours_needed: 0,
+                                                    preferred_timing: "",
                                                 });
                                             }
                                         }}
@@ -534,6 +569,7 @@ export default function NightlyPage() {
                                                     <span>
                                                         {b.advertiser} • {b.priority} •{" "}
                                                         {b.exposure_hours_needed}h
+                                                        {b.preferred_timing ? ` • ${b.preferred_timing}` : ""}
                                                     </span>
                                                     <button
                                                         onClick={() =>
