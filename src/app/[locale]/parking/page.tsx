@@ -205,6 +205,7 @@ export default function TrainParkingPage() {
 
       const rawAssignments = response.data.assignments || [];
       const tmParkingData: TrainParking[] = rawAssignments.map(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (assignment: any) => ({
           ...assignment,
           train_id: mapToTMFormat(assignment.train_id),

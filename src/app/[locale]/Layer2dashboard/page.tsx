@@ -582,6 +582,8 @@ const Layer2Dashboard: React.FC = () => {
       }
     });
     // Standby Trains Section
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const finalY = (doc as any).lastAutoTable.finalY + 10;
     if (finalY < 250 && data?.standby_trains && data.standby_trains.length > 0) {
       doc.setFontSize(14);
