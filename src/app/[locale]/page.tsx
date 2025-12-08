@@ -401,7 +401,7 @@ export default function LandingPage() {
 
                 {/* Admin Login Button */}
                 <motion.a
-                  href={`/${locale}/adminSignUp`}
+                  href={`/${locale}/adminLogin`}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   className="relative group"
@@ -777,18 +777,18 @@ export default function LandingPage() {
               © {currentYear} {t("heroTitle")}. {t("footer.rights")}
             </p>
             <div className="flex space-x-6">
-              <a
+              {/* <a
                 href="/privacy"
                 className="text-slate-400 hover:text-slate-50 transition-colors duration-300 text-sm"
               >
                 {t("footer.privacy")}
-              </a>
-              <a
+              </a> */}
+              {/* <a
                 href="/terms"
                 className="text-slate-400 hover:text-slate-50 transition-colors duration-300 text-sm"
               >
                 {t("footer.terms")}
-              </a>
+              </a> */}
             </div>
           </div>
         </div>
