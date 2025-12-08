@@ -209,7 +209,6 @@ const Layer2Dashboard: React.FC = () => {
   const [showAIAnalysis, setShowAIAnalysis] = useState(true);
   const [selectedStandbyTrains, setSelectedStandbyTrains] = useState<string[]>([]); // Multiple selection
   const [showStandbySelector, setShowStandbySelector] = useState(false); // Modal for selecting multiple
-  const [holidayNotification, setHolidayNotification] = useState<string | null>(null);
 
 
   const fetchScheduleData = useCallback(async () => {
@@ -249,7 +248,7 @@ const Layer2Dashboard: React.FC = () => {
     fetchTimetableData(); // Fetch timetable first to get holiday status
   }, [selectedDate]);
 
-useEffect(() => {
+  useEffect(() => {
     if (timetableData) {
       fetchScheduleData();
     }
@@ -438,133 +437,133 @@ useEffect(() => {
   };
 
   const handleAddStandbyTrain = () => {
-  if (!data || !data.standby_trains || data.standby_trains.length === 0) {
-    alert(t('errors.noStandbyTrains'));
-    return;
-  }
-  
-  // Open the standby selector modal instead of adding immediately
-  setShowStandbySelector(true);
-  setSelectedStandbyTrains([]); // Clear previous selections
-};
+    if (!data || !data.standby_trains || data.standby_trains.length === 0) {
+      alert(t('errors.noStandbyTrains'));
+      return;
+    }
 
-// New function to add multiple selected trains
-const handleAddSelectedStandbyTrains = () => {
-  if (selectedStandbyTrains.length === 0) {
-    alert(t('errors.selectAtLeastOneTrain'));
-    return;
-  }
+    // Open the standby selector modal instead of adding immediately
+    setShowStandbySelector(true);
+    setSelectedStandbyTrains([]); // Clear previous selections
+  };
 
-  setData(prevData => {
-    if (!prevData) return null;
-    
-    const updatedAssignments = [...(prevData.optimized_assignments || [])];
-    let updatedStandbyTrains = [...(prevData.standby_trains || [])];
-    const lastScheduledTrain = (prevData.optimized_assignments || []).slice().sort((a, b) => (b.departure_slot || 0) - (a.departure_slot || 0))[0];
+  // New function to add multiple selected trains
+  const handleAddSelectedStandbyTrains = () => {
+    if (selectedStandbyTrains.length === 0) {
+      alert(t('errors.selectAtLeastOneTrain'));
+      return;
+    }
+
+    setData(prevData => {
+      if (!prevData) return null;
+
+      const updatedAssignments = [...(prevData.optimized_assignments || [])];
+      let updatedStandbyTrains = [...(prevData.standby_trains || [])];
+      const lastScheduledTrain = (prevData.optimized_assignments || []).slice().sort((a, b) => (b.departure_slot || 0) - (a.departure_slot || 0))[0];
+      let nextSlot = lastScheduledTrain ? (lastScheduledTrain.departure_slot || 0) + 1 : 1;
+      let nextOrder = lastScheduledTrain ? (lastScheduledTrain.departure_order || 0) + 1 : 1;
+
+      selectedStandbyTrains.forEach(trainId => {
+        const standbyTrain = updatedStandbyTrains.find(t => t.train_id === trainId);
+        if (standbyTrain) {
+          const newAssignment: TrainAssignment = {
+            train_id: standbyTrain.train_id,
+            bay: standbyTrain.bay,
+            bay_position: standbyTrain.bay_position,
+            readiness: standbyTrain.readiness,
+            readiness_summary: standbyTrain.readiness_summary,
+            readiness_details: standbyTrain.readiness_details,
+            departure_slot: nextSlot,
+            departure_order: nextOrder,
+            departure_time: '-',
+            optimization_score: 100,
+            needs_shunting: false,
+            is_priority_slot: true,
+          };
+
+          updatedAssignments.push(newAssignment);
+          // Remove from standby list
+          updatedStandbyTrains = updatedStandbyTrains.filter(t => t.train_id !== trainId);
+
+          nextSlot++;
+          nextOrder++;
+        }
+      });
+
+      return {
+        ...prevData,
+        optimized_assignments: updatedAssignments,
+        standby_trains: updatedStandbyTrains,
+        total_trains_scheduled: (prevData.total_trains_scheduled || 0) + selectedStandbyTrains.length,
+        total_standby_trains: (prevData.total_standby_trains || 0) - selectedStandbyTrains.length,
+      };
+    });
+
+    alert(t('success.standbyTrainsAdded', { count: selectedStandbyTrains.length }));
+    setShowStandbySelector(false);
+    setSelectedStandbyTrains([]);
+  };
+  // Add this function right after handleAddSelectedStandbyTrains
+  const autoAddHolidayTrains = (scheduleData: OptimizationResult) => {
+    // Check if it's a holiday
+    const isHoliday = scheduleData?.timetable_info?.service_type === 'public_holiday' || false;
+
+    if (!isHoliday || !scheduleData.standby_trains || scheduleData.standby_trains.length === 0) {
+      return scheduleData;
+    }
+
+    // Get standby trains sorted by readiness (highest first)
+    const standbyTrainsSorted = [...scheduleData.standby_trains].sort((a, b) => b.readiness - a.readiness);
+
+    // Take top 5 (or fewer if less available)
+    const topTrainsToAdd = standbyTrainsSorted.slice(0, 5);
+
+    if (topTrainsToAdd.length === 0) {
+      return scheduleData;
+    }
+
+    // Clone the data
+    const updatedData = { ...scheduleData };
+    const updatedAssignments = [...(updatedData.optimized_assignments || [])];
+    let updatedStandbyTrains = [...(updatedData.standby_trains || [])];
+
+    // Find the last departure slot number
+    const lastScheduledTrain = updatedAssignments.sort((a, b) => (b.departure_slot || 0) - (a.departure_slot || 0))[0];
     let nextSlot = lastScheduledTrain ? (lastScheduledTrain.departure_slot || 0) + 1 : 1;
     let nextOrder = lastScheduledTrain ? (lastScheduledTrain.departure_order || 0) + 1 : 1;
 
-    selectedStandbyTrains.forEach(trainId => {
-      const standbyTrain = updatedStandbyTrains.find(t => t.train_id === trainId);
-      if (standbyTrain) {
-        const newAssignment: TrainAssignment = {
-          train_id: standbyTrain.train_id,
-          bay: standbyTrain.bay,
-          bay_position: standbyTrain.bay_position,
-          readiness: standbyTrain.readiness,
-          readiness_summary: standbyTrain.readiness_summary,
-          readiness_details: standbyTrain.readiness_details,
-          departure_slot: nextSlot,
-          departure_order: nextOrder,
-          departure_time: '-',
-          optimization_score: 100,
-          needs_shunting: false,
-          is_priority_slot: true,
-        };
-        
-        updatedAssignments.push(newAssignment);
-        // Remove from standby list
-        updatedStandbyTrains = updatedStandbyTrains.filter(t => t.train_id !== trainId);
-        
-        nextSlot++;
-        nextOrder++;
-      }
+    // Add each top train to the schedule
+    topTrainsToAdd.forEach(train => {
+      const newAssignment: TrainAssignment = {
+        train_id: train.train_id,
+        bay: train.bay,
+        bay_position: train.bay_position,
+        readiness: train.readiness,
+        readiness_summary: train.readiness_summary,
+        readiness_details: train.readiness_details,
+        departure_slot: nextSlot,
+        departure_order: nextOrder,
+        departure_time: '-',
+        optimization_score: 100,
+        needs_shunting: false,
+        is_priority_slot: true,
+      };
+
+      updatedAssignments.push(newAssignment);
+      updatedStandbyTrains = updatedStandbyTrains.filter(t => t.train_id !== train.train_id);
+
+      nextSlot++;
+      nextOrder++;
     });
 
-    return {
-      ...prevData,
-      optimized_assignments: updatedAssignments,
-      standby_trains: updatedStandbyTrains,
-      total_trains_scheduled: (prevData.total_trains_scheduled || 0) + selectedStandbyTrains.length,
-      total_standby_trains: (prevData.total_standby_trains || 0) - selectedStandbyTrains.length,
-    };
-  });
+    // Update the data
+    updatedData.optimized_assignments = updatedAssignments;
+    updatedData.standby_trains = updatedStandbyTrains;
+    updatedData.total_trains_scheduled = (updatedData.total_trains_scheduled || 0) + topTrainsToAdd.length;
+    updatedData.total_standby_trains = Math.max(0, (updatedData.total_standby_trains || 0) - topTrainsToAdd.length);
 
-  alert(t('success.standbyTrainsAdded', { count: selectedStandbyTrains.length }));
-  setShowStandbySelector(false);
-  setSelectedStandbyTrains([]);
-};
-// Add this function right after handleAddSelectedStandbyTrains
-const autoAddHolidayTrains = (scheduleData: OptimizationResult) => {
-  // Check if it's a holiday
-  const isHoliday = scheduleData?.timetable_info?.service_type === 'public_holiday' || false;
-  
-  if (!isHoliday || !scheduleData.standby_trains || scheduleData.standby_trains.length === 0) {
-    return scheduleData;
-  }
-  
-  // Get standby trains sorted by readiness (highest first)
-  const standbyTrainsSorted = [...scheduleData.standby_trains].sort((a, b) => b.readiness - a.readiness);
-  
-  // Take top 5 (or fewer if less available)
-  const topTrainsToAdd = standbyTrainsSorted.slice(0, 5);
-  
-  if (topTrainsToAdd.length === 0) {
-    return scheduleData;
-  }
-  
-  // Clone the data
-  const updatedData = { ...scheduleData };
-  const updatedAssignments = [...(updatedData.optimized_assignments || [])];
-  let updatedStandbyTrains = [...(updatedData.standby_trains || [])];
-  
-  // Find the last departure slot number
-  const lastScheduledTrain = updatedAssignments.sort((a, b) => (b.departure_slot || 0) - (a.departure_slot || 0))[0];
-  let nextSlot = lastScheduledTrain ? (lastScheduledTrain.departure_slot || 0) + 1 : 1;
-  let nextOrder = lastScheduledTrain ? (lastScheduledTrain.departure_order || 0) + 1 : 1;
-  
-  // Add each top train to the schedule
-  topTrainsToAdd.forEach(train => {
-    const newAssignment: TrainAssignment = {
-      train_id: train.train_id,
-      bay: train.bay,
-      bay_position: train.bay_position,
-      readiness: train.readiness,
-      readiness_summary: train.readiness_summary,
-      readiness_details: train.readiness_details,
-      departure_slot: nextSlot,
-      departure_order: nextOrder,
-      departure_time: '-',
-      optimization_score: 100,
-      needs_shunting: false,
-      is_priority_slot: true,
-    };
-    
-    updatedAssignments.push(newAssignment);
-    updatedStandbyTrains = updatedStandbyTrains.filter(t => t.train_id !== train.train_id);
-    
-    nextSlot++;
-    nextOrder++;
-  });
-  
-  // Update the data
-  updatedData.optimized_assignments = updatedAssignments;
-  updatedData.standby_trains = updatedStandbyTrains;
-  updatedData.total_trains_scheduled = (updatedData.total_trains_scheduled || 0) + topTrainsToAdd.length;
-  updatedData.total_standby_trains = Math.max(0, (updatedData.total_standby_trains || 0) - topTrainsToAdd.length);
-  
-  return updatedData;
-};
+    return updatedData;
+  };
   const fetchValidationData = async () => {
     try {
       await fetchSuggestedOverrides();
@@ -820,20 +819,20 @@ const autoAddHolidayTrains = (scheduleData: OptimizationResult) => {
       const doc = generatePDF();
       const pdfBlob = doc.output('blob');
       const pdfFile = new File([pdfBlob], 'kochi-metro-schedule.pdf', { type: 'application/pdf' });
-  
+
       const form = new FormData();
       form.append('file', pdfFile);
-  
+
       const res = await fetch(`${API_BASE}/save-schedule-pdf`, {
         method: 'POST',
         body: form,
       });
-  
+
       if (!res.ok) {
         const e = await res.json().catch(() => ({ detail: t('errors.saveFailed') }));
         throw new Error(e.detail || t('errors.saveFailed'));
       }
-  
+
       alert(t('success.saveToServer'));
     } catch (err) {
       console.error('Save to server failed', err);
@@ -843,11 +842,11 @@ const autoAddHolidayTrains = (scheduleData: OptimizationResult) => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-6">
-      <div className="max-w-[1800px] mx-auto space-y-6">
+      <div className="max-w-7xl mx-auto p-4 md:p-8 space-y-6 md:space-y-8">
 
         {/* Clean Header */}
         <div className="bg-slate-800/50 border-0 rounded-xl p-4">
-          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             {/* Title Section */}
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-gradient-to-br from-teal-500 to-emerald-600 rounded-xl flex items-center justify-center">
@@ -856,17 +855,15 @@ const autoAddHolidayTrains = (scheduleData: OptimizationResult) => {
                 </svg>
               </div>
               <div>
-                <h1 className="text-4xl font-bold mb-2">
-                  <span className="bg-gradient-to-r from-teal-400 to-emerald-500 bg-clip-text text-transparent">
-                    {t('header.title')}
-                  </span>
+                <h1 className="text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-emerald-400 drop-shadow-lg">
+                  {t('header.title')}
                 </h1>
                 <p className="text-sm text-slate-400 mt-0.5">{t('header.subtitle')}</p>
               </div>
             </div>
 
             {/* Status & Controls */}
-            <div className="flex items-center gap-4">
+            <div className="flex flex-col md:flex-row items-stretch md:items-center gap-4 w-full md:w-auto">
               <div className="flex items-center gap-2 px-4 py-2 bg-slate-800/50 rounded-lg border border-slate-700">
                 <div className={`w-2 h-2 rounded-full ${data.solver_status === 'OPTIMAL' ? 'bg-emerald-500 animate-pulse' : 'bg-yellow-500'}`}></div>
                 <span className="text-sm font-medium text-slate-200">{data.solver_status}</span>
@@ -876,35 +873,36 @@ const autoAddHolidayTrains = (scheduleData: OptimizationResult) => {
                 type="date"
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
-                className="bg-slate-800 text-slate-200 rounded-lg px-4 py-2 text-sm border border-slate-700 focus:outline-none focus:border-teal-500 transition-colors"
+                className="bg-slate-800 text-slate-200 rounded-lg px-4 py-2 text-sm border border-slate-700 focus:outline-none focus:border-teal-500 transition-colors w-full md:w-auto"
               />
 
-
-
-              {/* Remove this condition: timetableData?.holiday_check?.is_public_holiday && */}
 <button
   onClick={handleAddStandbyTrain}
-  className={`px-4 py-2 text-white rounded-lg text-sm transition-all flex items-center gap-2 ${
-    data?.timetable_info?.service_type === 'public_holiday'
-      ? 'bg-purple-600 hover:bg-purple-700 animate-pulse'
-      : 'bg-purple-600 hover:bg-purple-700'
-  }`}
+  className="px-4 py-2 bg-gradient-to-r from-slate-800 to-gray-900 hover:from-gray-900 hover:to-black text-white rounded-lg text-sm transition-all flex items-center justify-center gap-2 w-full md:w-auto shadow-md hover:shadow-lg border border-gray-700/30"
 >
   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
   </svg>
-  {t('button.addTrains')}{/* Updated translation key */}
+  {t('button.addTrains')}
 </button>
 
-              <button
-                onClick={() => router.push('/rotation')}
-                className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm transition-all flex items-center gap-2"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                {t('buttons.seeDelays')}
-              </button>
+<button
+  onClick={() => router.push('/rotation')}
+  className="px-4 py-2 bg-gradient-to-r from-slate-600 to-slate-700 hover:from-slate-700 hover:to-slate-800 text-white rounded-lg text-sm transition-all flex items-center justify-center gap-2 w-full md:w-auto shadow-md hover:shadow-lg"
+
+>
+  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>
+  {t('buttons.seeDelays')}
+</button>
+
+<button
+  onClick={() => router.push('/operators')}
+  className="px-4 py-2 bg-gradient-to-r from-slate-800 to-gray-900 hover:from-gray-900 hover:to-black text-white rounded-lg text-sm transition-all flex items-center justify-center gap-2 w-full md:w-auto shadow-md hover:shadow-lg border border-gray-700/30"
+>
+  {t('buttons.operatorSchedule')}
+</button>
             </div>
           </div>
         </div>
@@ -1106,7 +1104,7 @@ const autoAddHolidayTrains = (scheduleData: OptimizationResult) => {
             {/* Main Schedule Table */}
             <div className="bg-slate-800/50 border-0 rounded-xl p-4">
               {/* Table Header */}
-              <div className="flex justify-between items-center">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                   <h2 className="text-xl font-bold text-teal-400">{t('schedule.title')}</h2>
                   <p className="text-sm text-slate-400 mt-1">
@@ -1114,36 +1112,36 @@ const autoAddHolidayTrains = (scheduleData: OptimizationResult) => {
                   </p>
                 </div>
                 {/* Update the button group in header */}
-<div className="flex gap-3">
-  <button
-    onClick={downloadPDF}
-    className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-sm border border-slate-700 hover:border-slate-600 transition-all flex items-center gap-2"
-  >
-    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-    </svg>
-    {t('buttons.export')}
-  </button>
-  <button
-    onClick={shareSchedule}
-    className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-sm border border-slate-700 hover:border-slate-600 transition-all flex items-center gap-2"
-  >
-    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-    </svg>
-    {t('buttons.share')}
-  </button>
-  {/* Add Save to Server button */}
-  <button
-    onClick={saveToServer}
-    className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-sm border border-slate-700 hover:border-slate-600 transition-all flex items-center gap-2"
-  >
-    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5-5 5 5M12 5v12" />
-    </svg>
-    {t('buttons.saveToServer')}
-  </button>
-</div>
+                <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                  <button
+                    onClick={downloadPDF}
+                    className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-sm border border-slate-700 hover:border-slate-600 transition-all flex items-center justify-center gap-2 w-full md:w-auto"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    {t('buttons.export')}
+                  </button>
+                  <button
+                    onClick={shareSchedule}
+                    className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-sm border border-slate-700 hover:border-slate-600 transition-all flex items-center justify-center gap-2 w-full md:w-auto"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                    </svg>
+                    {t('buttons.share')}
+                  </button>
+                  {/* Add Save to Server button */}
+                  <button
+                    onClick={saveToServer}
+                    className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-sm border border-slate-700 hover:border-slate-600 transition-all flex items-center justify-center gap-2 w-full md:w-auto"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5-5 5 5M12 5v12" />
+                    </svg>
+                    {t('buttons.saveToServer')}
+                  </button>
+                </div>
               </div>
 
               {/* Table Content */}
@@ -1262,541 +1260,538 @@ const autoAddHolidayTrains = (scheduleData: OptimizationResult) => {
 
 
         {/* What-If Analysis Panel - ENHANCED VERSION */}
-{showWhatIf && (
-  <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-    <div className="bg-gray-800 border border-gray-700 rounded-2xl shadow-2xl max-w-7xl w-full max-h-[90vh] overflow-y-auto">
-      <div className="p-6">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h3 className="text-2xl font-bold text-white">{t('whatIf.title')}</h3>
-            <p className="text-gray-400 mt-1">{t('whatIf.subtitle')}</p>
-          </div>
-          <button
-            onClick={() => setShowWhatIf(false)}
-            className="text-gray-400 hover:text-gray-200 text-2xl p-2 hover:bg-gray-700 rounded-lg transition-colors"
-          >
-            ✕
-          </button>
-        </div>
+        {showWhatIf && (
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-gray-800 border border-gray-700 rounded-2xl shadow-2xl max-w-7xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6">
+                <div className="flex justify-between items-center mb-6">
+                  <div>
+                    <h3 className="text-2xl font-bold text-white">{t('whatIf.title')}</h3>
+                    <p className="text-gray-400 mt-1">{t('whatIf.subtitle')}</p>
+                  </div>
+                  <button
+                    onClick={() => setShowWhatIf(false)}
+                    className="text-gray-400 hover:text-gray-200 text-2xl p-2 hover:bg-gray-700 rounded-lg transition-colors"
+                  >
+                    ✕
+                  </button>
+                </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Standby Trains - Enhanced */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h4 className="text-lg font-semibold text-gray-200">{t('whatIf.availableStandby')}</h4>
-              <span className="text-sm text-gray-400 bg-gray-700 px-3 py-1 rounded-full">
-                {standbyTrains.length} {t('whatIf.available')}
-              </span>
-            </div>
-            
-            {loadingWhatIf ? (
-              <div className="flex justify-center py-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-400"></div>
-              </div>
-            ) : (
-              <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
-                {standbyTrains.map((train) => {
-                  const readinessScore = train.readiness || 0;
-                  const issueCount = (train.readiness_summary?.match(/needs|poor|critical|overdue|required|attention|maintenance/gi) || []).length;
-                  
-                  return (
-                    <div
-                      key={train.train_id}
-                      className={`p-4 border rounded-xl cursor-pointer transition-all duration-200 hover:shadow-lg ${
-                        selectedStandbyTrain === train.train_id 
-                          ? 'border-purple-500 bg-purple-900/30 shadow-lg shadow-purple-900/20' 
-                          : 'border-gray-600 hover:border-gray-500 bg-gray-900/30 hover:bg-gray-900/50'
-                      }`}
-                      onClick={() => setSelectedStandbyTrain(train.train_id)}
-                    >
-                      <div className="flex justify-between items-start mb-2">
-                        <div className="flex items-center gap-3">
-                          <div className="text-xl">
-                            {readinessScore >= 95 ? '🟢' : 
-                             readinessScore >= 85 ? '🔵' : 
-                             readinessScore >= 75 ? '🟡' : 
-                             readinessScore >= 65 ? '🟠' : '🔴'}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {/* Standby Trains - Enhanced */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-lg font-semibold text-gray-200">{t('whatIf.availableStandby')}</h4>
+                      <span className="text-sm text-gray-400 bg-gray-700 px-3 py-1 rounded-full">
+                        {standbyTrains.length} {t('whatIf.available')}
+                      </span>
+                    </div>
+
+                    {loadingWhatIf ? (
+                      <div className="flex justify-center py-12">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-400"></div>
+                      </div>
+                    ) : (
+                      <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
+                        {standbyTrains.map((train) => {
+                          const readinessScore = train.readiness || 0;
+                          const issueCount = (train.readiness_summary?.match(/needs|poor|critical|overdue|required|attention|maintenance/gi) || []).length;
+
+                          return (
+                            <div
+                              key={train.train_id}
+                              className={`p-4 border rounded-xl cursor-pointer transition-all duration-200 hover:shadow-lg ${selectedStandbyTrain === train.train_id
+                                ? 'border-purple-500 bg-purple-900/30 shadow-lg shadow-purple-900/20'
+                                : 'border-gray-600 hover:border-gray-500 bg-gray-900/30 hover:bg-gray-900/50'
+                                }`}
+                              onClick={() => setSelectedStandbyTrain(train.train_id)}
+                            >
+                              <div className="flex justify-between items-start mb-2">
+                                <div className="flex items-center gap-3">
+                                  <div className="text-xl">
+                                    {readinessScore >= 95 ? '🟢' :
+                                      readinessScore >= 85 ? '🔵' :
+                                        readinessScore >= 75 ? '🟡' :
+                                          readinessScore >= 65 ? '🟠' : '🔴'}
+                                  </div>
+                                  <div>
+                                    <div className="font-bold text-lg text-white">{train.train_id}</div>
+                                    <div className="text-sm text-gray-400">
+                                      {train.bay} • {t('schedule.position')} {train.bay_position}
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <div className={`px-3 py-1 rounded-lg text-lg font-bold border ${getReadinessColor(readinessScore)}`}>
+                                    {readinessScore}%
+                                  </div>
+                                  {issueCount > 0 && (
+                                    <div className="text-xs text-orange-400 mt-1">
+                                      {issueCount} {t('whatIf.issue', { count: issueCount })}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="text-sm text-gray-300 mb-2 line-clamp-2" title={train.readiness_summary}>
+                                {train.readiness_summary || t('whatIf.readyForService')}
+                              </div>
+
+                              {train.readiness_details && (
+                                <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto flex-wrap">
+                                  {Object.entries(train.readiness_details).slice(0, 3).map(([key, value]) => {
+                                    const isIssue = typeof value === 'string' &&
+                                      (value.toLowerCase().includes('needs') ||
+                                        value.toLowerCase().includes('poor') ||
+                                        value.toLowerCase().includes('attention') ||
+                                        value.toLowerCase().includes('critical'));
+
+                                    return (
+                                      <span
+                                        key={key}
+                                        className={`px-2 py-0.5 rounded text-xs font-medium ${isIssue
+                                          ? 'bg-red-900/30 text-red-300 border border-red-700'
+                                          : 'bg-emerald-900/30 text-emerald-300 border border-emerald-700'
+                                          }`}
+                                      >
+                                        {key}: {typeof value === 'string' ? value : 'OK'}
+                                      </span>
+                                    );
+                                  })}
+                                  {Object.keys(train.readiness_details).length > 3 && (
+                                    <span className="text-xs text-gray-500 px-2 py-0.5">
+                                      +{Object.keys(train.readiness_details).length - 3} {t('whatIf.more')}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+
+                        {standbyTrains.length === 0 && (
+                          <div className="text-center py-12 text-gray-400">
+                            <div className="text-6xl mb-4">🚂</div>
+                            <h4 className="text-lg font-medium text-gray-300 mb-2">{t('whatIf.noStandby')}</h4>
+                            <p className="text-sm">{t('whatIf.allScheduled')}</p>
                           </div>
-                          <div>
-                            <div className="font-bold text-lg text-white">{train.train_id}</div>
-                            <div className="text-sm text-gray-400">
-                              {train.bay} • {t('schedule.position')} {train.bay_position}
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Scheduled Trains - Enhanced */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-lg font-semibold text-gray-200">{t('whatIf.scheduledTrains')}</h4>
+                      <span className="text-sm text-gray-400 bg-gray-700 px-3 py-1 rounded-full">
+                        {sortedAssignments.length} {t('whatIf.scheduled')}
+                      </span>
+                    </div>
+
+                    <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
+                      {sortedAssignments.map((train) => (
+                        <div
+                          key={train.train_id}
+                          className={`p-4 border rounded-xl cursor-pointer transition-all duration-200 hover:shadow-lg ${selectedScheduledTrain === train.train_id
+                            ? 'border-teal-500 bg-teal-900/30 shadow-lg shadow-teal-900/20'
+                            : 'border-gray-600 hover:border-gray-500 bg-gray-900/30 hover:bg-gray-900/50'
+                            }`}
+                          onClick={() => setSelectedScheduledTrain(train.train_id)}
+                        >
+                          <div className="flex justify-between items-start mb-2">
+                            <div className="flex items-center gap-3">
+                              <div className="text-xl">🚄</div>
+                              <div>
+                                <div className="font-bold text-lg text-white">{train.train_id}</div>
+                                <div className="text-sm text-gray-400">
+                                  {t('schedule.slot')} {train.departure_slot} • {t('schedule.bay')} {train.bay}
+                                  {train.needs_shunting && (
+                                    <span className="ml-2 px-2 py-0.5 bg-orange-900/30 text-orange-300 text-xs rounded">
+                                      {t('schedule.shuntingRequired')}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className={`px-3 py-1 rounded-lg text-lg font-bold border ${getReadinessColor(train.readiness)}`}>
+                                {train.readiness}%
+                              </div>
+                              <div className="text-xs text-gray-400 mt-1">
+                                {t('schedule.departureOrder')} #{train.departure_order}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 text-sm text-gray-400">
+                            <div>
+                              {t('schedule.position')} {train.bay_position || '-'}
                             </div>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <div className={`px-3 py-1 rounded-lg text-lg font-bold border ${getReadinessColor(readinessScore)}`}>
-                            {readinessScore}%
-                          </div>
-                          {issueCount > 0 && (
-                            <div className="text-xs text-orange-400 mt-1">
-                              {issueCount} {t('whatIf.issue', { count: issueCount })}
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Analysis Controls - Enhanced */}
+                <div className="mt-6 space-y-4">
+                  <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
+                    <button
+                      onClick={analyzeSwap}
+                      disabled={!selectedScheduledTrain || !selectedStandbyTrain || loadingWhatIf}
+                      className="flex-1 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+                    >
+                      {loadingWhatIf ? (
+                        <div className="flex items-center justify-center">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          {t('whatIf.analyzing')}
+                        </div>
+                      ) : (
+                        t('whatIf.analyze')
+                      )}
+                    </button>
+                  </div>
+
+                  {selectedScheduledTrain && selectedStandbyTrain && (
+                    <div className="p-4 bg-teal-900/20 border border-teal-700 rounded-lg">
+                      <h5 className="font-semibold text-teal-300 mb-2">{t('whatIf.selectedSwap')}</h5>
+                      <p className="text-teal-200">
+                        {t('whatIf.replaceWith', {
+                          from: selectedScheduledTrain,  // Remove <strong> tags
+                          to: selectedStandbyTrain       // Remove <strong> tags
+                        })}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Swap Analysis Results Modal - With Enhanced AI Analysis */}
+        {showSwapAnalysis && swapAnalysis && (
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-gray-800 border border-gray-700 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6">
+                <div className="flex justify-between items-center mb-6">
+                  <div>
+                    <h3 className="text-2xl font-bold text-white">{t('swapAnalysis.title')}</h3>
+                    <p className="text-gray-400 mt-1">
+                      {swapAnalysis.swap_scenario.from_train} → {swapAnalysis.swap_scenario.to_train}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setShowSwapAnalysis(false)}
+                    className="text-gray-400 hover:text-gray-200 text-2xl p-2 hover:bg-gray-700 rounded-lg"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                {swapAnalysis.status === 'success' ? (
+                  <div className="space-y-6">
+                    {/* Recommendation Card - Enhanced */}
+                    <div className={`p-6 rounded-lg border ${getRecommendationColor(swapAnalysis.recommendation.decision)}`}>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="flex items-center gap-4">
+                            <div className="text-3xl">
+                              {swapAnalysis.recommendation.decision === 'ACCEPTED' ? '✅' :
+                                swapAnalysis.recommendation.decision === 'REJECTED' ? '❌' :
+                                  swapAnalysis.recommendation.decision === 'REVIEW_REQUIRED' ? '⚠️' : 'ℹ️'}
                             </div>
+                            <div>
+                              <h4 className="text-xl font-bold">
+                                {swapAnalysis.recommendation.decision === 'ACCEPTED' ? t('swapAnalysis.approveSwap') :
+                                  swapAnalysis.recommendation.decision === 'REJECTED' ? t('swapAnalysis.rejectSwap') :
+                                    swapAnalysis.recommendation.decision === 'REVIEW_REQUIRED' ? t('swapAnalysis.reviewRequired') : t('swapAnalysis.neutral')}
+                              </h4>
+                              <p className="text-sm text-gray-400 mt-1">
+                                {t('swapAnalysis.confidence')}: {swapAnalysis.recommendation.confidence}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="mt-4">
+                        <div className="flex items-center gap-2 mb-3">
+                          <div className="w-2 h-2 bg-current rounded-full"></div>
+                          <h5 className="font-medium">{t('swapAnalysis.keyFactors')}:</h5>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {swapAnalysis.recommendation.reasoning.slice(0, 3).map((reason, index) => (
+                            <span
+                              key={index}
+                              className="px-3 py-1.5 bg-gray-700/50 text-gray-300 rounded-lg text-sm border border-gray-600"
+                            >
+                              {reason.replace(/[.,]$/, '')}
+                            </span>
+                          ))}
+                          {swapAnalysis.recommendation.reasoning.length > 3 && (
+                            <span className="text-xs text-gray-500 px-3 py-1.5">
+                              +{swapAnalysis.recommendation.reasoning.length - 3} {t('swapAnalysis.more')}
+                            </span>
                           )}
                         </div>
                       </div>
-                      
-                      <div className="text-sm text-gray-300 mb-2 line-clamp-2" title={train.readiness_summary}>
-                        {train.readiness_summary || t('whatIf.readyForService')}
-                      </div>
-                      
-                      {train.readiness_details && (
-                        <div className="flex gap-1 flex-wrap">
-                          {Object.entries(train.readiness_details).slice(0, 3).map(([key, value]) => {
-                            const isIssue = typeof value === 'string' && 
-                              (value.toLowerCase().includes('needs') || 
-                               value.toLowerCase().includes('poor') ||
-                               value.toLowerCase().includes('attention') ||
-                               value.toLowerCase().includes('critical'));
-                            
-                            return (
-                              <span
-                                key={key}
-                                className={`px-2 py-0.5 rounded text-xs font-medium ${
-                                  isIssue 
-                                    ? 'bg-red-900/30 text-red-300 border border-red-700'
-                                    : 'bg-emerald-900/30 text-emerald-300 border border-emerald-700'
-                                }`}
-                              >
-                                {key}: {typeof value === 'string' ? value : 'OK'}
+                    </div>
+
+                    {/* Readiness Comparison - Enhanced */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="border border-gray-600 rounded-xl p-5 bg-gray-900/30 hover:bg-gray-900/40 transition-colors">
+                        <h4 className="font-bold text-lg text-gray-200 mb-4 flex items-center gap-2">
+                          <span className="text-teal-400">🚂</span>
+                          <span>{t('swapAnalysis.currentTrain')}</span>
+                          <span className="text-teal-300 ml-1">{swapAnalysis.swap_scenario.from_train}</span>
+                        </h4>
+                        <div className="flex items-center justify-between mb-4">
+                          <div className={`text-4xl font-bold ${getReadinessColor(swapAnalysis.readiness_comparison.scheduled_train.score).split(' ')[1]}`}>
+                            {swapAnalysis.readiness_comparison.scheduled_train.score}%
+                          </div>
+                          <div className="text-sm text-gray-400">
+                            {swapAnalysis.swap_scenario.departure_time || t('swapAnalysis.noSlot')}
+                          </div>
+                        </div>
+
+                        <div className="text-sm text-gray-300 mb-4 line-clamp-2">
+                          {swapAnalysis.readiness_comparison.scheduled_train.summary}
+                        </div>
+
+                        <div className="space-y-2">
+                          {Object.entries(swapAnalysis.readiness_comparison.scheduled_train.details).slice(0, 3).map(([key, value]) => (
+                            <div key={key} className="flex justify-between items-center text-xs">
+                              <span className="text-gray-400 capitalize">{key.replace(/_/g, ' ')}:</span>
+                              <span className={`px-2 py-1 rounded ${typeof value === 'string' && value.toLowerCase().includes('needs') ? 'bg-red-900/30 text-red-300 border border-red-700' : 'bg-emerald-900/30 text-emerald-300 border border-emerald-700'}`}>
+                                {typeof value === 'string' ? value : t('swapAnalysis.ok')}
                               </span>
-                            );
-                          })}
-                          {Object.keys(train.readiness_details).length > 3 && (
-                            <span className="text-xs text-gray-500 px-2 py-0.5">
-                              +{Object.keys(train.readiness_details).length - 3} {t('whatIf.more')}
-                            </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="border border-gray-600 rounded-xl p-5 bg-gray-900/30 hover:bg-gray-900/40 transition-colors">
+                        <h4 className="font-bold text-lg text-gray-200 mb-4 flex items-center gap-2">
+                          <span className="text-purple-400">🔄</span>
+                          <span>{t('swapAnalysis.standbyTrain')}</span>
+                          <span className="text-purple-300 ml-1">{swapAnalysis.swap_scenario.to_train}</span>
+                        </h4>
+                        <div className="flex items-center justify-between mb-4">
+                          <div className={`text-4xl font-bold ${getReadinessColor(swapAnalysis.readiness_comparison.standby_train.score).split(' ')[1]}`}>
+                            {swapAnalysis.readiness_comparison.standby_train.score}%
+                          </div>
+                          <div className="text-sm text-gray-400">
+                            {t('swapAnalysis.bay')} {swapAnalysis.swap_scenario.bay || t('swapAnalysis.unknown')}
+                          </div>
+                        </div>
+
+                        <div className="text-sm text-gray-300 mb-4 line-clamp-2">
+                          {swapAnalysis.readiness_comparison.standby_train.summary}
+                        </div>
+
+                        <div className="space-y-2">
+                          {Object.entries(swapAnalysis.readiness_comparison.standby_train.details).slice(0, 3).map(([key, value]) => (
+                            <div key={key} className="flex justify-between items-center text-xs">
+                              <span className="text-gray-400 capitalize">{key.replace(/_/g, ' ')}:</span>
+                              <span className={`px-2 py-1 rounded ${typeof value === 'string' && value.toLowerCase().includes('needs') ? 'bg-red-900/30 text-red-300 border border-red-700' : 'bg-emerald-900/30 text-emerald-300 border border-emerald-700'}`}>
+                                {typeof value === 'string' ? value : t('swapAnalysis.ok')}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Quick Stats - Enhanced */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="bg-gray-900/40 p-4 rounded-xl border border-gray-700 hover:border-teal-500 transition-colors">
+                        <div className="text-2xl font-bold text-emerald-400">
+                          {swapAnalysis.impact_analysis.readiness_score_change > 0 ? '+' : ''}{swapAnalysis.impact_analysis.readiness_score_change}%
+                        </div>
+                        <div className="text-sm text-gray-400 mt-1">{t('swapAnalysis.readinessChange')}</div>
+                      </div>
+
+                      <div className="bg-gray-900/40 p-4 rounded-xl border border-gray-700 hover:border-orange-500 transition-colors">
+                        <div className="text-2xl font-bold text-orange-400">
+                          {swapAnalysis.impact_analysis.estimated_shunting_moves || 0}
+                        </div>
+                        <div className="text-sm text-gray-400 mt-1">{t('swapAnalysis.shuntingMoves')}</div>
+                      </div>
+
+                      <div className="bg-gray-900/40 p-4 rounded-xl border border-gray-700 hover:border-red-500 transition-colors">
+                        <div className={`text-2xl font-bold ${swapAnalysis.impact_analysis.risk_level === 'HIGH' ? 'text-red-400' :
+                          swapAnalysis.impact_analysis.risk_level === 'MEDIUM' ? 'text-yellow-400' : 'text-emerald-400'}`}>
+                          {swapAnalysis.impact_analysis.risk_level}
+                        </div>
+                        <div className="text-sm text-gray-400 mt-1">{t('swapAnalysis.riskLevel')}</div>
+                      </div>
+
+                      <div className="bg-gray-900/40 p-4 rounded-xl border border-gray-700 hover:border-blue-500 transition-colors">
+                        <div className="text-2xl font-bold text-gray-300">
+                          {swapAnalysis.impact_analysis.is_peak_hour ? t('swapAnalysis.peak') : t('swapAnalysis.offPeak')}
+                        </div>
+                        <div className="text-sm text-gray-400 mt-1">{t('swapAnalysis.timePeriod')}</div>
+                      </div>
+                    </div>
+
+                    {/* AI Analysis - Collapsible Section */}
+                    <div className="border border-gray-700 rounded-xl overflow-hidden">
+                      <button
+                        onClick={() => setShowAIAnalysis(!showAIAnalysis)}
+                        className="w-full p-3 md:p-5 bg-gray-900/50 flex justify-between items-center hover:bg-gray-800/50 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="text-2xl">🤖</div>
+                          <h4 className="font-bold text-lg text-gray-200">{t('swapAnalysis.aiAnalysis')}</h4>
+                        </div>
+                        <div className="text-gray-400 text-lg">
+                          {showAIAnalysis ? '▲' : '▼'}
+                        </div>
+                      </button>
+
+                      {showAIAnalysis && (
+                        <div className="p-3 md:p-5 space-y-4 md:space-y-6">
+                          {/* Simplified Analysis Summary */}
+                          <div className="text-sm text-gray-300 bg-gray-900/30 p-3 md:p-5 rounded-lg border border-gray-600">
+                            <p className="mb-4 leading-relaxed">
+                              {swapAnalysis.ai_analysis.detailed_analysis && swapAnalysis.ai_analysis.detailed_analysis.length > 300
+                                ? swapAnalysis.ai_analysis.detailed_analysis.substring(0, 300) + '...'
+                                : swapAnalysis.ai_analysis.detailed_analysis}
+                            </p>
+
+                            {/* Safety Warnings */}
+                            {swapAnalysis.ai_analysis.safety_risks && swapAnalysis.ai_analysis.safety_risks.length > 0 && (
+                              <div className="mb-4">
+                                <div className="flex items-center gap-3 mb-3">
+                                  <span className="text-red-400 text-xl">⚠️</span>
+                                  <span className="font-bold text-red-400">{t('swapAnalysis.safetyWarnings')}:</span>
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                  {swapAnalysis.ai_analysis.safety_risks.slice(0, 3).map((risk, index) => (
+                                    <span key={index} className="px-3 py-1.5 bg-red-900/20 text-red-300 border border-red-700 rounded-lg text-sm">
+                                      {risk}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Operational Notes */}
+                            {swapAnalysis.ai_analysis.operational_risks && swapAnalysis.ai_analysis.operational_risks.length > 0 && (
+                              <div>
+                                <div className="flex items-center gap-3 mb-3">
+                                  <span className="text-orange-400 text-xl">⚙️</span>
+                                  <span className="font-bold text-orange-400">{t('swapAnalysis.operationalNotes')}:</span>
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                  {swapAnalysis.ai_analysis.operational_risks.slice(0, 3).map((risk, index) => (
+                                    <span key={index} className="px-3 py-1.5 bg-orange-900/20 text-orange-300 border border-orange-700 rounded-lg text-sm">
+                                      {risk}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Critical Concerns & Mitigation */}
+                          {((swapAnalysis.ai_analysis.critical_concerns && swapAnalysis.ai_analysis.critical_concerns.length > 0) ||
+                            (swapAnalysis.ai_analysis.mitigation_strategies && swapAnalysis.ai_analysis.mitigation_strategies.length > 0)) && (
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-6">
+                                {swapAnalysis.ai_analysis.critical_concerns && swapAnalysis.ai_analysis.critical_concerns.length > 0 && (
+                                  <div className="bg-red-900/20 border border-red-700 rounded-xl p-3 md:p-5">
+                                    <h4 className="font-bold text-red-300 mb-3 flex items-center gap-2">
+                                      <span>🚨</span>
+                                      {t('swapAnalysis.criticalIssues')}
+                                    </h4>
+                                    <ul className="space-y-2 text-sm text-red-200">
+                                      {swapAnalysis.ai_analysis.critical_concerns.slice(0, 3).map((concern, index) => (
+                                        <li key={index} className="flex items-start gap-2">
+                                          <span className="text-red-400 mt-1">•</span>
+                                          <span>{concern}</span>
+                                        </li>
+                                      ))}
+                                      {swapAnalysis.ai_analysis.critical_concerns.length > 3 && (
+                                        <li className="text-xs text-gray-400 pt-2">
+                                          +{swapAnalysis.ai_analysis.critical_concerns.length - 3} {t('swapAnalysis.moreConcerns')}
+                                        </li>
+                                      )}
+                                    </ul>
+                                  </div>
+                                )}
+
+                                {swapAnalysis.ai_analysis.mitigation_strategies && swapAnalysis.ai_analysis.mitigation_strategies.length > 0 && (
+                                  <div className="bg-teal-900/20 border border-teal-700 rounded-xl p-3 md:p-5">
+                                    <h4 className="font-bold text-teal-300 mb-3 flex items-center gap-2">
+                                      <span>✅</span>
+                                      {t('swapAnalysis.recommendedActions')}
+                                    </h4>
+                                    <ul className="space-y-2 text-sm text-teal-200">
+                                      {swapAnalysis.ai_analysis.mitigation_strategies.slice(0, 3).map((strategy, index) => (
+                                        <li key={index} className="flex items-start gap-2">
+                                          <span className="text-teal-400 mt-1">•</span>
+                                          <span>{strategy}</span>
+                                        </li>
+                                      ))}
+                                      {swapAnalysis.ai_analysis.mitigation_strategies.length > 3 && (
+                                        <li className="text-xs text-gray-400 pt-2">
+                                          +{swapAnalysis.ai_analysis.mitigation_strategies.length - 3} {t('swapAnalysis.moreActions')}
+                                        </li>
+                                      )}
+                                    </ul>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                          {/* Analysis Method */}
+                          {swapAnalysis.ai_analysis.analysis_method && (
+                            <div className="text-xs text-gray-500 italic pt-2">
+                              {t('swapAnalysis.analysisMethod')}: {swapAnalysis.ai_analysis.analysis_method}
+                            </div>
                           )}
                         </div>
                       )}
                     </div>
-                  );
-                })}
-                
-                {standbyTrains.length === 0 && (
-                  <div className="text-center py-12 text-gray-400">
-                    <div className="text-6xl mb-4">🚂</div>
-                    <h4 className="text-lg font-medium text-gray-300 mb-2">{t('whatIf.noStandby')}</h4>
-                    <p className="text-sm">{t('whatIf.allScheduled')}</p>
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-4 pt-4">
+                      <button
+                        onClick={() => {
+                          setSelectedScheduledTrain(swapAnalysis.swap_scenario.from_train);
+                          setSelectedStandbyTrain(swapAnalysis.swap_scenario.to_train);
+                          setShowOverride(true);
+                          setShowSwapAnalysis(false);
+                        }}
+                        className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                        </svg>
+                        {t('swapAnalysis.applyOverride')}
+                      </button>
+                      <button
+                        onClick={() => setShowSwapAnalysis(false)}
+                        className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+                      >
+                        {t('swapAnalysis.close')}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <div className="text-red-400 text-6xl mb-4">⚠️</div>
+                    <h3 className="text-xl font-bold text-gray-200 mb-2">{t('swapAnalysis.failedTitle')}</h3>
+                    <p className="text-gray-400">{swapAnalysis.status}</p>
                   </div>
                 )}
               </div>
-            )}
-          </div>
-
-          {/* Scheduled Trains - Enhanced */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h4 className="text-lg font-semibold text-gray-200">{t('whatIf.scheduledTrains')}</h4>
-              <span className="text-sm text-gray-400 bg-gray-700 px-3 py-1 rounded-full">
-                {sortedAssignments.length} {t('whatIf.scheduled')}
-              </span>
             </div>
-            
-            <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
-              {sortedAssignments.map((train) => (
-                <div
-                  key={train.train_id}
-                  className={`p-4 border rounded-xl cursor-pointer transition-all duration-200 hover:shadow-lg ${
-                    selectedScheduledTrain === train.train_id 
-                      ? 'border-teal-500 bg-teal-900/30 shadow-lg shadow-teal-900/20' 
-                      : 'border-gray-600 hover:border-gray-500 bg-gray-900/30 hover:bg-gray-900/50'
-                  }`}
-                  onClick={() => setSelectedScheduledTrain(train.train_id)}
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <div className="flex items-center gap-3">
-                      <div className="text-xl">🚄</div>
-                      <div>
-                        <div className="font-bold text-lg text-white">{train.train_id}</div>
-                        <div className="text-sm text-gray-400">
-                          {t('schedule.slot')} {train.departure_slot} • {t('schedule.bay')} {train.bay}
-                          {train.needs_shunting && (
-                            <span className="ml-2 px-2 py-0.5 bg-orange-900/30 text-orange-300 text-xs rounded">
-                              {t('schedule.shuntingRequired')}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className={`px-3 py-1 rounded-lg text-lg font-bold border ${getReadinessColor(train.readiness)}`}>
-                        {train.readiness}%
-                      </div>
-                      <div className="text-xs text-gray-400 mt-1">
-                        {t('schedule.departureOrder')} #{train.departure_order}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-2 text-sm text-gray-400">
-                    <div>
-                      {t('schedule.position')} {train.bay_position || '-'}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Analysis Controls - Enhanced */}
-        <div className="mt-6 space-y-4">
-          <div className="flex gap-4">
-            <button
-              onClick={analyzeSwap}
-              disabled={!selectedScheduledTrain || !selectedStandbyTrain || loadingWhatIf}
-              className="flex-1 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-lg transition-colors"
-            >
-              {loadingWhatIf ? (
-                <div className="flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  {t('whatIf.analyzing')}
-                </div>
-              ) : (
-                t('whatIf.analyze')
-              )}
-            </button>
-          </div>
-
-          {selectedScheduledTrain && selectedStandbyTrain && (
-            <div className="p-4 bg-teal-900/20 border border-teal-700 rounded-lg">
-              <h5 className="font-semibold text-teal-300 mb-2">{t('whatIf.selectedSwap')}</h5>
-              <p className="text-teal-200">
-              {t('whatIf.replaceWith', { 
-        from: selectedScheduledTrain,  // Remove <strong> tags
-        to: selectedStandbyTrain       // Remove <strong> tags
-      })}
-              </p>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  </div>
-)}
-
-        {/* Swap Analysis Results Modal - With Enhanced AI Analysis */}
-{showSwapAnalysis && swapAnalysis && (
-  <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-    <div className="bg-gray-800 border border-gray-700 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-      <div className="p-6">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h3 className="text-2xl font-bold text-white">{t('swapAnalysis.title')}</h3>
-            <p className="text-gray-400 mt-1">
-              {swapAnalysis.swap_scenario.from_train} → {swapAnalysis.swap_scenario.to_train}
-            </p>
-          </div>
-          <button
-            onClick={() => setShowSwapAnalysis(false)}
-            className="text-gray-400 hover:text-gray-200 text-2xl p-2 hover:bg-gray-700 rounded-lg"
-          >
-            ✕
-          </button>
-        </div>
-
-        {swapAnalysis.status === 'success' ? (
-          <div className="space-y-6">
-            {/* Recommendation Card - Enhanced */}
-            <div className={`p-6 rounded-lg border ${getRecommendationColor(swapAnalysis.recommendation.decision)}`}>
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="flex items-center gap-4">
-                    <div className="text-3xl">
-                      {swapAnalysis.recommendation.decision === 'ACCEPTED' ? '✅' :
-                       swapAnalysis.recommendation.decision === 'REJECTED' ? '❌' :
-                       swapAnalysis.recommendation.decision === 'REVIEW_REQUIRED' ? '⚠️' : 'ℹ️'}
-                    </div>
-                    <div>
-                      <h4 className="text-xl font-bold">
-                        {swapAnalysis.recommendation.decision === 'ACCEPTED' ? t('swapAnalysis.approveSwap') :
-                         swapAnalysis.recommendation.decision === 'REJECTED' ? t('swapAnalysis.rejectSwap') :
-                         swapAnalysis.recommendation.decision === 'REVIEW_REQUIRED' ? t('swapAnalysis.reviewRequired') : t('swapAnalysis.neutral')}
-                      </h4>
-                      <p className="text-sm text-gray-400 mt-1">
-                        {t('swapAnalysis.confidence')}: {swapAnalysis.recommendation.confidence}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="mt-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="w-2 h-2 bg-current rounded-full"></div>
-                  <h5 className="font-medium">{t('swapAnalysis.keyFactors')}:</h5>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {swapAnalysis.recommendation.reasoning.slice(0, 3).map((reason, index) => (
-                    <span
-                      key={index}
-                      className="px-3 py-1.5 bg-gray-700/50 text-gray-300 rounded-lg text-sm border border-gray-600"
-                    >
-                      {reason.replace(/[.,]$/, '')}
-                    </span>
-                  ))}
-                  {swapAnalysis.recommendation.reasoning.length > 3 && (
-                    <span className="text-xs text-gray-500 px-3 py-1.5">
-                      +{swapAnalysis.recommendation.reasoning.length - 3} {t('swapAnalysis.more')}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Readiness Comparison - Enhanced */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="border border-gray-600 rounded-xl p-5 bg-gray-900/30 hover:bg-gray-900/40 transition-colors">
-                <h4 className="font-bold text-lg text-gray-200 mb-4 flex items-center gap-2">
-                  <span className="text-teal-400">🚂</span>
-                  <span>{t('swapAnalysis.currentTrain')}</span>
-                  <span className="text-teal-300 ml-1">{swapAnalysis.swap_scenario.from_train}</span>
-                </h4>
-                <div className="flex items-center justify-between mb-4">
-                  <div className={`text-4xl font-bold ${getReadinessColor(swapAnalysis.readiness_comparison.scheduled_train.score).split(' ')[1]}`}>
-                    {swapAnalysis.readiness_comparison.scheduled_train.score}%
-                  </div>
-                  <div className="text-sm text-gray-400">
-                    {swapAnalysis.swap_scenario.departure_time || t('swapAnalysis.noSlot')}
-                  </div>
-                </div>
-                
-                <div className="text-sm text-gray-300 mb-4 line-clamp-2">
-                  {swapAnalysis.readiness_comparison.scheduled_train.summary}
-                </div>
-                
-                <div className="space-y-2">
-                  {Object.entries(swapAnalysis.readiness_comparison.scheduled_train.details).slice(0, 3).map(([key, value]) => (
-                    <div key={key} className="flex justify-between items-center text-xs">
-                      <span className="text-gray-400 capitalize">{key.replace(/_/g, ' ')}:</span>
-                      <span className={`px-2 py-1 rounded ${typeof value === 'string' && value.toLowerCase().includes('needs') ? 'bg-red-900/30 text-red-300 border border-red-700' : 'bg-emerald-900/30 text-emerald-300 border border-emerald-700'}`}>
-                        {typeof value === 'string' ? value : t('swapAnalysis.ok')}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="border border-gray-600 rounded-xl p-5 bg-gray-900/30 hover:bg-gray-900/40 transition-colors">
-                <h4 className="font-bold text-lg text-gray-200 mb-4 flex items-center gap-2">
-                  <span className="text-purple-400">🔄</span>
-                  <span>{t('swapAnalysis.standbyTrain')}</span>
-                  <span className="text-purple-300 ml-1">{swapAnalysis.swap_scenario.to_train}</span>
-                </h4>
-                <div className="flex items-center justify-between mb-4">
-                  <div className={`text-4xl font-bold ${getReadinessColor(swapAnalysis.readiness_comparison.standby_train.score).split(' ')[1]}`}>
-                    {swapAnalysis.readiness_comparison.standby_train.score}%
-                  </div>
-                  <div className="text-sm text-gray-400">
-                    {t('swapAnalysis.bay')} {swapAnalysis.swap_scenario.bay || t('swapAnalysis.unknown')}
-                  </div>
-                </div>
-                
-                <div className="text-sm text-gray-300 mb-4 line-clamp-2">
-                  {swapAnalysis.readiness_comparison.standby_train.summary}
-                </div>
-                
-                <div className="space-y-2">
-                  {Object.entries(swapAnalysis.readiness_comparison.standby_train.details).slice(0, 3).map(([key, value]) => (
-                    <div key={key} className="flex justify-between items-center text-xs">
-                      <span className="text-gray-400 capitalize">{key.replace(/_/g, ' ')}:</span>
-                      <span className={`px-2 py-1 rounded ${typeof value === 'string' && value.toLowerCase().includes('needs') ? 'bg-red-900/30 text-red-300 border border-red-700' : 'bg-emerald-900/30 text-emerald-300 border border-emerald-700'}`}>
-                        {typeof value === 'string' ? value : t('swapAnalysis.ok')}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Quick Stats - Enhanced */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-gray-900/40 p-4 rounded-xl border border-gray-700 hover:border-teal-500 transition-colors">
-                <div className="text-2xl font-bold text-emerald-400">
-                  {swapAnalysis.impact_analysis.readiness_score_change > 0 ? '+' : ''}{swapAnalysis.impact_analysis.readiness_score_change}%
-                </div>
-                <div className="text-sm text-gray-400 mt-1">{t('swapAnalysis.readinessChange')}</div>
-              </div>
-              
-              <div className="bg-gray-900/40 p-4 rounded-xl border border-gray-700 hover:border-orange-500 transition-colors">
-                <div className="text-2xl font-bold text-orange-400">
-                  {swapAnalysis.impact_analysis.estimated_shunting_moves || 0}
-                </div>
-                <div className="text-sm text-gray-400 mt-1">{t('swapAnalysis.shuntingMoves')}</div>
-              </div>
-              
-              <div className="bg-gray-900/40 p-4 rounded-xl border border-gray-700 hover:border-red-500 transition-colors">
-                <div className={`text-2xl font-bold ${swapAnalysis.impact_analysis.risk_level === 'HIGH' ? 'text-red-400' : 
-                  swapAnalysis.impact_analysis.risk_level === 'MEDIUM' ? 'text-yellow-400' : 'text-emerald-400'}`}>
-                  {swapAnalysis.impact_analysis.risk_level}
-                </div>
-                <div className="text-sm text-gray-400 mt-1">{t('swapAnalysis.riskLevel')}</div>
-              </div>
-              
-              <div className="bg-gray-900/40 p-4 rounded-xl border border-gray-700 hover:border-blue-500 transition-colors">
-                <div className="text-2xl font-bold text-gray-300">
-                  {swapAnalysis.impact_analysis.is_peak_hour ? t('swapAnalysis.peak') : t('swapAnalysis.offPeak')}
-                </div>
-                <div className="text-sm text-gray-400 mt-1">{t('swapAnalysis.timePeriod')}</div>
-              </div>
-            </div>
-
-            {/* AI Analysis - Collapsible Section */}
-            <div className="border border-gray-700 rounded-xl overflow-hidden">
-              <button
-                onClick={() => setShowAIAnalysis(!showAIAnalysis)}
-                className="w-full p-5 bg-gray-900/50 flex justify-between items-center hover:bg-gray-800/50 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="text-2xl">🤖</div>
-                  <h4 className="font-bold text-lg text-gray-200">{t('swapAnalysis.aiAnalysis')}</h4>
-                </div>
-                <div className="text-gray-400 text-lg">
-                  {showAIAnalysis ? '▲' : '▼'}
-                </div>
-              </button>
-              
-              {showAIAnalysis && (
-                <div className="p-5 space-y-6">
-                  {/* Simplified Analysis Summary */}
-                  <div className="text-sm text-gray-300 bg-gray-900/30 p-5 rounded-lg border border-gray-600">
-                    <p className="mb-4 leading-relaxed">
-                      {swapAnalysis.ai_analysis.detailed_analysis && swapAnalysis.ai_analysis.detailed_analysis.length > 300 
-                        ? swapAnalysis.ai_analysis.detailed_analysis.substring(0, 300) + '...'
-                        : swapAnalysis.ai_analysis.detailed_analysis}
-                    </p>
-                    
-                    {/* Safety Warnings */}
-                    {swapAnalysis.ai_analysis.safety_risks && swapAnalysis.ai_analysis.safety_risks.length > 0 && (
-                      <div className="mb-4">
-                        <div className="flex items-center gap-3 mb-3">
-                          <span className="text-red-400 text-xl">⚠️</span>
-                          <span className="font-bold text-red-400">{t('swapAnalysis.safetyWarnings')}:</span>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          {swapAnalysis.ai_analysis.safety_risks.slice(0, 3).map((risk, index) => (
-                            <span key={index} className="px-3 py-1.5 bg-red-900/20 text-red-300 border border-red-700 rounded-lg text-sm">
-                              {risk}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* Operational Notes */}
-                    {swapAnalysis.ai_analysis.operational_risks && swapAnalysis.ai_analysis.operational_risks.length > 0 && (
-                      <div>
-                        <div className="flex items-center gap-3 mb-3">
-                          <span className="text-orange-400 text-xl">⚙️</span>
-                          <span className="font-bold text-orange-400">{t('swapAnalysis.operationalNotes')}:</span>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          {swapAnalysis.ai_analysis.operational_risks.slice(0, 3).map((risk, index) => (
-                            <span key={index} className="px-3 py-1.5 bg-orange-900/20 text-orange-300 border border-orange-700 rounded-lg text-sm">
-                              {risk}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Critical Concerns & Mitigation */}
-                  {((swapAnalysis.ai_analysis.critical_concerns && swapAnalysis.ai_analysis.critical_concerns.length > 0) || 
-                    (swapAnalysis.ai_analysis.mitigation_strategies && swapAnalysis.ai_analysis.mitigation_strategies.length > 0)) && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {swapAnalysis.ai_analysis.critical_concerns && swapAnalysis.ai_analysis.critical_concerns.length > 0 && (
-                        <div className="bg-red-900/20 border border-red-700 rounded-xl p-5">
-                          <h4 className="font-bold text-red-300 mb-3 flex items-center gap-2">
-                            <span>🚨</span>
-                            {t('swapAnalysis.criticalIssues')}
-                          </h4>
-                          <ul className="space-y-2 text-sm text-red-200">
-                            {swapAnalysis.ai_analysis.critical_concerns.slice(0, 3).map((concern, index) => (
-                              <li key={index} className="flex items-start gap-2">
-                                <span className="text-red-400 mt-1">•</span>
-                                <span>{concern}</span>
-                              </li>
-                            ))}
-                            {swapAnalysis.ai_analysis.critical_concerns.length > 3 && (
-                              <li className="text-xs text-gray-400 pt-2">
-                                +{swapAnalysis.ai_analysis.critical_concerns.length - 3} {t('swapAnalysis.moreConcerns')}
-                              </li>
-                            )}
-                          </ul>
-                        </div>
-                      )}
-                      
-                      {swapAnalysis.ai_analysis.mitigation_strategies && swapAnalysis.ai_analysis.mitigation_strategies.length > 0 && (
-                        <div className="bg-teal-900/20 border border-teal-700 rounded-xl p-5">
-                          <h4 className="font-bold text-teal-300 mb-3 flex items-center gap-2">
-                            <span>✅</span>
-                            {t('swapAnalysis.recommendedActions')}
-                          </h4>
-                          <ul className="space-y-2 text-sm text-teal-200">
-                            {swapAnalysis.ai_analysis.mitigation_strategies.slice(0, 3).map((strategy, index) => (
-                              <li key={index} className="flex items-start gap-2">
-                                <span className="text-teal-400 mt-1">•</span>
-                                <span>{strategy}</span>
-                              </li>
-                            ))}
-                            {swapAnalysis.ai_analysis.mitigation_strategies.length > 3 && (
-                              <li className="text-xs text-gray-400 pt-2">
-                                +{swapAnalysis.ai_analysis.mitigation_strategies.length - 3} {t('swapAnalysis.moreActions')}
-                              </li>
-                            )}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  
-                  {/* Analysis Method */}
-                  {swapAnalysis.ai_analysis.analysis_method && (
-                    <div className="text-xs text-gray-500 italic pt-2">
-                      {t('swapAnalysis.analysisMethod')}: {swapAnalysis.ai_analysis.analysis_method}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex gap-4 pt-4">
-              <button
-                onClick={() => {
-                  setSelectedScheduledTrain(swapAnalysis.swap_scenario.from_train);
-                  setSelectedStandbyTrain(swapAnalysis.swap_scenario.to_train);
-                  setShowOverride(true);
-                  setShowSwapAnalysis(false);
-                }}
-                className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                </svg>
-                {t('swapAnalysis.applyOverride')}
-              </button>
-              <button
-                onClick={() => setShowSwapAnalysis(false)}
-                className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
-              >
-                {t('swapAnalysis.close')}
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="text-center py-12">
-            <div className="text-red-400 text-6xl mb-4">⚠️</div>
-            <h3 className="text-xl font-bold text-gray-200 mb-2">{t('swapAnalysis.failedTitle')}</h3>
-            <p className="text-gray-400">{swapAnalysis.status}</p>
           </div>
         )}
-      </div>
-    </div>
-  </div>
-)}
 
         {/* Validation Modal */}
         {showValidation && validationData && (
@@ -1969,156 +1964,155 @@ const autoAddHolidayTrains = (scheduleData: OptimizationResult) => {
         )}
       </div>
       {/* Override Modal */}
-{showOverride && (
-  <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-    <div className="bg-gray-800 border border-gray-700 rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-      <div className="p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-2xl font-bold text-white">Override Schedule</h3>
-          <button onClick={() => setShowOverride(false)} className="text-gray-400 hover:text-gray-200 text-2xl">✕</button>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <h4 className="text-lg font-semibold text-gray-200 mb-3">Select Scheduled Train</h4>
-            <div className="space-y-2 max-h-72 overflow-y-auto pr-2">
-              {sortedAssignments.map((t) => (
-                <div key={t.train_id} onClick={() => setSelectedScheduledTrain(t.train_id)}
-                  className={`p-3 border rounded cursor-pointer ${selectedScheduledTrain === t.train_id ? 'border-emerald-500 bg-emerald-900/30' : 'border-gray-600 hover:border-gray-500 bg-gray-900/30'}`}>
-                  <div className="flex justify-between">
-                    <div className="text-white font-medium">{t.train_id}</div>
-                    <div className="text-xs text-gray-400">Readiness {t.readiness}%</div>
-                  </div>
-                  <div className="text-xs text-gray-500">Bay {t.bay} • Slot {t.departure_slot}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div>
-            <h4 className="text-lg font-semibold text-gray-200 mb-3">Select Standby Train</h4>
-            <div className="space-y-2 max-h-72 overflow-y-auto pr-2">
-              {(data.standby_trains || []).map((t) => (
-                <div key={t.train_id} onClick={() => setSelectedStandbyTrain(t.train_id)}
-                  className={`p-3 border rounded cursor-pointer ${selectedStandbyTrain === t.train_id ? 'border-emerald-500 bg-emerald-900/30' : 'border-gray-600 hover:border-gray-500 bg-gray-900/30'}`}>
-                  <div className="flex justify-between">
-                    <div className="text-white font-medium">{t.train_id}</div>
-                    <div className="text-xs text-gray-400">Readiness {t.readiness}%</div>
-                  </div>
-                  <div className="text-xs text-gray-500">Bay {t.bay} • Pos {t.bay_position}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-        <div className="mt-6">
-          <label className="block text-sm font-medium text-gray-300 mb-1">Reason</label>
-          <textarea value={overrideReason} onChange={(e) => setOverrideReason(e.target.value)}
-            className="w-full bg-gray-900 border border-gray-700 rounded-md text-white p-3 min-h-[100px] focus:outline-none focus:ring-2 focus:ring-emerald-600"></textarea>
-        </div>
-        <div className="mt-4 flex justify-end">
-          <button onClick={submitOverride} disabled={overrideSubmitting}
-            className="px-4 py-2 bg-emerald-700 hover:bg-emerald-600 disabled:bg-gray-600 text-white rounded-md">
-            {overrideSubmitting ? 'Saving...' : 'Save Override'}
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
-
-{/* Standby Train Selector Modal */}
-{showStandbySelector && data?.standby_trains && (
-  <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-    <div className="bg-gray-800 border border-gray-700 rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-      <div className="p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-2xl font-bold text-white">{t('standbySelector.title')}</h3>
-          <button 
-            onClick={() => setShowStandbySelector(false)}
-            className="text-gray-400 hover:text-gray-200 text-2xl"
-          >
-            ✕
-          </button>
-        </div>
-        
-        <p className="text-gray-400 mb-6">
-          {t('standbySelector.subtitle')} ({data.standby_trains.length} {t('standbySelector.available')})
-        </p>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-96 overflow-y-auto mb-6">
-          {data.standby_trains.map((train) => (
-            <div
-              key={train.train_id}
-              onClick={() => {
-                setSelectedStandbyTrains(prev => 
-                  prev.includes(train.train_id)
-                    ? prev.filter(id => id !== train.train_id)
-                    : [...prev, train.train_id]
-                );
-              }}
-              className={`p-4 border rounded-xl cursor-pointer transition-all ${
-                selectedStandbyTrains.includes(train.train_id)
-                  ? 'border-emerald-500 bg-emerald-900/30'
-                  : 'border-gray-600 hover:border-gray-500 bg-gray-900/30'
-              }`}
-            >
-              <div className="flex justify-between items-center">
+      {showOverride && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-800 border border-gray-700 rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-2xl font-bold text-white">Override Schedule</h3>
+                <button onClick={() => setShowOverride(false)} className="text-gray-400 hover:text-gray-200 text-2xl">✕</button>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <div className="font-bold text-white">{train.train_id}</div>
-                  <div className="text-sm text-gray-400">
-                    {train.bay} • {t('schedule.position')} {train.bay_position}
+                  <h4 className="text-lg font-semibold text-gray-200 mb-3">Select Scheduled Train</h4>
+                  <div className="space-y-2 max-h-72 overflow-y-auto pr-2">
+                    {sortedAssignments.map((t) => (
+                      <div key={t.train_id} onClick={() => setSelectedScheduledTrain(t.train_id)}
+                        className={`p-3 border rounded cursor-pointer ${selectedScheduledTrain === t.train_id ? 'border-emerald-500 bg-emerald-900/30' : 'border-gray-600 hover:border-gray-500 bg-gray-900/30'}`}>
+                        <div className="flex justify-between">
+                          <div className="text-white font-medium">{t.train_id}</div>
+                          <div className="text-xs text-gray-400">Readiness {t.readiness}%</div>
+                        </div>
+                        <div className="text-xs text-gray-500">Bay {t.bay} • Slot {t.departure_slot}</div>
+                      </div>
+                    ))}
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className={`px-3 py-1 rounded text-xs font-bold border ${getReadinessColor(train.readiness)}`}>
-                    {train.readiness}%
+                <div>
+                  <h4 className="text-lg font-semibold text-gray-200 mb-3">Select Standby Train</h4>
+                  <div className="space-y-2 max-h-72 overflow-y-auto pr-2">
+                    {(data.standby_trains || []).map((t) => (
+                      <div key={t.train_id} onClick={() => setSelectedStandbyTrain(t.train_id)}
+                        className={`p-3 border rounded cursor-pointer ${selectedStandbyTrain === t.train_id ? 'border-emerald-500 bg-emerald-900/30' : 'border-gray-600 hover:border-gray-500 bg-gray-900/30'}`}>
+                        <div className="flex justify-between">
+                          <div className="text-white font-medium">{t.train_id}</div>
+                          <div className="text-xs text-gray-400">Readiness {t.readiness}%</div>
+                        </div>
+                        <div className="text-xs text-gray-500">Bay {t.bay} • Pos {t.bay_position}</div>
+                      </div>
+                    ))}
                   </div>
-                  <input
-                    type="checkbox"
-                    checked={selectedStandbyTrains.includes(train.train_id)}
-                    onChange={() => {}} // Handled by parent div click
-                    className="w-5 h-5 rounded border-gray-600 bg-gray-700"
-                  />
                 </div>
               </div>
-              <div className="text-xs text-gray-500 mt-2 truncate" title={train.readiness_summary}>
-                {train.readiness_summary}
+              <div className="mt-6">
+                <label className="block text-sm font-medium text-gray-300 mb-1">Reason</label>
+                <textarea value={overrideReason} onChange={(e) => setOverrideReason(e.target.value)}
+                  className="w-full bg-gray-900 border border-gray-700 rounded-md text-white p-3 min-h-[100px] focus:outline-none focus:ring-2 focus:ring-emerald-600"></textarea>
+              </div>
+              <div className="mt-4 flex justify-end">
+                <button onClick={submitOverride} disabled={overrideSubmitting}
+                  className="px-4 py-2 bg-emerald-700 hover:bg-emerald-600 disabled:bg-gray-600 text-white rounded-md">
+                  {overrideSubmitting ? 'Saving...' : 'Save Override'}
+                </button>
               </div>
             </div>
-          ))}
-        </div>
-        
-        {data.standby_trains.length === 0 && (
-          <div className="text-center py-8 text-gray-400">
-            <div className="text-4xl mb-2">🚂</div>
-            <p>{t('standbySelector.noTrains')}</p>
-          </div>
-        )}
-        
-        <div className="flex justify-between items-center mt-6">
-          <div className="text-gray-300">
-            {t('standbySelector.selected', { count: selectedStandbyTrains.length })}
-          </div>
-          <div className="flex gap-3">
-            <button
-              onClick={() => setShowStandbySelector(false)}
-              className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg"
-            >
-              {t('buttons.cancel')}
-            </button>
-            <button
-              onClick={handleAddSelectedStandbyTrains}
-              disabled={selectedStandbyTrains.length === 0}
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg"
-            >
-              {t('buttons.addSelected', { count: selectedStandbyTrains.length })}
-            </button>
           </div>
         </div>
-      </div>
+      )}
+
+      {/* Standby Train Selector Modal */}
+      {showStandbySelector && data?.standby_trains && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-800 border border-gray-700 rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-2xl font-bold text-white">{t('standbySelector.title')}</h3>
+                <button
+                  onClick={() => setShowStandbySelector(false)}
+                  className="text-gray-400 hover:text-gray-200 text-2xl"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <p className="text-gray-400 mb-6">
+                {t('standbySelector.subtitle')} ({data.standby_trains.length} {t('standbySelector.available')})
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-96 overflow-y-auto mb-6">
+                {data.standby_trains.map((train) => (
+                  <div
+                    key={train.train_id}
+                    onClick={() => {
+                      setSelectedStandbyTrains(prev =>
+                        prev.includes(train.train_id)
+                          ? prev.filter(id => id !== train.train_id)
+                          : [...prev, train.train_id]
+                      );
+                    }}
+                    className={`p-4 border rounded-xl cursor-pointer transition-all ${selectedStandbyTrains.includes(train.train_id)
+                      ? 'border-emerald-500 bg-emerald-900/30'
+                      : 'border-gray-600 hover:border-gray-500 bg-gray-900/30'
+                      }`}
+                  >
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <div className="font-bold text-white">{train.train_id}</div>
+                        <div className="text-sm text-gray-400">
+                          {train.bay} • {t('schedule.position')} {train.bay_position}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className={`px-3 py-1 rounded text-xs font-bold border ${getReadinessColor(train.readiness)}`}>
+                          {train.readiness}%
+                        </div>
+                        <input
+                          type="checkbox"
+                          checked={selectedStandbyTrains.includes(train.train_id)}
+                          onChange={() => { }} // Handled by parent div click
+                          className="w-5 h-5 rounded border-gray-600 bg-gray-700"
+                        />
+                      </div>
+                    </div>
+                    <div className="text-xs text-gray-500 mt-2 truncate" title={train.readiness_summary}>
+                      {train.readiness_summary}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {data.standby_trains.length === 0 && (
+                <div className="text-center py-8 text-gray-400">
+                  <div className="text-4xl mb-2">🚂</div>
+                  <p>{t('standbySelector.noTrains')}</p>
+                </div>
+              )}
+
+              <div className="flex justify-between items-center mt-6">
+                <div className="text-gray-300">
+                  {t('standbySelector.selected', { count: selectedStandbyTrains.length })}
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowStandbySelector(false)}
+                    className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg"
+                  >
+                    {t('buttons.cancel')}
+                  </button>
+                  <button
+                    onClick={handleAddSelectedStandbyTrains}
+                    disabled={selectedStandbyTrains.length === 0}
+                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg"
+                  >
+                    {t('buttons.addSelected', { count: selectedStandbyTrains.length })}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
-  </div>
-)}
-</div>
   )
 }
 export default Layer2Dashboard;

@@ -86,22 +86,21 @@ export default function AdminDashboardPage() {
           "linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)",
       }}
     >
-      <div className="max-w-7xl mx-auto p-8 space-y-8">
+      <div className="max-w-7xl mx-auto p-4 md:p-8 space-y-6 md:space-y-8">
         {/* HEADER */}
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="text-4xl font-bold text-slate-50 drop-shadow-lg">
+            <h1 className="text-3xl md:text-4xl font-bold text-slate-50 drop-shadow-lg">
               {t("title")}
             </h1>
-            <p className="text-slate-300 mt-2">{t("welcome")}</p>
+            <p className="text-slate-300 mt-2 text-lg">{t("welcome")}</p>
           </div>
           <button
             onClick={handleLogout}
             className="px-6 py-3 rounded-xl bg-slate-800/40 border border-slate-700/40 
              text-slate-200 backdrop-blur-sm shadow-lg 
-             hover:border-red-400/50 hover:text-red-400 
-             hover:shadow-red-500/20 hover:scale-[1.03] 
-             transition-all duration-300 flex items-center gap-2"
+             hover:border-red-400/50 hover:text-red-400              hover:shadow-red-500/20 hover:scale-[1.03] 
+              transition-all duration-300 flex items-center justify-center gap-2 w-full md:w-auto"
           >
             <LogOut size={20} />
             {t("logout")}
@@ -118,11 +117,11 @@ export default function AdminDashboardPage() {
               className="text-center py-16 rounded-2xl border border-slate-600/30 shadow-2xl backdrop-blur-md hover:shadow-3xl transition-all duration-300"
               style={{ backgroundColor: "rgba(15, 23, 42, 0.8)" }}
             >
-              <h2 className="text-3xl font-semibold text-slate-50 mb-4">
+              <h2 className="text-4xl font-semibold text-slate-50 mb-4">
                 {t("noDepotsTitle")}
               </h2>
               <p className="text-slate-400 mb-8 text-lg">{t("noDepotsDesc")}</p>
-              <div className="flex justify-center gap-4">
+              <div className="flex flex-col sm:flex-row justify-center gap-4">
                 <button
                   onClick={handleAddDepot}
                   className="px-8 py-4 bg-gradient-to-r from-sky-400 to-emerald-400 text-slate-900 rounded-xl hover:shadow-lg transition shadow-md text-lg font-semibold flex items-center gap-2 hover:scale-105 duration-200"
@@ -139,7 +138,7 @@ export default function AdminDashboardPage() {
                 </button>
                 <button
                   onClick={() => setShowAddEmployeeModal(true)}
-                  className="px-8 py-4 bg-slate-700 text-slate-50 rounded-xl hover:bg-slate-600 transition shadow-md text-lg font-semibold flex items-center gap-2 hover:scale-105 duration-200"
+                  className="px-8 py-4 bg-slate-700 text-slate-50 rounded-xl hover:bg-slate-600 transition shadow-md text-lg font-semibold flex items-center justify-center gap-2 hover:scale-105 duration-200 w-full md:w-auto"
                 >
                   <UserPlus size={22} />
                   {t("addEmployee")}
@@ -149,21 +148,21 @@ export default function AdminDashboardPage() {
           ) : (
             <div className="space-y-6">
               {/* Section Header */}
-              <div className="flex justify-between items-center">
-                <h2 className="text-3xl font-bold text-slate-50">
+              <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+                <h2 className="text-4xl font-bold text-slate-50">
                   {t("yourDepots")}
                 </h2>
-                <div className="flex gap-4">
+                <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
                   <button
                     onClick={() => setShowAddTrainModal(true)}
-                    className="px-6 py-3 bg-slate-700 text-slate-50 rounded-xl hover:bg-slate-600 transition shadow-md font-semibold flex items-center gap-2 hover:scale-105 duration-200"
+                    className="px-6 py-3 bg-slate-700 text-slate-50 rounded-xl hover:bg-slate-600 transition shadow-md font-semibold flex items-center justify-center gap-2 hover:scale-105 duration-200 w-full md:w-auto"
                   >
                     <Train size={20} />
                     {t("addTrain")}
                   </button>
                   <button
                     onClick={() => setShowAddEmployeeModal(true)}
-                    className="px-6 py-3 bg-slate-700 text-slate-50 rounded-xl hover:bg-slate-600 transition shadow-md font-semibold flex items-center gap-2 hover:scale-105 duration-200"
+                    className="px-6 py-3 bg-slate-700 text-slate-50 rounded-xl hover:bg-slate-600 transition shadow-md font-semibold flex items-center justify-center gap-2 hover:scale-105 duration-200 w-full md:w-auto"
                   >
                     <UserPlus size={20} />
                     {t("addEmployee")}
@@ -172,9 +171,8 @@ export default function AdminDashboardPage() {
                     onClick={handleAddDepot}
                     className="px-6 py-3 rounded-xl bg-gradient-to-r from-sky-500/80 to-emerald-500/80 
              text-slate-900 font-semibold shadow-lg 
-             hover:from-sky-400 hover:to-emerald-400 
-             hover:shadow-xl hover:scale-[1.05] 
-             transition-all duration-300 flex items-center gap-2"
+             hover:from-sky-400 hover:to-emerald-400              hover:shadow-xl hover:scale-[1.05] 
+              transition-all duration-300 flex items-center justify-center gap-2 w-full md:w-auto"
                   >
                     <Plus size={20} />
                     {t("addAnotherDepot")}

@@ -588,14 +588,14 @@ const MetroMap: React.FC<{ rotationData: RotationData; onStationSelect: (station
 
   return (
     <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 rounded-2xl p-6 shadow-xl h-full max-h-[600px] lg:max-h-[700px]">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
         <h3 className="text-2xl font-bold bg-gradient-to-r from-teal-400 to-emerald-500 bg-clip-text text-transparent flex items-center gap-3">
           <span className="p-2 bg-gradient-to-r from-teal-500 to-emerald-500 rounded-lg">🗺️</span>
           {t('map.title')}
         </h3>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 w-full md:w-auto">
           {/* Simplified Line Selector */}
-          <div className="flex gap-2 bg-slate-700/50 p-1 rounded-lg">
+          <div className="flex flex-wrap gap-2 bg-slate-700/50 p-1 rounded-lg w-full md:w-auto">
             {[
               { key: 'main' as const, label: t('map.mainLine'), color: 'teal', icon: '●' },
               { key: 'kakkanad' as const, label: t('map.kakkanadLine'), color: 'pink', icon: '●' },
@@ -629,7 +629,7 @@ const MetroMap: React.FC<{ rotationData: RotationData; onStationSelect: (station
 
           <button
             onClick={() => setShowTrains(!showTrains)}
-            className={`px-3 py-1.5 text-sm rounded-lg border transition-all flex items-center gap-2 ${showTrains
+            className={`px-3 py-1.5 text-sm rounded-lg border transition-all flex items-center justify-center gap-2 flex-grow md:flex-grow-0 ${showTrains
               ? 'bg-teal-500/20 border-teal-500 text-teal-300'
               : 'bg-slate-700/50 border-slate-600 text-slate-300 hover:border-teal-500/50'
               }`}
@@ -954,7 +954,7 @@ const RotationPage: React.FC = () => {
   if (!rotationData) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 lg:p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-3 md:p-6">
       <div className="max-w-[1920px] mx-auto">
         {/* Header Section */}
         <div className="mb-6 lg:mb-8">
@@ -988,7 +988,7 @@ const RotationPage: React.FC = () => {
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 lg:gap-6 mb-6 lg:mb-8 min-h-[70vh]">
           {/* Left Sidebar - Station List */}
           <div className="xl:col-span-2">
-            <div className="bg-slate-800/60 backdrop-blur-sm rounded-2xl p-6 h-full flex flex-col">
+            <div className="bg-slate-800/60 backdrop-blur-sm rounded-2xl p-4 md:p-6 h-full flex flex-col">
               <div className="flex items-center gap-3 mb-6">
                 <div className="p-2 bg-gradient-to-r from-teal-500 to-emerald-500 rounded-lg">
                   <span className="text-white">🚉</span>
@@ -1086,7 +1086,7 @@ const RotationPage: React.FC = () => {
               </div>
 
               {/* Stats Cards */}
-              <div className="space-y-4">
+              <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-1 gap-3 xl:gap-4">
                 <div className="bg-gradient-to-br from-teal-500/20 to-emerald-500/10 rounded-xl p-4 border border-teal-500/30">
                   <div className="flex items-center justify-between">
                     <div>
@@ -1178,7 +1178,7 @@ const RotationPage: React.FC = () => {
           {/* View Controls */}
           <div className="bg-slate-800/60 backdrop-blur-sm rounded-2xl p-6 border-0">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2 w-full lg:w-auto">
                 {[
                   { key: 'overview' as const, label: t('view.overview'), icon: '🌐' },
                   { key: 'timeline' as const, label: t('view.timeline'), icon: '📅' },
@@ -1190,7 +1190,7 @@ const RotationPage: React.FC = () => {
                     className={`flex items-center gap-2 py-3 px-4 rounded-xl font-medium border transition-all duration-200 ${currentView === view.key
                       ? 'bg-gradient-to-r from-teal-600 to-emerald-600 text-white border-teal-500 shadow-lg'
                       : 'bg-slate-700/50 text-slate-300 border-0 hover:bg-slate-700/70 hover:text-teal-300'
-                      }`}
+                      } flex-grow md:flex-grow-0 justify-center`}
                   >
                     <span className="text-lg">{view.icon}</span>
                     <span>{view.label}</span>
@@ -1198,7 +1198,7 @@ const RotationPage: React.FC = () => {
                 ))}
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
@@ -1556,59 +1556,61 @@ const TimelineView: React.FC<{
       </div>
 
       {/* Simple Horizontal Metro Line */}
-      <div className="relative mb-8">
-        {/* The horizontal metro line */}
-        <div className="relative h-1 bg-gradient-to-r from-slate-600 via-slate-500 to-slate-600 rounded-full mb-12"></div>
+      <div className="overflow-x-auto pb-6 -mx-6 px-6">
+        <div className="relative mb-8 min-w-[300px] md:min-w-[800px]">
+          {/* The horizontal metro line */}
+          <div className="relative h-1 bg-gradient-to-r from-slate-600 via-slate-500 to-slate-600 rounded-full mb-12"></div>
 
-        {/* Station Dots and Names */}
-        <div className="flex justify-between items-start">
-          {allStations.map((station, index) => {
-            const isSelected = selectedStation === station;
-            const isTrainHere = currentTrainPosition === station;
+          {/* Station Dots and Names */}
+          <div className="flex justify-between items-start">
+            {allStations.map((station, index) => {
+              const isSelected = selectedStation === station;
+              const isTrainHere = currentTrainPosition === station;
 
-            return (
-              <div key={station} className="flex flex-col items-center -mt-6">
-                {/* Station Dot and Line Connection */}
-                <div className="relative flex flex-col items-center">
-                  {/* Vertical line connecting dot to station name */}
-                  <div className={`h-8 w-0.5 mb-2 ${isSelected ? 'bg-cyan-400' : 'bg-slate-600'}`}></div>
+              return (
+                <div key={station} className="flex flex-col items-center -mt-6">
+                  {/* Station Dot and Line Connection */}
+                  <div className="relative flex flex-col items-center">
+                    {/* Vertical line connecting dot to station name */}
+                    <div className={`h-8 w-0.5 mb-2 ${isSelected ? 'bg-cyan-400' : 'bg-slate-600'}`}></div>
 
-                  {/* Station Dot */}
-                  <button
-                    onClick={() => handleStationClick(station)}
-                    className={`relative w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${isSelected
-                      ? 'bg-cyan-500 border-cyan-400 scale-125 shadow-lg shadow-cyan-500/30'
-                      : isTrainHere
-                        ? 'bg-emerald-500 border-emerald-400 shadow-lg shadow-emerald-500/30'
-                        : 'bg-slate-700 border-slate-600 hover:border-teal-400 hover:scale-110'
-                      }`}
-                  >
-                    <div className={`w-2 h-2 rounded-full ${isSelected ? 'bg-white' : isTrainHere ? 'bg-white' : 'bg-slate-400'}`}></div>
+                    {/* Station Dot */}
+                    <button
+                      onClick={() => handleStationClick(station)}
+                      className={`relative w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${isSelected
+                        ? 'bg-cyan-500 border-cyan-400 scale-125 shadow-lg shadow-cyan-500/30'
+                        : isTrainHere
+                          ? 'bg-emerald-500 border-emerald-400 shadow-lg shadow-emerald-500/30'
+                          : 'bg-slate-700 border-slate-600 hover:border-teal-400 hover:scale-110'
+                        }`}
+                    >
+                      <div className={`w-2 h-2 rounded-full ${isSelected ? 'bg-white' : isTrainHere ? 'bg-white' : 'bg-slate-400'}`}></div>
 
-                    {/* Train indicator */}
-                    {isTrainHere && selectedTrain !== 'All Trains' && (
-                      <>
-                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-800 px-2 py-1 rounded border border-emerald-500 text-xs text-emerald-300 whitespace-nowrap">
-                          {selectedTrain}
-                        </div>
-                        <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-2xl">↓</div>
-                      </>
-                    )}
+                      {/* Train indicator */}
+                      {isTrainHere && selectedTrain !== 'All Trains' && (
+                        <>
+                          <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-800 px-2 py-1 rounded border border-emerald-500 text-xs text-emerald-300 whitespace-nowrap">
+                            {selectedTrain}
+                          </div>
+                          <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-2xl">↓</div>
+                        </>
+                      )}
 
-                    {/* Selected indicator */}
-                    {isSelected && (
-                      <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-2xl text-cyan-400">↓</div>
-                    )}
-                  </button>
+                      {/* Selected indicator */}
+                      {isSelected && (
+                        <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-2xl text-cyan-400">↓</div>
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Station Name */}
+                  <div className={`mt-2 text-center max-w-[80px] ${isSelected ? 'text-cyan-300 font-semibold' : 'text-slate-300'}`}>
+                    <p className="text-xs truncate">{station}</p>
+                  </div>
                 </div>
-
-                {/* Station Name */}
-                <div className={`mt-2 text-center max-w-[80px] ${isSelected ? 'text-cyan-300 font-semibold' : 'text-slate-300'}`}>
-                  <p className="text-xs truncate">{station}</p>
-                </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       </div>
 
@@ -1751,7 +1753,7 @@ const StationsView: React.FC<{ rotationData: RotationData }> = ({ rotationData }
   return (
     <div className="bg-gradient-to-br from-slate-900/80 to-slate-800/80 backdrop-blur-lg rounded-3xl p-8 shadow-2xl">
       {/* Header */}
-      <div className="flex items-center justify-between mb-12">
+      <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-8 md:mb-12">
         <div className="flex items-center gap-5">
           <div className="p-4 bg-gradient-to-br from-cyan-500/20 to-blue-600/20 rounded-2xl border border-cyan-500/30 shadow-2xl">
             <span className="text-3xl">🚇</span>
@@ -1772,7 +1774,7 @@ const StationsView: React.FC<{ rotationData: RotationData }> = ({ rotationData }
       {/* Interactive Metro Line */}
       <div className="relative mb-16">
         {/* Main Metro Track */}
-        <div className="absolute left-20 top-8 bottom-8 w-3 bg-gradient-to-b from-cyan-500/10 to-blue-500/10 rounded-full">
+        <div className="absolute left-8 md:left-20 top-8 bottom-8 w-3 bg-gradient-to-b from-cyan-500/10 to-blue-500/10 rounded-full">
           {/* Animated Light Pulse */}
           <div className="absolute inset-0 w-3 bg-gradient-to-b from-cyan-400/40 to-blue-400/40 rounded-full animate-pulse"></div>
 
@@ -1783,7 +1785,7 @@ const StationsView: React.FC<{ rotationData: RotationData }> = ({ rotationData }
         </div>
 
         {/* Station Markers */}
-        <div className="space-y-16 ml-32">
+        <div className="space-y-8 md:space-y-16 ml-16 md:ml-32">
           {/* Fix 5: Add underscore to index parameter */}
           {rotationData.station_timings.map((station, _index) => (
             <div
@@ -1798,9 +1800,9 @@ const StationsView: React.FC<{ rotationData: RotationData }> = ({ rotationData }
               )}
 
               {/* Station Card */}
-              <div className="bg-gradient-to-r from-slate-800/50 to-slate-700/50 rounded-3xl p-8 border border-slate-600/20 hover:border-cyan-500/40 transition-all duration-500 shadow-2xl hover:shadow-cyan-500/20 backdrop-blur-lg">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-8 flex-1">
+              <div className="bg-gradient-to-r from-slate-800/50 to-slate-700/50 rounded-3xl p-4 md:p-8 border border-slate-600/20 hover:border-cyan-500/40 transition-all duration-500 shadow-2xl hover:shadow-cyan-500/20 backdrop-blur-lg">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                  <div className="flex flex-col md:flex-row items-start md:items-center gap-4 md:gap-8 flex-1 w-full">
                     {/* Interactive Station Dot */}
                     <div className="relative">
                       <div className="absolute inset-0 w-16 h-16 rounded-full bg-cyan-400/20 blur-xl group-hover:bg-cyan-400/40 transition-all duration-500"></div>
@@ -1820,7 +1822,7 @@ const StationsView: React.FC<{ rotationData: RotationData }> = ({ rotationData }
 
                     {/* Station Information */}
                     <div className="flex-1">
-                      <div className="flex items-center gap-4 mb-4">
+                      <div className="flex flex-wrap items-center gap-2 md:gap-4 mb-3 md:mb-4">
                         <h4 className="text-2xl font-bold text-cyan-100 group-hover:text-white transition-colors duration-300">
                           {station.station}
                         </h4>
@@ -1836,7 +1838,7 @@ const StationsView: React.FC<{ rotationData: RotationData }> = ({ rotationData }
                         )}
                       </div>
 
-                      <div className="flex items-center gap-8 text-sm">
+                      <div className="flex flex-wrap items-center gap-4 md:gap-8 text-sm">
                         <div className="flex items-center gap-3">
                           <div className="w-3 h-3 bg-gradient-to-br from-teal-400 to-cyan-400 rounded-full animate-pulse shadow-lg shadow-teal-400/50"></div>
                           <span className="text-slate-300">
@@ -1855,7 +1857,7 @@ const StationsView: React.FC<{ rotationData: RotationData }> = ({ rotationData }
                   </div>
 
                   {/* Time & Status */}
-                  <div className="text-right">
+                  <div className="w-full lg:w-auto mt-4 lg:mt-0 pt-4 lg:pt-0 border-t lg:border-t-0 border-slate-600/30 flex lg:block justify-between items-center text-right lg:text-right">
                     <div className="mb-4">
                       <div className="text-3xl font-black bg-gradient-to-r from-teal-300 to-cyan-300 bg-clip-text text-transparent">
                         +{station.cumulative_time}m

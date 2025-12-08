@@ -350,7 +350,9 @@
             "share": "Share",
             "saveToServer": "Save to Server",
             "cancel": "Cancel",
-            "addSelected": "Add Selected ({count})"
+            "addSelected": "Add Selected ({count})",
+            "toggleAI": "AI Insights",
+            "operatorSchedule": "Operator Schedule"
         },
         "whatIf": {
             "title": "What-If Train Swap Analysis",
