@@ -8,6 +8,7 @@ import logging
 
 from app.services.operators import TrainOperatorService
 from app.services.pdf_generator import DutyPDFGenerator
+from pydantic import BaseModel
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -15,6 +16,11 @@ logger = logging.getLogger(__name__)
 # Initialize services
 operator_service = TrainOperatorService()
 pdf_generator = DutyPDFGenerator()
+
+
+class LeaveRequest(BaseModel):
+    operator_id: str
+    service_date: Optional[str] = None
 
 @router.get("")
 @router.get("/")
@@ -91,3 +97,32 @@ async def download_operator_duty_pdf(
     except Exception as e:
         logger.error(f"Failed to download PDF: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to download PDF: {str(e)}")
+
+
+@router.post("/leave")
+async def mark_operator_on_leave(payload: LeaveRequest):
+    """
+    Mark an operator as on leave for a given service date (default: tomorrow)
+    and automatically reassign their duty to a spare operator in the same shift.
+    """
+    try:
+        result = operator_service.mark_operator_on_leave(
+            operator_id=payload.operator_id,
+            service_date=payload.service_date,
+        )
+        # Wrap result to keep consistent response structure
+        return JSONResponse(
+            content={
+                "success": True,
+                **result,
+                "timestamp": datetime.now().isoformat(),
+            }
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Failed to mark operator on leave: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to mark operator on leave: {str(e)}",
+        )

@@ -68,6 +68,10 @@ class TrainOperatorService:
         self._optimized_trains_cache: Dict[str, List[Dict[str, Any]]] = {}
         self._train_shift_duties_cache: Dict[str, Dict[Tuple[str, str], Dict[str, Any]]] = {}
         self._assignments_cache: Dict[str, Dict[str, Dict[str, Any]]] = {}
+
+        # In-memory overrides for manual leave / reassignment
+        # Structure: { "YYYY-MM-DD": {"on_leave": set(operator_ids), "reassignments": [...] } }
+        self._leave_overrides: Dict[str, Dict[str, Any]] = {}
     
     def _create_operator_database(self) -> Dict[str, Dict[str, Any]]:
         """
@@ -773,6 +777,13 @@ class TrainOperatorService:
                 sign_off = ""
                 total_hours = 0.0
                 duty_id = f"OFF-{operator_id.split('-')[1].zfill(3)}"
+            elif status == "on_leave":
+                shift_label = "ON LEAVE"
+                train_id = None
+                sign_on = ""
+                sign_off = ""
+                total_hours = 0.0
+                duty_id = f"LV-{operator_id.split('-')[1].zfill(3)}"
             elif status == "spare":
                 shift_label = f"{assign.get('shift', '')} SPARE"
                 train_id = "SPARE"
@@ -839,11 +850,17 @@ class TrainOperatorService:
         assignments = self._compute_daily_assignments(service_date)
         assignment = assignments.get(operator_id)
 
-        if not assignment or assignment.get("status") == "off":
+        if not assignment or assignment.get("status") in ("off", "on_leave"):
+            status = assignment.get("status") if assignment else "off"
+            is_leave = status == "on_leave"
             duty = {
                 "date": service_date,
-                "duty_id": f"OFF-{operator_id.split('-')[1].zfill(3)}",
-                "shift": "WEEKLY OFF",
+                "duty_id": (
+                    f"LV-{operator_id.split('-')[1].zfill(3)}"
+                    if is_leave
+                    else f"OFF-{operator_id.split('-')[1].zfill(3)}"
+                ),
+                "shift": "ON LEAVE" if is_leave else "WEEKLY OFF",
                 "operator_id": operator_id,
                 "operator_name": operator_info["name"],
                 "phone": operator_info["phone"],
@@ -861,7 +878,11 @@ class TrainOperatorService:
                 "restrictions": [],
                 "emergency_contacts": self._get_emergency_contacts(),
                 "pre_check_checklist": [],
-                "reminders": ["Weekly rest day - no duty assigned"],
+                "reminders": [
+                    "On approved leave - no duty assigned (manual override)"
+                    if is_leave
+                    else "Weekly rest day - no duty assigned"
+                ],
                 "generated_at": datetime.now().isoformat(),
             }
             return duty
@@ -1117,6 +1138,120 @@ class TrainOperatorService:
 
         self._assignments_cache[service_date] = assignments
         return assignments
+
+    def mark_operator_on_leave(self, operator_id: str, service_date: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Mark an operator as on leave for a given service date and
+        reassign their duty to a spare operator in the same shift.
+
+        - If the operator is already OFF/ON_LEAVE for that day, an error is raised.
+        - A spare operator (status == 'spare') with the same shift is promoted to driver.
+        - The original operator is marked with status 'on_leave'.
+        """
+        if operator_id not in self.operator_db:
+            raise ValueError(f"Operator {operator_id} not found")
+
+        # Default to "tomorrow" if not provided, since leave is usually for next day
+        if service_date:
+            target_date = service_date
+        else:
+            target_date = (date.today() + timedelta(days=1)).isoformat()
+
+        # Ensure assignments and train duties are computed
+        self._build_train_shift_duties(target_date)
+        assignments = self._compute_daily_assignments(target_date)
+
+        if operator_id not in assignments:
+            raise ValueError(f"No duty assignment found for operator {operator_id} on {target_date}")
+
+        current_assignment = assignments[operator_id]
+        status = current_assignment.get("status")
+
+        if status in ("off", "on_leave"):
+            raise ValueError(
+                f"Operator {operator_id} is already "
+                f"{'on leave' if status == 'on_leave' else 'off'} on {target_date}"
+            )
+
+        shift_name = current_assignment.get("shift")
+        if not shift_name:
+            raise ValueError(f"Operator {operator_id} has no shift assigned on {target_date}")
+
+        # Find a spare operator in the same shift
+        spare_candidate_id: Optional[str] = None
+        for op_id, assign in assignments.items():
+            if op_id == operator_id:
+                continue
+            if assign.get("status") == "spare" and assign.get("shift") == shift_name:
+                spare_candidate_id = op_id
+                break
+
+        if not spare_candidate_id:
+            raise ValueError(
+                f"No spare operator available in {shift_name} shift to cover leave for {operator_id}"
+            )
+
+        spare_assignment = assignments[spare_candidate_id]
+
+        # Preserve previous state for debugging / UI
+        previous_driver_assignment = current_assignment.copy()
+        previous_spare_assignment = spare_assignment.copy()
+
+        # Promote spare operator to driver, copying train duty from the original operator
+        assignments[spare_candidate_id] = {
+            **current_assignment,
+            "status": "driver",
+        }
+
+        # Mark original operator as on leave (no train allocation)
+        assignments[operator_id] = {
+            "status": "on_leave",
+            "shift": shift_name,
+            "shift_label": "ON LEAVE",
+            "train_id": None,
+            "sign_on": "",
+            "sign_off": "",
+            "total_hours": 0.0,
+        }
+
+        # Update cache so subsequent calls (summary/duty) use the overridden assignments
+        self._assignments_cache[target_date] = assignments
+
+        # Track override in in-memory structure
+        overrides_for_date = self._leave_overrides.setdefault(
+            target_date, {"on_leave": set(), "reassignments": []}
+        )
+        overrides_for_date["on_leave"].add(operator_id)
+        overrides_for_date["reassignments"].append(
+            {
+                "leave_operator_id": operator_id,
+                "replacement_operator_id": spare_candidate_id,
+                "created_at": datetime.now().isoformat(),
+            }
+        )
+
+        # Build a fresh summary snapshot after override for frontend convenience
+        updated_summary = self.get_operator_duty_summary(target_date)
+
+        return {
+            "success": True,
+            "service_date": target_date,
+            "message": (
+                f"Operator {operator_id} marked on leave for {target_date}. "
+                f"Spare operator {spare_candidate_id} reassigned to cover their duty."
+            ),
+            "leave_operator": {
+                "operator_id": operator_id,
+                "previous_assignment": previous_driver_assignment,
+                "new_assignment": assignments[operator_id],
+            },
+            "replacement_operator": {
+                "operator_id": spare_candidate_id,
+                "previous_assignment": previous_spare_assignment,
+                "new_assignment": assignments[spare_candidate_id],
+            },
+            "updated_summary": updated_summary,
+        }
     
     def _generate_trips(self, shift_type: str) -> List[Dict[str, Any]]:
         """Generate trips based on shift type"""
