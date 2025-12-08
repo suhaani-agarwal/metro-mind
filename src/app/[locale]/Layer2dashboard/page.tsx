@@ -1,7 +1,7 @@
 "use client";
 import { useTranslations } from 'next-intl';
 import React, { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/i18n/routing';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import autoTable from 'jspdf-autotable';
@@ -188,37 +188,37 @@ const Layer2Dashboard: React.FC = () => {
 
 
   const fetchScheduleData = useCallback(async () => {
-  try {
-    setLoading(true);
-    setError(null);
+    try {
+      setLoading(true);
+      setError(null);
 
-    const response = await fetch(`${API_BASE}/schedule/test?service_date=${selectedDate}`);
+      const response = await fetch(`${API_BASE}/schedule/test?service_date=${selectedDate}`);
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
-      throw new Error(errorData?.detail || `HTTP error! status: ${response.status}`);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.detail || `HTTP error! status: ${response.status}`);
+      }
+
+      const result: OptimizationResult = await response.json();
+
+      if (
+        result.status &&
+        !['OPTIMAL', 'FEASIBLE'].includes(result.status) &&
+        result.solver_status !== 'OPTIMAL' &&
+        result.solver_status !== 'FEASIBLE'
+      ) {
+        throw new Error(result.error || result.status);
+      }
+
+      setData(result);
+
+    } catch (err) {
+      console.error('Error fetching schedule:', err);
+      setError(err instanceof Error ? err.message : t('errors.loadSchedule'));
+    } finally {
+      setLoading(false);
     }
-
-    const result: OptimizationResult = await response.json();
-
-    if (
-      result.status &&
-      !['OPTIMAL', 'FEASIBLE'].includes(result.status) &&
-      result.solver_status !== 'OPTIMAL' &&
-      result.solver_status !== 'FEASIBLE'
-    ) {
-      throw new Error(result.error || result.status);
-    }
-
-    setData(result);
-
-  } catch (err) {
-    console.error('Error fetching schedule:', err);
-    setError(err instanceof Error ? err.message : t('errors.loadSchedule'));
-  } finally {
-    setLoading(false);
-  }
-}, [selectedDate]); // 👈 dependency here is mandatory
+  }, [selectedDate]); // 👈 dependency here is mandatory
 
   useEffect(() => {
     fetchScheduleData();
@@ -705,7 +705,7 @@ const Layer2Dashboard: React.FC = () => {
 
 
               <button
-                onClick={() => router.push("/rotation")}
+                onClick={() => router.push('/rotation')}
                 className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm transition-all flex items-center gap-2"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
