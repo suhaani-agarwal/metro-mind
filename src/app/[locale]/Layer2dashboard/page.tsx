@@ -6,8 +6,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import autoTable from 'jspdf-autotable';
 
-const API_BASE =
-  "http://localhost:5005";
+const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5005";
 interface TrainAssignment {
   train_id: string;
   bay: string;
