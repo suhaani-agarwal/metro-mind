@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.services.layer1_service import ScheduleOptimizer
 from app.services.data_generator import DataGenerator
 from app.schemas import OptimizationRequest, OptimizationResponse
-from routes import onboarding, nightly
+from routes import onboarding, nightly, operators
 import json
 import os
 import logging
@@ -13,6 +13,10 @@ from pathlib import Path
 from datetime import date, datetime, timedelta
 import random
 from fastapi.responses import FileResponse
+from app.services.operators import TrainOperatorService
+from app.services.pdf_generator import DutyPDFGenerator
+import uuid
+
 
 # Load environment variables
 from dotenv import load_dotenv
@@ -1306,6 +1310,9 @@ async def verify_otp(employeeId: str, otp: str):
         raise he
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+#endpoints for operators scheduling
+app.include_router(operators.router, prefix="/api/operators", tags=["Operators"])
 
 if __name__ == "__main__":
     import uvicorn
