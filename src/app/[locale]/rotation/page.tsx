@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import { useMap } from 'react-leaflet';
 import dynamic from 'next/dynamic';
@@ -484,28 +484,31 @@ const MetroMap: React.FC<{ rotationData: RotationData; onStationSelect: (station
 
   // Auto-zoom to main line
   const MapController = () => {
-    const map = useMap();
-    useEffect(() => {
-      if (!map || !L) return;
+  const map = useMap();
+  const shouldAutoZoom = useRef(true); // Only auto-zoom once
+  
+  useEffect(() => {
+    if (!map || !L || !shouldAutoZoom.current) return;
 
-      try {
-        const timer = setTimeout(() => {
-          const bounds = getMainLineBounds();
-          if (bounds && map && map.fitBounds && typeof map.fitBounds === 'function') {
-            map.fitBounds(bounds, {
-              padding: [80, 120],
-              maxZoom: 14
-            });
-          }
-        }, 100);
+    try {
+      const timer = setTimeout(() => {
+        const bounds = getMainLineBounds();
+        if (bounds && map && map.fitBounds && typeof map.fitBounds === 'function') {
+          map.fitBounds(bounds, {
+            padding: [80, 120],
+            maxZoom: 14
+          });
+          shouldAutoZoom.current = false; // Disable future auto-zooms
+        }
+      }, 100);
 
-        return () => clearTimeout(timer);
-      } catch (error) {
-        console.error('Error fitting map bounds:', error);
-      }
-    }, [map, selectedLine]);
-    return null;
-  };
+      return () => clearTimeout(timer);
+    } catch (error) {
+      console.error('Error fitting map bounds:', error);
+    }
+  }, [map]); // Only depends on map
+  return null;
+};
 
   const handleStationClick = (stationId: string) => {
     setSelectedStation(stationId);
@@ -631,7 +634,7 @@ const MetroMap: React.FC<{ rotationData: RotationData; onStationSelect: (station
         <div className="h-full rounded-lg overflow-hidden">
           <MapContainer
             center={[10.0160, 76.2990]}
-            zoom={13}
+            zoom={3}
             style={{ height: '100%', width: '100%' }}
             className="rounded-lg"
             zoomControl={true}
@@ -640,10 +643,11 @@ const MetroMap: React.FC<{ rotationData: RotationData; onStationSelect: (station
             <MapController />
 
             {/* Cleaner tile layer */}
-            <TileLayer
-              url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            />
+            {/* Cleaner tile layer */}
+<TileLayer
+  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+/>
 
             {/* Main Metro Line - Teal */}
             {(selectedLine === 'main' || selectedLine === 'all') && (
