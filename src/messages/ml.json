@@ -220,7 +220,14 @@
         "selectTrain": "വിശദീകരണം കാണാൻ ഒരു ട്രെയിൻ തിരഞ്ഞെടുക്കുക",
         "priorityScore": "പ്രാധാന്യ സ്കോർ",
         "crew": "ക്രൂ",
-        "priority": "പ്രാധാന്യം"
+        "priority": "പ്രാധാന്യം",
+        "inventoryRequired": "സ്റ്റോക്ക് ആവശ്യമാണ്",
+        "inventoryStatus": "സ്റ്റോക്ക് അവസ്ഥ",
+        "loc": "സ്ഥാനം",
+        "req": "ആവശ്യം",
+        "avail": "ലഭ്യമാണ്",
+        "noInventoryRequired": "സ്റ്റോക്ക് ആവശ്യമില്ല",
+        "selectTrainInventory": "സ്റ്റോക്ക് പരിശോധിക്കാൻ ട്രെയിൻ തിരഞ്ഞെടുക്കുക"
     },
     "Layer2Dashboard": {
         "loading": {

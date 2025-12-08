@@ -1,0 +1,422 @@
+{
+    "TM001": {
+        "job_cards": [
+            {
+                "priority": "High",
+                "description": "Software major update (5.1h)",
+                "inventory_required": [
+                    {
+                        "item": "Diagnostic Laptop",
+                        "quantity": 1,
+                        "available_stock": 5,
+                        "unit": "unit",
+                        "location": "Tech Room A",
+                        "status": "In Stock"
+                    },
+                    {
+                        "item": "USB-C Interface Cable",
+                        "quantity": 1,
+                        "available_stock": 12,
+                        "unit": "unit",
+                        "location": "Cabinet 3",
+                        "status": "In Stock"
+                    },
+                    {
+                        "item": "Software Patch v5.1",
+                        "quantity": 1,
+                        "available_stock": 999,
+                        "unit": "license",
+                        "location": "Server",
+                        "status": "In Stock"
+                    }
+                ]
+            }
+        ]
+    },
+    "TM002": {
+        "job_cards": [
+            {
+                "priority": "Low",
+                "description": "Interior deep cleaning (2.1h)",
+                "inventory_required": [
+                    {
+                        "item": "Industrial Vacuum Cleaner",
+                        "quantity": 1,
+                        "available_stock": 3,
+                        "unit": "unit",
+                        "location": "Cleaning Bay",
+                        "status": "In Stock"
+                    },
+                    {
+                        "item": "Cleaning Solvent",
+                        "quantity": 2,
+                        "available_stock": 50,
+                        "unit": "liters",
+                        "location": "Chemical Store",
+                        "status": "In Stock"
+                    },
+                    {
+                        "item": "Microfiber Cloths",
+                        "quantity": 10,
+                        "available_stock": 200,
+                        "unit": "pcs",
+                        "location": "Supply Closet",
+                        "status": "In Stock"
+                    }
+                ]
+            }
+        ]
+    },
+    "TM003": {
+        "job_cards": [
+            {
+                "priority": "High",
+                "description": "Software major update (5.1h)",
+                "inventory_required": [
+                    {
+                        "item": "Diagnostic Laptop",
+                        "quantity": 1,
+                        "available_stock": 5,
+                        "unit": "unit",
+                        "location": "Tech Room A",
+                        "status": "In Stock"
+                    }
+                ]
+            },
+            {
+                "priority": "Medium",
+                "description": "Bogie alignment (3.8h)",
+                "inventory_required": [
+                    {
+                        "item": "Laser Alignment Tool",
+                        "quantity": 1,
+                        "available_stock": 2,
+                        "unit": "set",
+                        "location": "Tool Room",
+                        "status": "In Stock"
+                    },
+                    {
+                        "item": "Hydraulic Jack",
+                        "quantity": 2,
+                        "available_stock": 0,
+                        "unit": "unit",
+                        "location": "Bay 4",
+                        "status": "Out of Stock"
+                    },
+                    {
+                        "item": "Shim Pack",
+                        "quantity": 1,
+                        "available_stock": 15,
+                        "unit": "set",
+                        "location": "Parts Bin 12",
+                        "status": "In Stock"
+                    }
+                ]
+            }
+        ]
+    },
+    "TM004": {
+        "job_cards": [
+            {
+                "priority": "High",
+                "description": "Software major update (5.1h)",
+                "inventory_required": [
+                    {
+                        "item": "Diagnostic Laptop",
+                        "quantity": 1,
+                        "available_stock": 4,
+                        "unit": "unit",
+                        "location": "Tech Room A",
+                        "status": "In Stock"
+                    }
+                ]
+            },
+            {
+                "priority": "Medium",
+                "description": "Bogie alignment (3.8h)",
+                "inventory_required": [
+                    {
+                        "item": "Laser Alignment Tool",
+                        "quantity": 1,
+                        "available_stock": 1,
+                        "unit": "set",
+                        "location": "Tool Room",
+                        "status": "Low Stock"
+                    },
+                    {
+                        "item": "Shim Pack",
+                        "quantity": 1,
+                        "available_stock": 14,
+                        "unit": "set",
+                        "location": "Parts Bin 12",
+                        "status": "In Stock"
+                    }
+                ]
+            }
+        ]
+    },
+    "TM005": {
+        "job_cards": [
+            {
+                "priority": "Low",
+                "description": "Safety system check (1.5h)",
+                "inventory_required": [
+                    {
+                        "item": "Safety Diagnostic Kit",
+                        "quantity": 1,
+                        "available_stock": 4,
+                        "unit": "kit",
+                        "location": "Safety Locker",
+                        "status": "In Stock"
+                    },
+                    {
+                        "item": "Multimeter",
+                        "quantity": 1,
+                        "available_stock": 8,
+                        "unit": "unit",
+                        "location": "Tool Room",
+                        "status": "In Stock"
+                    }
+                ]
+            }
+        ]
+    },
+    "TM006": {
+        "job_cards": [
+            {
+                "priority": "High",
+                "description": "HVAC system maintenance (4.5h)",
+                "inventory_required": [
+                    {
+                        "item": "Refrigerant Gas (R410A)",
+                        "quantity": 5,
+                        "available_stock": 12,
+                        "unit": "kg",
+                        "location": "Hazmat Store",
+                        "status": "Low Stock"
+                    },
+                    {
+                        "item": "HVAC Air Filter",
+                        "quantity": 4,
+                        "available_stock": 40,
+                        "unit": "pcs",
+                        "location": "Parts Bin 08",
+                        "status": "In Stock"
+                    },
+                    {
+                        "item": "Pressure Gauge",
+                        "quantity": 1,
+                        "available_stock": 6,
+                        "unit": "unit",
+                        "location": "Tool Room",
+                        "status": "In Stock"
+                    }
+                ]
+            }
+        ]
+    },
+    "TM009": {
+        "job_cards": [
+            {
+                "priority": "Low",
+                "description": "Interior deep cleaning (2.1h)",
+                "inventory_required": [
+                    {
+                        "item": "Cleaning Solvent",
+                        "quantity": 2,
+                        "available_stock": 48,
+                        "unit": "liters",
+                        "location": "Chemical Store",
+                        "status": "In Stock"
+                    },
+                    {
+                        "item": "Disinfectant Spray",
+                        "quantity": 1,
+                        "available_stock": 25,
+                        "unit": "can",
+                        "location": "Supply Closet",
+                        "status": "In Stock"
+                    }
+                ]
+            }
+        ]
+    },
+    "TM012": {
+        "job_cards": [
+            {
+                "priority": "Critical",
+                "description": "Critical brake system failure (7.5h)",
+                "inventory_required": [
+                    {
+                        "item": "Brake Caliper Assembly",
+                        "quantity": 2,
+                        "available_stock": 1,
+                        "unit": "unit",
+                        "location": "Heavy Parts A",
+                        "status": "Out of Stock"
+                    },
+                    {
+                        "item": "Hydraulic Fluid",
+                        "quantity": 1,
+                        "available_stock": 20,
+                        "unit": "can",
+                        "location": "Fluid Store",
+                        "status": "In Stock"
+                    },
+                    {
+                        "item": "Brake Pads (Set)",
+                        "quantity": 2,
+                        "available_stock": 8,
+                        "unit": "set",
+                        "location": "Parts Bin 05",
+                        "status": "In Stock"
+                    }
+                ]
+            }
+        ]
+    },
+    "TM013": {
+        "job_cards": [
+            {
+                "priority": "Low",
+                "description": "Routine inspection (1.8h)",
+                "inventory_required": [
+                    {
+                        "item": "Inspection Checklist",
+                        "quantity": 1,
+                        "available_stock": 100,
+                        "unit": "pad",
+                        "location": "Office",
+                        "status": "In Stock"
+                    },
+                    {
+                        "item": "Flashlight",
+                        "quantity": 1,
+                        "available_stock": 15,
+                        "unit": "unit",
+                        "location": "Tool Room",
+                        "status": "In Stock"
+                    }
+                ]
+            }
+        ]
+    },
+    "TM014": {
+        "job_cards": [
+            {
+                "priority": "High",
+                "description": "HVAC system maintenance (4.5h)",
+                "inventory_required": [
+                    {
+                        "item": "Refrigerant Gas (R410A)",
+                        "quantity": 3,
+                        "available_stock": 7,
+                        "unit": "kg",
+                        "location": "Hazmat Store",
+                        "status": "Low Stock"
+                    },
+                    {
+                        "item": "HVAC Air Filter",
+                        "quantity": 4,
+                        "available_stock": 36,
+                        "unit": "pcs",
+                        "location": "Parts Bin 08",
+                        "status": "In Stock"
+                    }
+                ]
+            }
+        ]
+    },
+    "TM016": {
+        "job_cards": [
+            {
+                "priority": "High",
+                "description": "Software major update (5.1h)",
+                "inventory_required": [
+                    {
+                        "item": "Software Patch v5.1",
+                        "quantity": 1,
+                        "available_stock": 999,
+                        "unit": "license",
+                        "location": "Server",
+                        "status": "In Stock"
+                    }
+                ]
+            },
+            {
+                "priority": "Medium",
+                "description": "Bogie alignment (3.8h)",
+                "inventory_required": [
+                    {
+                        "item": "Shim Pack",
+                        "quantity": 1,
+                        "available_stock": 13,
+                        "unit": "set",
+                        "location": "Parts Bin 12",
+                        "status": "In Stock"
+                    }
+                ]
+            }
+        ]
+    },
+    "TM017": {
+        "job_cards": [
+            {
+                "priority": "High",
+                "description": "Software major update (5.1h), HVAC system maintenance (4.5h)",
+                "inventory_required": [
+                    {
+                        "item": "Software Patch v5.1",
+                        "quantity": 1,
+                        "available_stock": 999,
+                        "unit": "license",
+                        "location": "Server",
+                        "status": "In Stock"
+                    },
+                    {
+                        "item": "HVAC Air Filter",
+                        "quantity": 4,
+                        "available_stock": 32,
+                        "unit": "pcs",
+                        "location": "Parts Bin 08",
+                        "status": "In Stock"
+                    },
+                    {
+                        "item": "Condenser Coil Cleaner",
+                        "quantity": 1,
+                        "available_stock": 0,
+                        "unit": "can",
+                        "location": "Chemical Store",
+                        "status": "Out of Stock"
+                    }
+                ]
+            }
+        ]
+    },
+    "TM024": {
+        "job_cards": [
+            {
+                "priority": "High",
+                "description": "Software major update (5.1h), HVAC system maintenance (4.5h)",
+                "inventory_required": [
+                    {
+                        "item": "Diagnostic Laptop",
+                        "quantity": 1,
+                        "available_stock": 3,
+                        "unit": "unit",
+                        "location": "Tech Room A",
+                        "status": "In Stock"
+                    },
+                    {
+                        "item": "HVAC Filter Set",
+                        "quantity": 1,
+                        "available_stock": 5,
+                        "unit": "set",
+                        "location": "Parts Bin 09",
+                        "status": "In Stock"
+                    }
+                ]
+            }
+        ]
+    }
+}

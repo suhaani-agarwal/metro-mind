@@ -4,6 +4,26 @@ import { OptimizationResponse, ReadinessScore, CleaningAssignment } from './type
 import ParkingMapComponent from './ParkingMap';
 import { useRouter } from "@/i18n/routing";
 import { useTranslations } from "next-intl";
+import inventoryData from "@/data/inventory.json";
+
+interface InventoryItem {
+  item: string;
+  quantity: number;
+  available_stock: number;
+  unit: string;
+  location: string;
+  status: string;
+}
+
+interface InventoryRecord {
+  job_cards: {
+    priority: string;
+    description: string;
+    inventory_required: InventoryItem[];
+  }[];
+}
+
+const inventory = inventoryData as Record<string, InventoryRecord>;
 
 // Simplified styles to improve performance
 const styles = {
@@ -483,6 +503,75 @@ export default function Layer1Dashboard() {
           </div>
 
           <ReadinessList scores={data?.readiness_scores || []} />
+
+          {/* Inventory Card (Left Column) */}
+          <div style={styles.card}>
+            <h3 style={styles.cardTitle} className="flex items-center gap-2">
+              <span> </span> {t('inventoryStatus')}
+            </h3>
+            {selectedTrain ? (
+              inventory[selectedTrain] ? (
+                <div style={{ display: 'grid', gap: '0.75rem' }}>
+                  {inventory[selectedTrain].job_cards.map((job, idx) => (
+                    <div key={idx} style={{ background: 'rgba(15, 23, 42, 0.4)', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(148, 163, 184, 0.1)' }}>
+                      <div style={{
+                        fontSize: '0.9rem',
+                        color: job.priority === 'Critical' ? '#f87171' : '#fbbf24',
+                        marginBottom: '0.75rem',
+                        fontWeight: '700',
+                        borderBottom: '1px solid rgba(148, 163, 184, 0.1)',
+                        paddingBottom: '0.5rem'
+                      }}>
+                        {job.description}
+                      </div>
+                      <div style={{ display: 'grid', gap: '0.5rem' }}>
+                        {job.inventory_required.map((inv, i) => (
+                          <div key={i} style={{
+                            background: 'rgba(30, 41, 59, 0.4)',
+                            padding: '0.75rem',
+                            borderRadius: '8px',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            fontSize: '0.85rem'
+                          }}>
+                            <div>
+                              <div style={{ color: '#e2e8f0', fontWeight: '600' }}>{inv.item}</div>
+                              <div style={{ color: '#94a3b8', fontSize: '0.8rem', marginTop: '2px' }}>
+                                {t('loc')}: {inv.location}
+                              </div>
+                            </div>
+                            <div style={{ textAlign: 'right' }}>
+                              <div style={{
+                                color: inv.status === 'In Stock' ? '#4ade80' :
+                                  inv.status === 'Low Stock' ? '#fbbf24' : '#f87171',
+                                fontWeight: '700',
+                                fontSize: '0.8rem',
+                                marginBottom: '2px'
+                              }}>
+                                {inv.status}
+                              </div>
+                              <div style={{ color: '#cbd5e1' }}>
+                                <span style={{ color: '#94a3b8' }}>{t('req')}:</span> {inv.quantity} {' '}
+                                <span style={{ color: '#94a3b8', marginLeft: '4px' }}>{t('avail')}:</span> {inv.available_stock}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={styles.empty}>
+                  <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>✅</div>
+                  {t('noInventoryRequired')}
+                </div>
+              )
+            ) : (
+              <div style={styles.empty}>{t('selectTrainInventory')}</div>
+            )}
+          </div>
         </div>
 
         <div style={styles.right}>
@@ -492,6 +581,7 @@ export default function Layer1Dashboard() {
             selected={selectedTrain}
             onSelect={setSelectedTrain}
           />
+
 
           <div style={styles.detailsCard}>
             <h3 style={styles.cardTitle}>{t('details')}</h3>

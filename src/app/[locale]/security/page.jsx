@@ -347,7 +347,7 @@ export default function SecurityPage() {
             }
 
             // 2. Send OTP via email
-            const response = await fetch("/api/send-otp", {
+            const response = await fetch("http://localhost:5005/api/send-otp", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ email, employeeId: formData.employeeId }),
@@ -379,7 +379,7 @@ export default function SecurityPage() {
           try {
             // Verify OTP via API
             const response = await fetch(
-              `/api/verify-otp?employeeId=${formData.employeeId}&otp=${formData.otp}`
+              `http://localhost:5005/api/verify-otp?employeeId=${formData.employeeId}&otp=${formData.otp}`
             );
 
             const data = await response.json();
