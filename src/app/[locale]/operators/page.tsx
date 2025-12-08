@@ -1,26 +1,23 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { 
-  Container, Paper, Typography, Box, Grid, Card, CardContent, 
+import { useState, useEffect } from 'react';
+import {
+  Container, Paper, Typography, Box, Grid as MuiGrid, Card, CardContent,
   Button, Select, MenuItem, FormControl, InputLabel, Alert,
-  Chip, CircularProgress, Table, TableBody, TableCell, 
+  Chip, CircularProgress, Table, TableBody, TableCell,
   TableContainer, TableHead, TableRow,
   Dialog, DialogTitle, DialogContent, DialogActions,
   Stepper, Step, StepLabel, Avatar
 } from '@mui/material';
+
+const Grid = MuiGrid as any;
 import {
   Download as DownloadIcon,
   Preview as PreviewIcon,
   Schedule as ScheduleIcon,
   Person as PersonIcon,
-  Train as TrainIcon,
-  AccessTime as AccessTimeIcon,
-  Warning as WarningIcon,
-  CheckCircle as CheckCircleIcon
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
-// import { API_BASE } from '@/lib/config';
 
 const API_BASE =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5005";
@@ -164,7 +161,7 @@ export default function TrainOperatorsPage() {
     try {
       const response = await fetch(`${API_BASE}/api/operators/${operatorId}/duty`);
       const data = await response.json();
-      
+
       if (data.success) {
         setDutySchedule(data.duty);
         setActiveStep(1);
@@ -181,7 +178,7 @@ export default function TrainOperatorsPage() {
 
   const generatePDF = async () => {
     if (!selectedOperator) return;
-    
+
     setPdfLoading(true);
     try {
       window.open(`${API_BASE}/api/operators/${selectedOperator}/duty/pdf/download`, '_blank');
@@ -225,9 +222,9 @@ export default function TrainOperatorsPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <Paper elevation={3} sx={{ 
-          p: 4, 
-          mb: 4, 
+        <Paper elevation={3} sx={{
+          p: 4,
+          mb: 4,
           borderRadius: 2,
           background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
           color: '#f8fafc'
@@ -340,8 +337,8 @@ export default function TrainOperatorsPage() {
                         const statusColor = isOff
                           ? '#64748b'
                           : isSpare
-                          ? '#fbbf24'
-                          : '#22c55e';
+                            ? '#fbbf24'
+                            : '#22c55e';
 
                         return (
                           <TableRow
@@ -409,8 +406,8 @@ export default function TrainOperatorsPage() {
 
           <Grid container spacing={4} component="div">
             {/* Left Column - Selection and Summary */}
-            <Grid item xs={12} md={4} component="div">
-              <Card sx={{ 
+            <Grid xs={12} md={4} component="div">
+              <Card sx={{
                 height: '100%',
                 background: 'rgba(15, 23, 42, 0.8)',
                 backdropFilter: 'blur(10px)',
@@ -422,13 +419,13 @@ export default function TrainOperatorsPage() {
                     <PersonIcon sx={{ mr: 1, verticalAlign: 'middle', color: '#38bdf8' }} />
                     Operator Selection
                   </Typography>
-                  
+
                   <FormControl fullWidth sx={{ mb: 3 }}>
                     <InputLabel sx={{ color: '#94a3b8' }}>Select Operator</InputLabel>
                     <Select
                       value={selectedOperator}
                       label="Select Operator"
-                      onChange={(e) => setSelectedOperator(e.target.value)}
+                      onChange={(e: any) => setSelectedOperator(e.target.value)}
                       disabled={loading}
                       sx={{
                         color: '#f8fafc',
@@ -446,10 +443,10 @@ export default function TrainOperatorsPage() {
                       {operators.map((operator) => (
                         <MenuItem key={operator.id} value={operator.id}>
                           <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <Avatar sx={{ 
-                              width: 36, 
-                              height: 36, 
-                              mr: 2, 
+                            <Avatar sx={{
+                              width: 36,
+                              height: 36,
+                              mr: 2,
                               background: `linear-gradient(135deg, #38bdf8 0%, #06d6a0 100%)`,
                               color: '#0f172a',
                               fontWeight: 'bold'
@@ -498,10 +495,10 @@ export default function TrainOperatorsPage() {
                       </Typography>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                         <Typography variant="body2" sx={{ color: '#94a3b8' }}>Total Operators:</Typography>
-                        <Chip 
-                          label={dutySummary.total_operators} 
-                          size="small" 
-                          sx={{ 
+                        <Chip
+                          label={dutySummary.total_operators}
+                          size="small"
+                          sx={{
                             background: 'rgba(56, 189, 248, 0.2)',
                             color: '#38bdf8'
                           }}
@@ -522,7 +519,7 @@ export default function TrainOperatorsPage() {
                         Export Options
                       </Typography>
                       <Grid container spacing={1} component="div">
-                        <Grid item xs={6} component="div">
+                        <Grid xs={6} component="div">
                           <Button
                             variant="outlined"
                             fullWidth
@@ -541,7 +538,7 @@ export default function TrainOperatorsPage() {
                             PDF
                           </Button>
                         </Grid>
-                        <Grid item xs={6} component="div">
+                        <Grid xs={6} component="div">
                           <Button
                             variant="outlined"
                             fullWidth
@@ -567,14 +564,14 @@ export default function TrainOperatorsPage() {
             </Grid>
 
             {/* Right Column - Duty Schedule */}
-            <Grid item xs={12} md={8} component="div">
+            <Grid xs={12} md={8} component="div">
               {dutySchedule ? (
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.5 }}
                 >
-                  <Card sx={{ 
+                  <Card sx={{
                     background: 'rgba(15, 23, 42, 0.8)',
                     backdropFilter: 'blur(10px)',
                     border: '1px solid rgba(148, 163, 184, 0.2)',
@@ -582,10 +579,10 @@ export default function TrainOperatorsPage() {
                   }}>
                     <CardContent>
                       {/* Header */}
-                      <Box sx={{ 
-                        background: 'linear-gradient(135deg, #003366 0%, #0066cc 100%)', 
-                        color: 'white', 
-                        p: 3, 
+                      <Box sx={{
+                        background: 'linear-gradient(135deg, #003366 0%, #0066cc 100%)',
+                        color: 'white',
+                        p: 3,
                         borderRadius: 1,
                         textAlign: 'center',
                         mb: 3
@@ -600,9 +597,9 @@ export default function TrainOperatorsPage() {
 
                       {/* Operator Info */}
                       <Grid container spacing={2} sx={{ mb: 3 }} component="div">
-                        <Grid item xs={12} sm={4} component="div">
-                          <Paper sx={{ 
-                            p: 2, 
+                        <Grid xs={12} sm={4} component="div">
+                          <Paper sx={{
+                            p: 2,
                             background: 'rgba(30, 41, 59, 0.6)',
                             border: '1px solid rgba(148, 163, 184, 0.2)',
                             borderRadius: 2
@@ -620,9 +617,9 @@ export default function TrainOperatorsPage() {
                             </Typography>
                           </Paper>
                         </Grid>
-                        <Grid item xs={12} sm={4} component="div">
-                          <Paper sx={{ 
-                            p: 2, 
+                        <Grid xs={12} sm={4} component="div">
+                          <Paper sx={{
+                            p: 2,
                             background: 'rgba(30, 41, 59, 0.6)',
                             border: '1px solid rgba(148, 163, 184, 0.2)',
                             borderRadius: 2
@@ -635,9 +632,9 @@ export default function TrainOperatorsPage() {
                             </Typography>
                           </Paper>
                         </Grid>
-                        <Grid item xs={12} sm={4} component="div">
-                          <Paper sx={{ 
-                            p: 2, 
+                        <Grid xs={12} sm={4} component="div">
+                          <Paper sx={{
+                            p: 2,
                             background: 'rgba(30, 41, 59, 0.6)',
                             border: `1px solid ${getShiftColor(dutySchedule.shift)}`,
                             borderRadius: 2
@@ -653,19 +650,19 @@ export default function TrainOperatorsPage() {
                       </Grid>
 
                       {/* Operator Details */}
-                      <Paper sx={{ 
-                        p: 2, 
-                        mb: 3, 
+                      <Paper sx={{
+                        p: 2,
+                        mb: 3,
                         background: 'rgba(30, 41, 59, 0.6)',
                         border: '1px solid rgba(148, 163, 184, 0.2)',
                         borderRadius: 2
                       }}>
                         <Grid container spacing={2} alignItems="center" component="div">
-                          <Grid item xs={12} md={6} component="div">
+                          <Grid xs={12} md={6} component="div">
                             <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                              <Avatar sx={{ 
-                                width: 48, 
-                                height: 48, 
+                              <Avatar sx={{
+                                width: 48,
+                                height: 48,
                                 mr: 2,
                                 background: `linear-gradient(135deg, ${getShiftColor(dutySchedule.shift)} 0%, #38bdf8 100%)`,
                                 color: '#0f172a',
@@ -684,7 +681,7 @@ export default function TrainOperatorsPage() {
                               </Box>
                             </Box>
                           </Grid>
-                          <Grid item xs={12} md={6} component="div">
+                          <Grid xs={12} md={6} component="div">
                             <Typography variant="body1" sx={{ color: '#f8fafc' }}>
                               <strong>Phone:</strong> {dutySchedule.phone}
                             </Typography>
@@ -693,9 +690,9 @@ export default function TrainOperatorsPage() {
                       </Paper>
 
                       {/* Duty Summary */}
-                      <Paper sx={{ 
-                        p: 2, 
-                        mb: 3, 
+                      <Paper sx={{
+                        p: 2,
+                        mb: 3,
                         background: 'rgba(56, 189, 248, 0.1)',
                         border: '1px solid rgba(56, 189, 248, 0.3)',
                         borderRadius: 2
@@ -703,7 +700,7 @@ export default function TrainOperatorsPage() {
                         <Typography variant="h6" sx={{ color: '#38bdf8', mb: 2 }}>
                           Duty Summary
                         </Typography>
-                        
+
                         <Grid container spacing={2} component="div">
                           {[
                             { label: 'Sign-on', value: formatTime(dutySchedule.sign_on), color: '#06d6a0' },
@@ -711,7 +708,7 @@ export default function TrainOperatorsPage() {
                             { label: 'Total Duty', value: `${dutySchedule.total_hours}h`, color: '#38bdf8' },
                             { label: 'Driving', value: `${dutySchedule.driving_hours}h`, color: '#06d6a0' }
                           ].map((item, index) => (
-                            <Grid item xs={6} sm={3} key={index} component="div">
+                            <Grid xs={6} sm={3} key={index} component="div">
                               <Box sx={{ textAlign: 'center' }}>
                                 <Typography variant="caption" sx={{ color: '#94a3b8', display: 'block' }}>
                                   {item.label}
@@ -726,9 +723,9 @@ export default function TrainOperatorsPage() {
                       </Paper>
 
                       {/* Train Assignment */}
-                      <Paper sx={{ 
-                        p: 2, 
-                        mb: 3, 
+                      <Paper sx={{
+                        p: 2,
+                        mb: 3,
                         background: 'rgba(251, 191, 36, 0.1)',
                         border: '1px solid rgba(251, 191, 36, 0.3)',
                         borderRadius: 2
@@ -736,11 +733,11 @@ export default function TrainOperatorsPage() {
                         <Typography variant="h6" sx={{ color: '#fbbf24', mb: 2 }}>
                           Train Assignment
                         </Typography>
-                        
+
                         <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                          <Chip 
+                          <Chip
                             label={dutySchedule.train_id}
-                            sx={{ 
+                            sx={{
                               background: 'rgba(251, 191, 36, 0.2)',
                               color: '#fbbf24',
                               fontWeight: 'bold',
@@ -833,12 +830,12 @@ export default function TrainOperatorsPage() {
                                   const duration = trip?.duration || '—';
                                   const paxEstimate = trip?.pax_estimate || '—';
                                   const notes = trip?.notes || '—';
-                                  
+
                                   // Check for delays safely
                                   const predictedDelay = trip?.predicted_delay_minutes;
                                   const delaySummary = trip?.predicted_delay_summary;
                                   const hasDelay = typeof predictedDelay === 'number' && predictedDelay >= 5;
-                                  
+
                                   let displayNotes = notes;
                                   if (hasDelay && delaySummary) {
                                     displayNotes = `${delaySummary} (${predictedDelay} min delay)`;
@@ -877,9 +874,9 @@ export default function TrainOperatorsPage() {
                       )}
 
                       {/* Footer */}
-                      <Box sx={{ 
-                        mt: 3, 
-                        pt: 2, 
+                      <Box sx={{
+                        mt: 3,
+                        pt: 2,
                         borderTop: '1px solid rgba(148, 163, 184, 0.2)',
                         textAlign: 'center'
                       }}>
@@ -891,11 +888,11 @@ export default function TrainOperatorsPage() {
                   </Card>
                 </motion.div>
               ) : (
-                <Card sx={{ 
-                  height: '100%', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center', 
+                <Card sx={{
+                  height: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                   p: 8,
                   background: 'rgba(15, 23, 42, 0.8)',
                   backdropFilter: 'blur(10px)',
@@ -918,8 +915,8 @@ export default function TrainOperatorsPage() {
         </Paper>
 
         {/* PDF Preview Dialog */}
-        <Dialog 
-          open={previewOpen} 
+        <Dialog
+          open={previewOpen}
           onClose={() => setPreviewOpen(false)}
           maxWidth="lg"
           fullWidth
@@ -940,8 +937,8 @@ export default function TrainOperatorsPage() {
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setPreviewOpen(false)}>Close</Button>
-            <Button 
-              variant="contained" 
+            <Button
+              variant="contained"
               onClick={generatePDF}
               startIcon={<DownloadIcon />}
             >
