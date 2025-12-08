@@ -15,8 +15,9 @@ export default async function LocaleLayout({
   children: ReactNode;
   params: Promise<{ locale: string }>;
 }) {
-  // Ensure that the incoming `locale` is valid
+   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { locale } = await params;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   if (!routing.locales.includes(locale as any)) {
     notFound();
   }

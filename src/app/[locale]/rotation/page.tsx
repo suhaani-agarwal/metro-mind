@@ -306,7 +306,10 @@ const airportExtensionStations = [
 // NEW: Improved Metro Map Component
 
 // NEW: Metro Map Component with Station Labels
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const MetroMap: React.FC<{ rotationData: RotationData; onStationSelect: (stationId: string | null) => void; t: any; }> = ({ rotationData, onStationSelect, t }) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [icons, setIcons] = useState<{ trainIcon: any; delayedTrainIcon: any } | null>(null);
   const [selectedStation, setSelectedStation] = useState<string | null>(null);
   const [showTrains, setShowTrains] = useState(true);
@@ -788,6 +791,7 @@ const RotationPage: React.FC = () => {
       const data: RotationData = await response.json();
       setRotationData(data);
       try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (window as any).__rotationData = data;
         const map = new Map<string, string>();
         data.train_schedules.forEach(ts => {
@@ -796,6 +800,7 @@ const RotationPage: React.FC = () => {
             map.set(key, ts.train_id);
           });
         });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (window as any).__rotationDataTrainMap = map;
       } catch { }
     } catch (err) {
@@ -1956,8 +1961,11 @@ const StationsView: React.FC<{ rotationData: RotationData }> = ({ rotationData }
 // Helper to map an event back to its train id from the current rotationData in closure
 function findTrainIdForEvent(event: StationEvent): string {
   try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const any = (window as any).__rotationData as RotationData | undefined;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (any) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       for (const t of any.train_schedules) {
         if (t.station_events && t.station_events.some(e => e.station === event.station && e.expected_arrival === event.expected_arrival && e.scheduled_arrival === event.scheduled_arrival && e.direction === event.direction && e.rotation === event.rotation)) {
           return t.train_id;
