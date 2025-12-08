@@ -231,6 +231,19 @@
         "priority": "Priority"
     },
     "Layer2Dashboard": {
+        "button": {
+            "addTrains": "Add Standby Train"
+        },
+        "success": {
+            "standbyTrainsAdded": "{count} standby train(s) added successfully."
+        },
+        "standbySelector": {
+            "title": "Select Standby Trains",
+            "subtitle": "Select available trains to add to the schedule",
+            "available": "Available",
+            "noTrains": "No standby trains found",
+            "selected": "{count} Selected"
+        },
         "loading": {
             "title": "Loading Schedule Data",
             "subtitle": "Optimizing trains with readiness & minimal shunting focus..."
@@ -335,7 +348,9 @@
             "viewTimetable": "View Timetable",
             "export": "Export PDF",
             "share": "Share",
-            "saveToServer": "Save to Server"
+            "saveToServer": "Save to Server",
+            "cancel": "Cancel",
+            "addSelected": "Add Selected ({count})"
         },
         "whatIf": {
             "title": "What-If Train Swap Analysis",
@@ -458,7 +473,9 @@
             "loadSchedule": "Failed to load schedule data",
             "fetchStandby": "Failed to fetch standby trains",
             "analysisFailed": "Analysis failed",
-            "saveOverride": "Failed to save override"
+            "saveOverride": "Failed to save override",
+            "noStandbyTrains": "No standby trains available.",
+            "selectAtLeastOneTrain": "Please select at least one train."
         }
     },
     "Onboarding": {
