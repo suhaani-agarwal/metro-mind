@@ -30,11 +30,19 @@ interface TrainAssignment {
   is_priority_slot?: boolean;
 }
 
+interface ReadinessDetails {
+  mechanical?: string;
+  electrical?: string;
+  safety?: string;
+  cleanliness?: string;
+  last_maintenance?: string;
+}
+
 interface StandbyTrain {
   train_id: string;
   readiness: number;
   readiness_summary: string;
-  readiness_details: Record<string, any>;
+  readiness_details: ReadinessDetails;
   bay: string;
   bay_position: number;
   status: string;
@@ -67,7 +75,7 @@ interface OptimizationResult {
   service_date?: string;
   processing_time?: string;
   shunting_operations_required?: number;
-  trains_requiring_shunting?: any[];
+  trains_requiring_shunting?: (string | ShuntingOperation)[];
   input_validation?: ValidationResult;
   test_data_validation?: ValidationResult;
   optimization_summary?: {
@@ -91,8 +99,8 @@ interface ValidationResult {
   valid: boolean;
   warnings: string[];
   errors: string[];
-  stats: Record<string, any>;
-  detailed_stats?: Record<string, any>;
+  stats: Record<string, unknown>;
+  detailed_stats?: Record<string, unknown>;
 }
 
 interface SwapAnalysis {
@@ -107,12 +115,12 @@ interface SwapAnalysis {
     scheduled_train: {
       score: number;
       summary: string;
-      details: Record<string, any>;
+      details: ReadinessDetails;
     };
     standby_train: {
       score: number;
       summary: string;
-      details: Record<string, any>;
+      details: ReadinessDetails;
     };
   };
   ai_analysis: {
@@ -162,6 +170,21 @@ interface TimetableData {
   };
 }
 
+type ShuntingOperation = string | {
+  train_id: string;
+  // Add other properties if available in the shunting operation object
+  reason?: string;
+  from_bay?: string;
+  to_bay?: string;
+};
+
+interface SuggestedOverride {
+  from_train: string;
+  to_train: string;
+  confidence: 'high' | 'medium' | 'low';
+  reason: string;
+}
+
 const Layer2Dashboard: React.FC = () => {
   const t = useTranslations('Layer2Dashboard');
   const router = useRouter();
@@ -173,7 +196,7 @@ const Layer2Dashboard: React.FC = () => {
   const [overrideReason, setOverrideReason] = useState<string>('');
   const [showOverride, setShowOverride] = useState(false);
   const [overrideSubmitting, setOverrideSubmitting] = useState(false);
-  const [suggestedOverrides, setSuggestedOverrides] = useState<any[]>([]);
+  const [suggestedOverrides, setSuggestedOverrides] = useState<SuggestedOverride[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingWhatIf, setLoadingWhatIf] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -513,7 +536,7 @@ const Layer2Dashboard: React.FC = () => {
 
     // Schedule Table
     const tableColumn = ["Slot", "Train ID", "Bay", "Position", "Departure", "Readiness", "Status"];
-    const tableRows: any[] = [];
+    const tableRows: (string | number)[][] = [];
 
     sortedAssignments.forEach((train) => {
       const trainData = [
@@ -565,7 +588,7 @@ const Layer2Dashboard: React.FC = () => {
       doc.text('Standby Trains', 14, finalY);
 
       const standbyColumns = ["Train ID", "Bay", "Position", "Readiness", "Status"];
-      const standbyRows: any[] = [];
+      const standbyRows: (string | number)[][] = [];
 
       data.standby_trains.forEach((train) => {
         const standbyData = [
