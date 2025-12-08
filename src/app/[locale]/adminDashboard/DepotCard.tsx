@@ -6,7 +6,7 @@ import { collection, doc, writeBatch, query, where, getDocs, limit } from "fireb
 import * as XLSX from "xlsx";
 
 const API_BASE =
-  "http://localhost:5005";
+    "http://localhost:5005";
 
 interface Depot {
     name: string;
@@ -214,12 +214,12 @@ export default function DepotCard({ depot, onDelete }: DepotCardProps) {
 
     return (
         <div
-            className="rounded-2xl border border-slate-600/30 shadow-xl backdrop-blur-md p-6 hover:shadow-2xl transition-all duration-300 group hover:border-sky-400/50"
+            className="rounded-2xl border border-slate-600/30 shadow-xl backdrop-blur-md p-4 sm:p-6 hover:shadow-2xl transition-all duration-300 group hover:border-sky-400/50"
             style={{ backgroundColor: "rgba(15, 23, 42, 0.8)" }}
         >
             <div className="flex justify-between items-start mb-6">
                 <div className="flex-1">
-                    <h3 className="text-2xl font-bold text-slate-50 group-hover:text-emerald-400 transition">{depot.name}</h3>
+                    <h3 className="text-xl sm:text-2xl font-bold text-slate-50 group-hover:text-emerald-400 transition">{depot.name}</h3>
                     <p className="text-slate-400 mt-1 flex items-center gap-2">📍 {depot.location}</p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -248,15 +248,15 @@ export default function DepotCard({ depot, onDelete }: DepotCardProps) {
             <div className="space-y-3 mb-6">
                 <div className="flex items-center justify-between p-3 rounded-lg hover:bg-slate-600/10 transition">
                     <span className="text-slate-400">📊 Max Capacity</span>
-                    <span className="text-slate-50 font-semibold text-lg">{depot.max_capacity_trains} Trains</span>
+                    <span className="text-slate-50 font-semibold text-base sm:text-lg">{depot.max_capacity_trains} Trains</span>
                 </div>
                 <div className="flex items-center justify-between p-3 rounded-lg hover:bg-slate-600/10 transition">
                     <span className="text-slate-400">⏰ Hours</span>
-                    <span className="text-slate-50 font-semibold text-lg">{depot.operational_hours}</span>
+                    <span className="text-slate-50 font-semibold text-base sm:text-lg">{depot.operational_hours}</span>
                 </div>
                 <div className="flex items-center justify-between p-3 rounded-lg hover:bg-slate-600/10 transition">
                     <span className="text-slate-400">🔧 Maintenance Bays</span>
-                    <span className="text-slate-50 font-semibold text-lg">{depot.maintenance_bays}</span>
+                    <span className="text-slate-50 font-semibold text-base sm:text-lg">{depot.maintenance_bays}</span>
                 </div>
             </div>
 
