@@ -88,7 +88,7 @@ export default function MetroMindPage() {
           `${API_BASE}/api/nightly/unified-data`
         );
 
-        let trainsData = response.data.trains || [];
+        const trainsData = response.data.trains || [];
         setTrains(trainsData);
         setError(null);
       } catch (err) {

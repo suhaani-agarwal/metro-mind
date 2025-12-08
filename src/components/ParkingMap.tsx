@@ -465,6 +465,7 @@ export default function AdvancedDepotMap({
     const currentPositions: Record<string, string | null> = {};
     const currentSlots: Record<string, number | undefined> = {};
     if (unifiedData?.trains) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       unifiedData.trains.forEach((train: any) => {
         if (!train.id) return;
         if (train.current_position == null || train.current_position === '') {
@@ -487,11 +488,13 @@ export default function AdvancedDepotMap({
     Object.entries(currentPositions).forEach(([trainId, trackId]) => {
       if (trackId) {
         if (!trackContent[trackId]) trackContent[trackId] = [];
+        
         trackContent[trackId].push(trainId);
       }
     });
 
     // Generate moves from assignments
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     outputData.parking_assignments.forEach((assignment: any) => {
       const trainId = assignment.train_id;
       const targetTrack = assignment.track_id;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, ChangeEvent } from "react";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc, collection, getDocs } from "firebase/firestore";
 import { useRouter, useParams } from "next/navigation";
@@ -62,7 +62,7 @@ export default function AdminSignup() {
   const [loading, setLoading] = useState(false);
   const role = "MetroMind Admin"; // autofilled
 
-  const handleChange = (e: any) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
@@ -95,9 +95,14 @@ export default function AdminSignup() {
 
       alert(t.successMessage);
       router.push(`/${locale}/adminLogin`);
-    } catch (error: any) {
+    } catch (error) {
       console.error(error);
-      alert(error.message || "Something went wrong");
+      
+      if (error instanceof Error) {
+        alert(error.message || "Something went wrong");
+      } else {
+        alert("An unknown error occurred");
+      }
     } finally {
       setLoading(false);
     }
