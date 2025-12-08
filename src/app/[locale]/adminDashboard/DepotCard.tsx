@@ -6,7 +6,7 @@ import { collection, doc, writeBatch, query, where, getDocs, limit } from "fireb
 import * as XLSX from "xlsx";
 
 const API_BASE =
-  process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5005";
+  "http://localhost:5005";
 
 interface Depot {
     name: string;

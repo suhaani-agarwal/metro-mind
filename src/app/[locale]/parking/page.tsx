@@ -17,7 +17,7 @@ import {
   DragStartEvent,
 } from "@dnd-kit/core";
 
-const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5005";
+const API_BASE = "http://localhost:5005";
 
 interface TrainParking {
   train_id: string;
