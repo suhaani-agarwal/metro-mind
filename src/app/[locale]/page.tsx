@@ -401,7 +401,7 @@ export default function LandingPage() {
 
                 {/* Admin Login Button */}
                 <motion.a
-                  href={`/${locale}/adminSignUp`}
+                  href={`/${locale}/adminLogin`}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   className="relative group"
