@@ -319,14 +319,16 @@
             "prioritySlot": "Priority Slot",
             "showingStandby": "Showing {count} of {total} standby trains",
             "noTrains": "No Trains Scheduled",
-            "noAssignments": "No optimized train assignments available for this date."
+            "noAssignments": "No optimized train assignments available for this date.",
+            "departureOrder": "Departure Order"
         },
         "buttons": {
             "seeDelays": "See Estimated Delays",
             "whatIf": "What-If Analysis",
             "viewTimetable": "View Timetable",
             "export": "Export PDF",
-            "share": "Share"
+            "share": "Share",
+            "saveToServer": "Save to Server"
         },
         "whatIf": {
             "title": "What-If Train Swap Analysis",
@@ -354,15 +356,27 @@
             "replace": "Replace",
             "with": "with",
             "readyForService": "Ready for service",
-            "issues": "issues"
+            "issue": "{count, plural, one {issue} other {issues}}"
         },
         "swapAnalysis": {
-            "title": "Swap Analysis Results",
+            "title": "Swap Analysis",
+            "approveSwap": "Approve Swap",
+            "rejectSwap": "Reject Swap",
+            "reviewRequired": "Review Required",
+            "neutral": "Neutral",
             "failedTitle": "Analysis Failed",
             "recommendation": "Recommendation",
             "reasoning": "Reasoning",
+            "keyFactors": "Key Factors",
             "currentTrain": "Current Train",
             "replacementTrain": "Replacement Train",
+            "standbyTrain": "Standby Train",
+            "bay": "Bay",
+            "unknown": "Unknown",
+            "shuntingMoves": "Shunting Moves",
+            "peak": "Peak",
+            "offPeak": "Off-peak",
+            "timePeriod": "Time Period",
             "impactAnalysis": "Impact Analysis",
             "readinessChange": "Readiness Score Change",
             "extraShunting": "Est. Extra Shunting Moves",
@@ -373,11 +387,18 @@
             "peakHour": "Peak Hour",
             "aiAnalysis": "AI Analysis",
             "safetyRisks": "Safety Risks",
+            "safetyWarnings": "Safety Warnings",
             "operationalRisks": "Operational Risks",
+            "operationalNotes": "Operational Notes",
             "criticalConcerns": "Critical Concerns",
+            "criticalIssues": "Critical Issues",
             "mitigationStrategies": "Mitigation Strategies",
+            "recommendedActions": "Recommended Actions",
+            "analysisMethod": "Analysis Method",
             "analysisFailed": "Analysis Failed",
-            "confidence": "Confidence"
+            "confidence": "Confidence",
+            "applyOverride": "Apply Override",
+            "close": "Close"
         },
         "validation": {
             "title": "Data Validation Results",

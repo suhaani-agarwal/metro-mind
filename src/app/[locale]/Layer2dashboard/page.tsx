@@ -208,6 +208,7 @@ const Layer2Dashboard: React.FC = () => {
   const [showSwapAnalysis, setShowSwapAnalysis] = useState(false);
   const [selectedScheduledTrain, setSelectedScheduledTrain] = useState<string>('');
   const [selectedStandbyTrain, setSelectedStandbyTrain] = useState<string>('');
+  const [showAIAnalysis, setShowAIAnalysis] = useState(true);
 
 
   const fetchScheduleData = useCallback(async () => {
@@ -687,6 +688,32 @@ const Layer2Dashboard: React.FC = () => {
     }
   };
 
+  const saveToServer = async () => {
+    try {
+      const doc = generatePDF();
+      const pdfBlob = doc.output('blob');
+      const pdfFile = new File([pdfBlob], 'kochi-metro-schedule.pdf', { type: 'application/pdf' });
+  
+      const form = new FormData();
+      form.append('file', pdfFile);
+  
+      const res = await fetch(`${API_BASE}/save-schedule-pdf`, {
+        method: 'POST',
+        body: form,
+      });
+  
+      if (!res.ok) {
+        const e = await res.json().catch(() => ({ detail: t('errors.saveFailed') }));
+        throw new Error(e.detail || t('errors.saveFailed'));
+      }
+  
+      alert(t('success.saveToServer'));
+    } catch (err) {
+      console.error('Save to server failed', err);
+      alert(err instanceof Error ? err.message : t('errors.saveFailed'));
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-6">
       <div className="max-w-[1800px] mx-auto space-y-6">
@@ -944,26 +971,37 @@ const Layer2Dashboard: React.FC = () => {
                     {t('schedule.subtitle', { count: sortedAssignments.length })}
                   </p>
                 </div>
-                <div className="flex gap-3">
-                  <button
-                    onClick={downloadPDF}
-                    className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-sm border border-slate-700 hover:border-slate-600 transition-all flex items-center gap-2"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    {t('buttons.export')}
-                  </button>
-                  <button
-                    onClick={shareSchedule}
-                    className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-sm border border-slate-700 hover:border-slate-600 transition-all flex items-center gap-2"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                    </svg>
-                    {t('buttons.share')}
-                  </button>
-                </div>
+                {/* Update the button group in header */}
+<div className="flex gap-3">
+  <button
+    onClick={downloadPDF}
+    className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-sm border border-slate-700 hover:border-slate-600 transition-all flex items-center gap-2"
+  >
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+    </svg>
+    {t('buttons.export')}
+  </button>
+  <button
+    onClick={shareSchedule}
+    className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-sm border border-slate-700 hover:border-slate-600 transition-all flex items-center gap-2"
+  >
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+    </svg>
+    {t('buttons.share')}
+  </button>
+  {/* Add Save to Server button */}
+  <button
+    onClick={saveToServer}
+    className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-sm border border-slate-700 hover:border-slate-600 transition-all flex items-center gap-2"
+  >
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5-5 5 5M12 5v12" />
+    </svg>
+    {t('buttons.saveToServer')}
+  </button>
+</div>
               </div>
 
               {/* Table Content */}
@@ -1081,403 +1119,542 @@ const Layer2Dashboard: React.FC = () => {
         </div> {/* End Grid Layout */}
 
 
-        {/* What-If Analysis Panel */}
-        {showWhatIf && (
-          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-gray-800 border border-gray-700 rounded-2xl shadow-2xl max-w-7xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="p-6">
-                <div className="flex justify-between items-center mb-6">
-                  <div>
-                    <h3 className="text-2xl font-bold text-white">{t('whatIf.title')}</h3>
-                    <p className="text-gray-400 mt-1">{t('whatIf.subtitle')}</p>
-                  </div>
-                  <button
-                    onClick={() => setShowWhatIf(false)}
-                    className="text-gray-400 hover:text-gray-200 text-2xl p-2 hover:bg-gray-700 rounded-lg transition-colors"
-                  >
-                    ✕
-                  </button>
-                </div>
+        {/* What-If Analysis Panel - ENHANCED VERSION */}
+{showWhatIf && (
+  <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div className="bg-gray-800 border border-gray-700 rounded-2xl shadow-2xl max-w-7xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="p-6">
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h3 className="text-2xl font-bold text-white">{t('whatIf.title')}</h3>
+            <p className="text-gray-400 mt-1">{t('whatIf.subtitle')}</p>
+          </div>
+          <button
+            onClick={() => setShowWhatIf(false)}
+            className="text-gray-400 hover:text-gray-200 text-2xl p-2 hover:bg-gray-700 rounded-lg transition-colors"
+          >
+            ✕
+          </button>
+        </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  {/* Standby Trains */}
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-lg font-semibold text-gray-200">{t('whatIf.availableStandby')}</h4>
-                      <span className="text-sm text-gray-400 bg-gray-700 px-3 py-1 rounded-full">
-                        {t('whatIf.availableCount', { count: standbyTrains.length })}
-                      </span>
-                    </div>
-
-                    {loadingWhatIf ? (
-                      <div className="flex justify-center py-12">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-400"></div>
-                      </div>
-                    ) : (
-                      <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
-                        {standbyTrains.map((train) => {
-                          const readinessScore = train.readiness || 0;
-                          const issueCount = (train.readiness_summary.match(/needs|poor|critical|overdue|required|attention|maintenance/gi) || []).length;
-
-                          return (
-                            <div
-                              key={train.train_id}
-                              className={`p-4 border rounded-xl cursor-pointer transition-all duration-200 hover:shadow-lg ${selectedStandbyTrain === train.train_id
-                                ? 'border-purple-500 bg-purple-900/30 shadow-lg shadow-purple-900/20'
-                                : 'border-gray-600 hover:border-gray-500 bg-gray-900/30 hover:bg-gray-900/50'
-                                }`}
-                              onClick={() => setSelectedStandbyTrain(train.train_id)}
-                            >
-                              <div className="flex justify-between items-start mb-3">
-                                <div className="flex items-center gap-3">
-                                  <div className="text-xl">
-                                    {readinessScore >= 95 ? '🟢' :
-                                      readinessScore >= 85 ? '🟡' :
-                                        readinessScore >= 70 ? '🟠' : '🔴'}
-                                  </div>
-                                  <div>
-                                    <div className="font-bold text-lg text-white">{train.train_id}</div>
-                                    <div className="text-sm text-gray-400">
-                                      {train.bay} • Position {train.bay_position}
-                                    </div>
-                                  </div>
-                                </div>
-                                <div className="text-right">
-                                  <div className={`px-3 py-2 rounded-lg text-lg font-bold border ${getReadinessColor(readinessScore)}`}>
-                                    {readinessScore}%
-                                  </div>
-                                  {issueCount > 0 && (
-                                    <div className="text-xs text-orange-400 mt-1">
-                                      {issueCount} issue{issueCount !== 1 ? 's' : ''}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-
-                              <div className="text-sm text-gray-300 mb-3" title={train.readiness_summary}>
-                                {train.readiness_summary || 'No summary available'}
-                              </div>
-
-                              {train.readiness_details && (
-                                <div className="flex gap-2 flex-wrap">
-                                  {Object.entries(train.readiness_details).map(([key, value]) => {
-                                    const isIssue = typeof value === 'string' &&
-                                      (value.toLowerCase().includes('needs') ||
-                                        value.toLowerCase().includes('poor') ||
-                                        value.toLowerCase().includes('attention') ||
-                                        value.toLowerCase().includes('critical'));
-
-                                    return (
-                                      <span
-                                        key={key}
-                                        className={`px-2 py-1 rounded text-xs font-medium ${isIssue
-                                          ? 'bg-red-900/30 text-red-300 border border-red-700'
-                                          : 'bg-emerald-900/30 text-emerald-300 border border-emerald-700'
-                                          }`}
-                                      >
-                                        {key}: {typeof value === 'string' ? value : 'OK'}
-                                      </span>
-                                    );
-                                  })}
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-
-                        {standbyTrains.length === 0 && (
-                          <div className="text-center py-12 text-gray-400">
-                            <div className="text-6xl mb-4">🚂</div>
-                            <h4 className="text-lg font-medium text-gray-300 mb-2">{t('whatIf.noStandby')}</h4>
-                            <p className="text-sm">{t('whatIf.allScheduled')}</p>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Scheduled Trains */}
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-lg font-semibold text-gray-200">{t('whatIf.scheduledTrains')}</h4>
-                      <span className="text-sm text-gray-400 bg-gray-700 px-3 py-1 rounded-full">
-                        {t('whatIf.scheduledCount', { count: sortedAssignments.length })}
-                      </span>
-                    </div>
-
-                    <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
-                      {sortedAssignments.map((train) => (
-                        <div
-                          key={train.train_id}
-                          className={`p-4 border rounded-xl cursor-pointer transition-all duration-200 hover:shadow-lg ${selectedScheduledTrain === train.train_id
-                            ? 'border-teal-500 bg-teal-900/30 shadow-lg shadow-teal-900/20'
-                            : 'border-gray-600 hover:border-gray-500 bg-gray-900/30 hover:bg-gray-900/50'
-                            }`}
-                          onClick={() => setSelectedScheduledTrain(train.train_id)}
-                        >
-                          <div className="flex justify-between items-start mb-3">
-                            <div className="flex items-center gap-3">
-                              <div className="text-xl">🚄</div>
-                              <div>
-                                <div className="font-bold text-lg text-white">{train.train_id}</div>
-                                <div className="text-sm text-gray-400">
-                                  Slot {train.departure_slot} • Bay {train.bay}
-                                  {train.needs_shunting && (
-                                    <span className="text-orange-400 ml-2 px-2 py-0.5 bg-orange-900/30 rounded text-xs">
-                                      Shunting Required
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <div className={`px-3 py-2 rounded-lg text-lg font-bold border ${getReadinessColor(train.readiness)}`}>
-                                {train.readiness}%
-                              </div>
-                              <div className="text-xs text-gray-500 mt-1">
-                                Departure #{train.departure_order}
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="text-sm text-gray-400">
-                            Position {train.bay_position} • Ready for service
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Analysis Controls */}
-                <div className="mt-6 space-y-4">
-                  <div className="flex gap-4">
-                    <button
-                      onClick={analyzeSwap}
-                      disabled={!selectedScheduledTrain || !selectedStandbyTrain || loadingWhatIf}
-                      className="flex-1 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Standby Trains - Enhanced */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h4 className="text-lg font-semibold text-gray-200">{t('whatIf.availableStandby')}</h4>
+              <span className="text-sm text-gray-400 bg-gray-700 px-3 py-1 rounded-full">
+                {standbyTrains.length} {t('whatIf.available')}
+              </span>
+            </div>
+            
+            {loadingWhatIf ? (
+              <div className="flex justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-400"></div>
+              </div>
+            ) : (
+              <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
+                {standbyTrains.map((train) => {
+                  const readinessScore = train.readiness || 0;
+                  const issueCount = (train.readiness_summary?.match(/needs|poor|critical|overdue|required|attention|maintenance/gi) || []).length;
+                  
+                  return (
+                    <div
+                      key={train.train_id}
+                      className={`p-4 border rounded-xl cursor-pointer transition-all duration-200 hover:shadow-lg ${
+                        selectedStandbyTrain === train.train_id 
+                          ? 'border-purple-500 bg-purple-900/30 shadow-lg shadow-purple-900/20' 
+                          : 'border-gray-600 hover:border-gray-500 bg-gray-900/30 hover:bg-gray-900/50'
+                      }`}
+                      onClick={() => setSelectedStandbyTrain(train.train_id)}
                     >
-                      {loadingWhatIf ? (
-                        <div className="flex items-center justify-center">
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                          {t('whatIf.analyzing')}
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex items-center gap-3">
+                          <div className="text-xl">
+                            {readinessScore >= 95 ? '🟢' : 
+                             readinessScore >= 85 ? '🔵' : 
+                             readinessScore >= 75 ? '🟡' : 
+                             readinessScore >= 65 ? '🟠' : '🔴'}
+                          </div>
+                          <div>
+                            <div className="font-bold text-lg text-white">{train.train_id}</div>
+                            <div className="text-sm text-gray-400">
+                              {train.bay} • {t('schedule.position')} {train.bay_position}
+                            </div>
+                          </div>
                         </div>
-                      ) : (
-                        t('whatIf.analyze')
+                        <div className="text-right">
+                          <div className={`px-3 py-1 rounded-lg text-lg font-bold border ${getReadinessColor(readinessScore)}`}>
+                            {readinessScore}%
+                          </div>
+                          {issueCount > 0 && (
+                            <div className="text-xs text-orange-400 mt-1">
+                              {issueCount} {t('whatIf.issue', { count: issueCount })}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="text-sm text-gray-300 mb-2 line-clamp-2" title={train.readiness_summary}>
+                        {train.readiness_summary || t('whatIf.readyForService')}
+                      </div>
+                      
+                      {train.readiness_details && (
+                        <div className="flex gap-1 flex-wrap">
+                          {Object.entries(train.readiness_details).slice(0, 3).map(([key, value]) => {
+                            const isIssue = typeof value === 'string' && 
+                              (value.toLowerCase().includes('needs') || 
+                               value.toLowerCase().includes('poor') ||
+                               value.toLowerCase().includes('attention') ||
+                               value.toLowerCase().includes('critical'));
+                            
+                            return (
+                              <span
+                                key={key}
+                                className={`px-2 py-0.5 rounded text-xs font-medium ${
+                                  isIssue 
+                                    ? 'bg-red-900/30 text-red-300 border border-red-700'
+                                    : 'bg-emerald-900/30 text-emerald-300 border border-emerald-700'
+                                }`}
+                              >
+                                {key}: {typeof value === 'string' ? value : 'OK'}
+                              </span>
+                            );
+                          })}
+                          {Object.keys(train.readiness_details).length > 3 && (
+                            <span className="text-xs text-gray-500 px-2 py-0.5">
+                              +{Object.keys(train.readiness_details).length - 3} {t('whatIf.more')}
+                            </span>
+                          )}
+                        </div>
                       )}
-                    </button>
+                    </div>
+                  );
+                })}
+                
+                {standbyTrains.length === 0 && (
+                  <div className="text-center py-12 text-gray-400">
+                    <div className="text-6xl mb-4">🚂</div>
+                    <h4 className="text-lg font-medium text-gray-300 mb-2">{t('whatIf.noStandby')}</h4>
+                    <p className="text-sm">{t('whatIf.allScheduled')}</p>
                   </div>
+                )}
+              </div>
+            )}
+          </div>
 
-                  {selectedScheduledTrain && selectedStandbyTrain && (
-                    <div className="p-4 bg-teal-900/20 border border-teal-700 rounded-lg">
-                      <h5 className="font-semibold text-teal-300 mb-2">{t('whatIf.selectedSwap')}</h5>
-                      <p className="text-teal-200">
-                        {t('whatIf.replaceWith', { from: selectedScheduledTrain, to: selectedStandbyTrain })}
+          {/* Scheduled Trains - Enhanced */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h4 className="text-lg font-semibold text-gray-200">{t('whatIf.scheduledTrains')}</h4>
+              <span className="text-sm text-gray-400 bg-gray-700 px-3 py-1 rounded-full">
+                {sortedAssignments.length} {t('whatIf.scheduled')}
+              </span>
+            </div>
+            
+            <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
+              {sortedAssignments.map((train) => (
+                <div
+                  key={train.train_id}
+                  className={`p-4 border rounded-xl cursor-pointer transition-all duration-200 hover:shadow-lg ${
+                    selectedScheduledTrain === train.train_id 
+                      ? 'border-teal-500 bg-teal-900/30 shadow-lg shadow-teal-900/20' 
+                      : 'border-gray-600 hover:border-gray-500 bg-gray-900/30 hover:bg-gray-900/50'
+                  }`}
+                  onClick={() => setSelectedScheduledTrain(train.train_id)}
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="flex items-center gap-3">
+                      <div className="text-xl">🚄</div>
+                      <div>
+                        <div className="font-bold text-lg text-white">{train.train_id}</div>
+                        <div className="text-sm text-gray-400">
+                          {t('schedule.slot')} {train.departure_slot} • {t('schedule.bay')} {train.bay}
+                          {train.needs_shunting && (
+                            <span className="ml-2 px-2 py-0.5 bg-orange-900/30 text-orange-300 text-xs rounded">
+                              {t('schedule.shuntingRequired')}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className={`px-3 py-1 rounded-lg text-lg font-bold border ${getReadinessColor(train.readiness)}`}>
+                        {train.readiness}%
+                      </div>
+                      <div className="text-xs text-gray-400 mt-1">
+                        {t('schedule.departureOrder')} #{train.departure_order}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-2 text-sm text-gray-400">
+                    <div>
+                      {t('schedule.position')} {train.bay_position || '-'}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Analysis Controls - Enhanced */}
+        <div className="mt-6 space-y-4">
+          <div className="flex gap-4">
+            <button
+              onClick={analyzeSwap}
+              disabled={!selectedScheduledTrain || !selectedStandbyTrain || loadingWhatIf}
+              className="flex-1 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+            >
+              {loadingWhatIf ? (
+                <div className="flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  {t('whatIf.analyzing')}
+                </div>
+              ) : (
+                t('whatIf.analyze')
+              )}
+            </button>
+          </div>
+
+          {selectedScheduledTrain && selectedStandbyTrain && (
+            <div className="p-4 bg-teal-900/20 border border-teal-700 rounded-lg">
+              <h5 className="font-semibold text-teal-300 mb-2">{t('whatIf.selectedSwap')}</h5>
+              <p className="text-teal-200">
+              {t('whatIf.replaceWith', { 
+        from: selectedScheduledTrain,  // Remove <strong> tags
+        to: selectedStandbyTrain       // Remove <strong> tags
+      })}
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+
+        {/* Swap Analysis Results Modal - With Enhanced AI Analysis */}
+{showSwapAnalysis && swapAnalysis && (
+  <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div className="bg-gray-800 border border-gray-700 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="p-6">
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h3 className="text-2xl font-bold text-white">{t('swapAnalysis.title')}</h3>
+            <p className="text-gray-400 mt-1">
+              {swapAnalysis.swap_scenario.from_train} → {swapAnalysis.swap_scenario.to_train}
+            </p>
+          </div>
+          <button
+            onClick={() => setShowSwapAnalysis(false)}
+            className="text-gray-400 hover:text-gray-200 text-2xl p-2 hover:bg-gray-700 rounded-lg"
+          >
+            ✕
+          </button>
+        </div>
+
+        {swapAnalysis.status === 'success' ? (
+          <div className="space-y-6">
+            {/* Recommendation Card - Enhanced */}
+            <div className={`p-6 rounded-lg border ${getRecommendationColor(swapAnalysis.recommendation.decision)}`}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-4">
+                    <div className="text-3xl">
+                      {swapAnalysis.recommendation.decision === 'ACCEPTED' ? '✅' :
+                       swapAnalysis.recommendation.decision === 'REJECTED' ? '❌' :
+                       swapAnalysis.recommendation.decision === 'REVIEW_REQUIRED' ? '⚠️' : 'ℹ️'}
+                    </div>
+                    <div>
+                      <h4 className="text-xl font-bold">
+                        {swapAnalysis.recommendation.decision === 'ACCEPTED' ? t('swapAnalysis.approveSwap') :
+                         swapAnalysis.recommendation.decision === 'REJECTED' ? t('swapAnalysis.rejectSwap') :
+                         swapAnalysis.recommendation.decision === 'REVIEW_REQUIRED' ? t('swapAnalysis.reviewRequired') : t('swapAnalysis.neutral')}
+                      </h4>
+                      <p className="text-sm text-gray-400 mt-1">
+                        {t('swapAnalysis.confidence')}: {swapAnalysis.recommendation.confidence}
                       </p>
                     </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mt-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-2 h-2 bg-current rounded-full"></div>
+                  <h5 className="font-medium">{t('swapAnalysis.keyFactors')}:</h5>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {swapAnalysis.recommendation.reasoning.slice(0, 3).map((reason, index) => (
+                    <span
+                      key={index}
+                      className="px-3 py-1.5 bg-gray-700/50 text-gray-300 rounded-lg text-sm border border-gray-600"
+                    >
+                      {reason.replace(/[.,]$/, '')}
+                    </span>
+                  ))}
+                  {swapAnalysis.recommendation.reasoning.length > 3 && (
+                    <span className="text-xs text-gray-500 px-3 py-1.5">
+                      +{swapAnalysis.recommendation.reasoning.length - 3} {t('swapAnalysis.more')}
+                    </span>
                   )}
                 </div>
               </div>
             </div>
-          </div>
-        )}
 
-        {/* Swap Analysis Results Modal */}
-        {showSwapAnalysis && swapAnalysis && (
-          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-gray-800 border border-gray-700 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="p-6">
-                <div className="flex justify-between items-center mb-6">
-                  <div>
-                    <h3 className="text-2xl font-bold text-white">{t('swapAnalysis.title')}</h3>
-                    <p className="text-gray-400 mt-1">
-                      {swapAnalysis.swap_scenario.from_train} → {swapAnalysis.swap_scenario.to_train}
-                    </p>
+            {/* Readiness Comparison - Enhanced */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="border border-gray-600 rounded-xl p-5 bg-gray-900/30 hover:bg-gray-900/40 transition-colors">
+                <h4 className="font-bold text-lg text-gray-200 mb-4 flex items-center gap-2">
+                  <span className="text-teal-400">🚂</span>
+                  <span>{t('swapAnalysis.currentTrain')}</span>
+                  <span className="text-teal-300 ml-1">{swapAnalysis.swap_scenario.from_train}</span>
+                </h4>
+                <div className="flex items-center justify-between mb-4">
+                  <div className={`text-4xl font-bold ${getReadinessColor(swapAnalysis.readiness_comparison.scheduled_train.score).split(' ')[1]}`}>
+                    {swapAnalysis.readiness_comparison.scheduled_train.score}%
                   </div>
-                  <button
-                    onClick={() => setShowSwapAnalysis(false)}
-                    className="text-gray-400 hover:text-gray-200 text-2xl"
-                  >
-                    ✕
-                  </button>
+                  <div className="text-sm text-gray-400">
+                    {swapAnalysis.swap_scenario.departure_time || t('swapAnalysis.noSlot')}
+                  </div>
                 </div>
-
-                {swapAnalysis.status === 'success' ? (
-                  <div className="space-y-6">
-                    {/* Recommendation Summary */}
-                    <div className={`p-4 rounded-lg border ${getRecommendationColor(swapAnalysis.recommendation.decision)}`}>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="text-lg font-semibold">
-                            {t('swapAnalysis.recommendation')}: {swapAnalysis.recommendation.decision}
-                          </h4>
-                          <p className="mt-1">{t('swapAnalysis.confidence')}: {swapAnalysis.recommendation.confidence}</p>
-                          {/* {swapAnalysis.ai_analysis.analysis_method && ( */}
-                          {/* <p className="text-sm opacity-80">Analysis: {swapAnalysis.ai_analysis.analysis_method}</p> */}
-                          {/* )} */}
-                        </div>
-                        <div className="text-2xl">
-                          {swapAnalysis.recommendation.decision === 'ACCEPTED' ? '✅' :
-                            swapAnalysis.recommendation.decision === 'REJECTED' ? '❌' :
-                              swapAnalysis.recommendation.decision === 'REVIEW_REQUIRED' ? '⚠️' : 'ℹ️'}
-                        </div>
-                      </div>
-                      <div className="mt-3">
-                        <h5 className="font-medium mb-2">{t('swapAnalysis.reasoning')}:</h5>
-                        <ul className="list-disc list-inside space-y-1">
-                          {swapAnalysis.recommendation.reasoning.map((reason, index) => (
-                            <li key={index} className="text-sm">{reason}</li>
-                          ))}
-                        </ul>
-                      </div>
+                
+                <div className="text-sm text-gray-300 mb-4 line-clamp-2">
+                  {swapAnalysis.readiness_comparison.scheduled_train.summary}
+                </div>
+                
+                <div className="space-y-2">
+                  {Object.entries(swapAnalysis.readiness_comparison.scheduled_train.details).slice(0, 3).map(([key, value]) => (
+                    <div key={key} className="flex justify-between items-center text-xs">
+                      <span className="text-gray-400 capitalize">{key.replace(/_/g, ' ')}:</span>
+                      <span className={`px-2 py-1 rounded ${typeof value === 'string' && value.toLowerCase().includes('needs') ? 'bg-red-900/30 text-red-300 border border-red-700' : 'bg-emerald-900/30 text-emerald-300 border border-emerald-700'}`}>
+                        {typeof value === 'string' ? value : t('swapAnalysis.ok')}
+                      </span>
                     </div>
+                  ))}
+                </div>
+              </div>
 
-                    {/* Readiness Comparison */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="border border-gray-600 rounded-lg p-4 bg-gray-900/30">
-                        <h4 className="font-semibold text-gray-200 mb-3">{t('swapAnalysis.currentTrain', { train: swapAnalysis.swap_scenario.from_train })}</h4>
-                        <div className={`text-2xl font-bold mb-2 ${getReadinessColor(swapAnalysis.readiness_comparison.scheduled_train.score).split(' ')[1]}`}>
-                          {swapAnalysis.readiness_comparison.scheduled_train.score}%
-                        </div>
-                        <p className="text-sm text-gray-400 mb-2">{swapAnalysis.readiness_comparison.scheduled_train.summary}</p>
-                        <div className="text-xs space-y-1">
-                          {Object.entries(swapAnalysis.readiness_comparison.scheduled_train.details).map(([key, value]) => (
-                            <div key={key} className="flex justify-between">
-                              <span className="capitalize text-gray-400">{key}:</span>
-                              <span className="text-gray-300">{value as string}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className="border border-gray-600 rounded-lg p-4 bg-gray-900/30">
-                        <h4 className="font-semibold text-gray-200 mb-3">{t('swapAnalysis.replacementTrain', { train: swapAnalysis.swap_scenario.to_train })}</h4>
-                        <div className={`text-2xl font-bold mb-2 ${getReadinessColor(swapAnalysis.readiness_comparison.standby_train.score).split(' ')[1]}`}>
-                          {swapAnalysis.readiness_comparison.standby_train.score}%
-                        </div>
-                        <p className="text-sm text-gray-400 mb-2">{swapAnalysis.readiness_comparison.standby_train.summary}</p>
-                        <div className="text-xs space-y-1">
-                          {Object.entries(swapAnalysis.readiness_comparison.standby_train.details).map(([key, value]) => (
-                            <div key={key} className="flex justify-between">
-                              <span className="capitalize text-gray-400">{key}:</span>
-                              <span className="text-gray-300">{value as string}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Impact Analysis */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-4">
-                        <h4 className="font-semibold text-gray-200">{t('swapAnalysis.impactAnalysis')}</h4>
-                        <div className="space-y-3 bg-gray-900/30 p-4 rounded-lg border border-gray-600">
-                          <div className="flex justify-between">
-                            <span className="text-gray-300">{t('swapAnalysis.readinessChange')}:</span>
-                            <span className={`font-bold ${swapAnalysis.impact_analysis.readiness_score_change > 0 ? 'text-emerald-400' : swapAnalysis.impact_analysis.readiness_score_change < 0 ? 'text-red-400' : 'text-gray-400'}`}>
-                              {swapAnalysis.impact_analysis.readiness_score_change > 0 ? '+' : ''}{swapAnalysis.impact_analysis.readiness_score_change}%
-                            </span>
-                          </div>
-                          {(typeof swapAnalysis.impact_analysis.estimated_shunting_moves === 'number') && (
-                            <div className="flex justify-between">
-                              <span className="text-gray-300">{t('swapAnalysis.extraShunting')}:</span>
-                              <span className="font-medium text-orange-300">{swapAnalysis.impact_analysis.estimated_shunting_moves}</span>
-                            </div>
-                          )}
-                          {(typeof swapAnalysis.impact_analysis.estimated_extra_fuel_liters === 'number') && (
-                            <div className="flex justify-between">
-                              <span className="text-gray-300">{t('swapAnalysis.extraFuel')}:</span>
-                              <span className="font-medium text-orange-300">{swapAnalysis.impact_analysis.estimated_extra_fuel_liters} L</span>
-                            </div>
-                          )}
-                          <div className="flex justify-between">
-                            <span className="text-gray-300">{t('swapAnalysis.riskLevel')}:</span>
-                            <span className={`px-2 py-1 rounded text-xs font-medium ${getRiskLevelColor(swapAnalysis.impact_analysis.risk_level)}`}>
-                              {swapAnalysis.impact_analysis.risk_level}
-                            </span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-300">{t('swapAnalysis.delayRisk')}:</span>
-                            <span className="font-medium text-gray-200">{swapAnalysis.impact_analysis.estimated_delay_risk}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-300">{t('swapAnalysis.passengerImpact')}:</span>
-                            <span className={`px-2 py-1 rounded text-xs font-medium ${getRiskLevelColor(swapAnalysis.impact_analysis.passenger_impact_severity)}`}>
-                              {swapAnalysis.impact_analysis.passenger_impact_severity}
-                            </span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-300">{t('swapAnalysis.peakHour')}:</span>
-                            <span className="text-gray-200">{swapAnalysis.impact_analysis.is_peak_hour ? 'Yes' : 'No'}</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-4">
-                        <h4 className="font-semibold text-gray-200">{t('swapAnalysis.aiAnalysis')}</h4>
-                        <div className="text-sm bg-gray-900/30 p-4 rounded-lg border border-gray-600">
-                          <p className="mb-3 text-gray-300">{swapAnalysis.ai_analysis.detailed_analysis}</p>
-                          <div className="space-y-2">
-                            <div>
-                              <span className="font-medium text-red-400">{t('swapAnalysis.safetyRisks')}:</span>
-                              <ul className="list-disc list-inside mt-1 text-xs">
-                                {swapAnalysis.ai_analysis.safety_risks.map((risk, index) => (
-                                  <li key={index} className="text-gray-400">{risk}</li>
-                                ))}
-                              </ul>
-                            </div>
-                            <div>
-                              <span className="font-medium text-orange-400">{t('swapAnalysis.operationalRisks')}:</span>
-                              <ul className="list-disc list-inside mt-1 text-xs">
-                                {swapAnalysis.ai_analysis.operational_risks.map((risk, index) => (
-                                  <li key={index} className="text-gray-400">{risk}</li>
-                                ))}
-                              </ul>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Critical Concerns & Mitigation */}
-                    {((Array.isArray(swapAnalysis.ai_analysis.critical_concerns) && swapAnalysis.ai_analysis.critical_concerns.length > 0) ||
-                      (Array.isArray(swapAnalysis.ai_analysis.mitigation_strategies) && swapAnalysis.ai_analysis.mitigation_strategies.length > 0)) && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          {Array.isArray(swapAnalysis.ai_analysis.critical_concerns) && swapAnalysis.ai_analysis.critical_concerns.length > 0 && (
-                            <div className="bg-red-900/20 border border-red-700 rounded-lg p-4">
-                              <h4 className="font-semibold text-red-300 mb-2">{t('swapAnalysis.criticalConcerns')}</h4>
-                              <ul className="list-disc list-inside space-y-1 text-sm text-red-200">
-                                {swapAnalysis.ai_analysis.critical_concerns.map((concern, index) => (
-                                  <li key={index}>{concern}</li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
-
-                          {Array.isArray(swapAnalysis.ai_analysis.mitigation_strategies) && swapAnalysis.ai_analysis.mitigation_strategies.length > 0 && (
-                            <div className="bg-teal-900/20 border border-teal-700 rounded-lg p-4">
-                              <h4 className="font-semibold text-teal-300 mb-2">{t('swapAnalysis.mitigationStrategies')}</h4>
-                              <ul className="list-disc list-inside space-y-1 text-sm text-teal-200">
-                                {swapAnalysis.ai_analysis.mitigation_strategies.map((strategy, index) => (
-                                  <li key={index}>{strategy}</li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
-                        </div>
-                      )}
+              <div className="border border-gray-600 rounded-xl p-5 bg-gray-900/30 hover:bg-gray-900/40 transition-colors">
+                <h4 className="font-bold text-lg text-gray-200 mb-4 flex items-center gap-2">
+                  <span className="text-purple-400">🔄</span>
+                  <span>{t('swapAnalysis.standbyTrain')}</span>
+                  <span className="text-purple-300 ml-1">{swapAnalysis.swap_scenario.to_train}</span>
+                </h4>
+                <div className="flex items-center justify-between mb-4">
+                  <div className={`text-4xl font-bold ${getReadinessColor(swapAnalysis.readiness_comparison.standby_train.score).split(' ')[1]}`}>
+                    {swapAnalysis.readiness_comparison.standby_train.score}%
                   </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <div className="text-red-400 text-6xl mb-4">⚠️</div>
-                    <h3 className="text-xl font-semibold text-gray-200 mb-2">{t('swapAnalysis.failedTitle')}</h3>
-                    <p className="text-gray-400">{swapAnalysis.status}</p>
+                  <div className="text-sm text-gray-400">
+                    {t('swapAnalysis.bay')} {swapAnalysis.swap_scenario.bay || t('swapAnalysis.unknown')}
                   </div>
-                )}
+                </div>
+                
+                <div className="text-sm text-gray-300 mb-4 line-clamp-2">
+                  {swapAnalysis.readiness_comparison.standby_train.summary}
+                </div>
+                
+                <div className="space-y-2">
+                  {Object.entries(swapAnalysis.readiness_comparison.standby_train.details).slice(0, 3).map(([key, value]) => (
+                    <div key={key} className="flex justify-between items-center text-xs">
+                      <span className="text-gray-400 capitalize">{key.replace(/_/g, ' ')}:</span>
+                      <span className={`px-2 py-1 rounded ${typeof value === 'string' && value.toLowerCase().includes('needs') ? 'bg-red-900/30 text-red-300 border border-red-700' : 'bg-emerald-900/30 text-emerald-300 border border-emerald-700'}`}>
+                        {typeof value === 'string' ? value : t('swapAnalysis.ok')}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
+
+            {/* Quick Stats - Enhanced */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="bg-gray-900/40 p-4 rounded-xl border border-gray-700 hover:border-teal-500 transition-colors">
+                <div className="text-2xl font-bold text-emerald-400">
+                  {swapAnalysis.impact_analysis.readiness_score_change > 0 ? '+' : ''}{swapAnalysis.impact_analysis.readiness_score_change}%
+                </div>
+                <div className="text-sm text-gray-400 mt-1">{t('swapAnalysis.readinessChange')}</div>
+              </div>
+              
+              <div className="bg-gray-900/40 p-4 rounded-xl border border-gray-700 hover:border-orange-500 transition-colors">
+                <div className="text-2xl font-bold text-orange-400">
+                  {swapAnalysis.impact_analysis.estimated_shunting_moves || 0}
+                </div>
+                <div className="text-sm text-gray-400 mt-1">{t('swapAnalysis.shuntingMoves')}</div>
+              </div>
+              
+              <div className="bg-gray-900/40 p-4 rounded-xl border border-gray-700 hover:border-red-500 transition-colors">
+                <div className={`text-2xl font-bold ${swapAnalysis.impact_analysis.risk_level === 'HIGH' ? 'text-red-400' : 
+                  swapAnalysis.impact_analysis.risk_level === 'MEDIUM' ? 'text-yellow-400' : 'text-emerald-400'}`}>
+                  {swapAnalysis.impact_analysis.risk_level}
+                </div>
+                <div className="text-sm text-gray-400 mt-1">{t('swapAnalysis.riskLevel')}</div>
+              </div>
+              
+              <div className="bg-gray-900/40 p-4 rounded-xl border border-gray-700 hover:border-blue-500 transition-colors">
+                <div className="text-2xl font-bold text-gray-300">
+                  {swapAnalysis.impact_analysis.is_peak_hour ? t('swapAnalysis.peak') : t('swapAnalysis.offPeak')}
+                </div>
+                <div className="text-sm text-gray-400 mt-1">{t('swapAnalysis.timePeriod')}</div>
+              </div>
+            </div>
+
+            {/* AI Analysis - Collapsible Section */}
+            <div className="border border-gray-700 rounded-xl overflow-hidden">
+              <button
+                onClick={() => setShowAIAnalysis(!showAIAnalysis)}
+                className="w-full p-5 bg-gray-900/50 flex justify-between items-center hover:bg-gray-800/50 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="text-2xl">🤖</div>
+                  <h4 className="font-bold text-lg text-gray-200">{t('swapAnalysis.aiAnalysis')}</h4>
+                </div>
+                <div className="text-gray-400 text-lg">
+                  {showAIAnalysis ? '▲' : '▼'}
+                </div>
+              </button>
+              
+              {showAIAnalysis && (
+                <div className="p-5 space-y-6">
+                  {/* Simplified Analysis Summary */}
+                  <div className="text-sm text-gray-300 bg-gray-900/30 p-5 rounded-lg border border-gray-600">
+                    <p className="mb-4 leading-relaxed">
+                      {swapAnalysis.ai_analysis.detailed_analysis && swapAnalysis.ai_analysis.detailed_analysis.length > 300 
+                        ? swapAnalysis.ai_analysis.detailed_analysis.substring(0, 300) + '...'
+                        : swapAnalysis.ai_analysis.detailed_analysis}
+                    </p>
+                    
+                    {/* Safety Warnings */}
+                    {swapAnalysis.ai_analysis.safety_risks && swapAnalysis.ai_analysis.safety_risks.length > 0 && (
+                      <div className="mb-4">
+                        <div className="flex items-center gap-3 mb-3">
+                          <span className="text-red-400 text-xl">⚠️</span>
+                          <span className="font-bold text-red-400">{t('swapAnalysis.safetyWarnings')}:</span>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {swapAnalysis.ai_analysis.safety_risks.slice(0, 3).map((risk, index) => (
+                            <span key={index} className="px-3 py-1.5 bg-red-900/20 text-red-300 border border-red-700 rounded-lg text-sm">
+                              {risk}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Operational Notes */}
+                    {swapAnalysis.ai_analysis.operational_risks && swapAnalysis.ai_analysis.operational_risks.length > 0 && (
+                      <div>
+                        <div className="flex items-center gap-3 mb-3">
+                          <span className="text-orange-400 text-xl">⚙️</span>
+                          <span className="font-bold text-orange-400">{t('swapAnalysis.operationalNotes')}:</span>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {swapAnalysis.ai_analysis.operational_risks.slice(0, 3).map((risk, index) => (
+                            <span key={index} className="px-3 py-1.5 bg-orange-900/20 text-orange-300 border border-orange-700 rounded-lg text-sm">
+                              {risk}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Critical Concerns & Mitigation */}
+                  {((swapAnalysis.ai_analysis.critical_concerns && swapAnalysis.ai_analysis.critical_concerns.length > 0) || 
+                    (swapAnalysis.ai_analysis.mitigation_strategies && swapAnalysis.ai_analysis.mitigation_strategies.length > 0)) && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {swapAnalysis.ai_analysis.critical_concerns && swapAnalysis.ai_analysis.critical_concerns.length > 0 && (
+                        <div className="bg-red-900/20 border border-red-700 rounded-xl p-5">
+                          <h4 className="font-bold text-red-300 mb-3 flex items-center gap-2">
+                            <span>🚨</span>
+                            {t('swapAnalysis.criticalIssues')}
+                          </h4>
+                          <ul className="space-y-2 text-sm text-red-200">
+                            {swapAnalysis.ai_analysis.critical_concerns.slice(0, 3).map((concern, index) => (
+                              <li key={index} className="flex items-start gap-2">
+                                <span className="text-red-400 mt-1">•</span>
+                                <span>{concern}</span>
+                              </li>
+                            ))}
+                            {swapAnalysis.ai_analysis.critical_concerns.length > 3 && (
+                              <li className="text-xs text-gray-400 pt-2">
+                                +{swapAnalysis.ai_analysis.critical_concerns.length - 3} {t('swapAnalysis.moreConcerns')}
+                              </li>
+                            )}
+                          </ul>
+                        </div>
+                      )}
+                      
+                      {swapAnalysis.ai_analysis.mitigation_strategies && swapAnalysis.ai_analysis.mitigation_strategies.length > 0 && (
+                        <div className="bg-teal-900/20 border border-teal-700 rounded-xl p-5">
+                          <h4 className="font-bold text-teal-300 mb-3 flex items-center gap-2">
+                            <span>✅</span>
+                            {t('swapAnalysis.recommendedActions')}
+                          </h4>
+                          <ul className="space-y-2 text-sm text-teal-200">
+                            {swapAnalysis.ai_analysis.mitigation_strategies.slice(0, 3).map((strategy, index) => (
+                              <li key={index} className="flex items-start gap-2">
+                                <span className="text-teal-400 mt-1">•</span>
+                                <span>{strategy}</span>
+                              </li>
+                            ))}
+                            {swapAnalysis.ai_analysis.mitigation_strategies.length > 3 && (
+                              <li className="text-xs text-gray-400 pt-2">
+                                +{swapAnalysis.ai_analysis.mitigation_strategies.length - 3} {t('swapAnalysis.moreActions')}
+                              </li>
+                            )}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  
+                  {/* Analysis Method */}
+                  {swapAnalysis.ai_analysis.analysis_method && (
+                    <div className="text-xs text-gray-500 italic pt-2">
+                      {t('swapAnalysis.analysisMethod')}: {swapAnalysis.ai_analysis.analysis_method}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-4 pt-4">
+              <button
+                onClick={() => {
+                  setSelectedScheduledTrain(swapAnalysis.swap_scenario.from_train);
+                  setSelectedStandbyTrain(swapAnalysis.swap_scenario.to_train);
+                  setShowOverride(true);
+                  setShowSwapAnalysis(false);
+                }}
+                className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                </svg>
+                {t('swapAnalysis.applyOverride')}
+              </button>
+              <button
+                onClick={() => setShowSwapAnalysis(false)}
+                className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+              >
+                {t('swapAnalysis.close')}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <div className="text-red-400 text-6xl mb-4">⚠️</div>
+            <h3 className="text-xl font-bold text-gray-200 mb-2">{t('swapAnalysis.failedTitle')}</h3>
+            <p className="text-gray-400">{swapAnalysis.status}</p>
           </div>
         )}
+      </div>
+    </div>
+  </div>
+)}
 
         {/* Validation Modal */}
         {showValidation && validationData && (
