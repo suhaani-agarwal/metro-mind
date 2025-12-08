@@ -19,8 +19,7 @@ import {
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 
-const API_BASE =
-  process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5005";
+const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5005";
 
 // Define types
 interface Operator {

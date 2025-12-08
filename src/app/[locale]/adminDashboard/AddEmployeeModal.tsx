@@ -4,8 +4,7 @@ import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import { useTranslations } from "next-intl";
 
-const API_BASE =
-    "http://localhost:5005";
+const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5005";
 
 interface AddEmployeeModalProps {
     onClose: () => void;

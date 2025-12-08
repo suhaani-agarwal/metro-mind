@@ -5,8 +5,7 @@ import { db } from "@/firebase/config";
 import { collection, doc, writeBatch, query, where, getDocs, limit } from "firebase/firestore";
 import * as XLSX from "xlsx";
 
-const API_BASE =
-  "http://localhost:5005";
+const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5005";
 
 interface Depot {
     name: string;

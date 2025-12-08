@@ -10,7 +10,7 @@ import AddTrainModal from "./AddTrainModal";
 import AddEmployeeModal from "./AddEmployeeModal";
 import { useTranslations } from "next-intl";
 
-const API_BASE = "http://localhost:5005";
+const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5005";
 
 interface Depot {
   name: string;
