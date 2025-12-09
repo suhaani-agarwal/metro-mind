@@ -18,6 +18,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { db } from "@/firebase/config";
 import { collection, query, where, getDocs } from "firebase/firestore";
 
+const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5005";
+
 const getDesignations = (t) => [
   {
     id: "station-master",
@@ -347,7 +349,7 @@ export default function SecurityPage() {
             }
 //hello
             // 2. Send OTP via email
-            const response = await fetch("http://localhost:5005/api/send-otp", {
+            const response = await fetch(`${API_BASE}/api/send-otp`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ email, employeeId: formData.employeeId }),
@@ -379,7 +381,7 @@ export default function SecurityPage() {
           try {
             // Verify OTP via API
             const response = await fetch(
-              `http://localhost:5005/api/verify-otp?employeeId=${formData.employeeId}&otp=${formData.otp}`
+              `${API_BASE}/api/verify-otp?employeeId=${formData.employeeId}&otp=${formData.otp}`
             );
 
             const data = await response.json();
