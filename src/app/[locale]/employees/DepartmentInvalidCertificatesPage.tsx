@@ -138,14 +138,6 @@ const DepartmentInvalidCertificatesPage: React.FC<DepartmentPageProps> = ({
 
     setSubmitting(false);
 
-    if (hasError) {
-      alert(
-        "Some certificates could not be renewed. Please check the console for details."
-      );
-    } else {
-      alert("Selected certificates renewed successfully.");
-    }
-
     setIssuedAt("");
     setValidUntil("");
     setSelected({});
