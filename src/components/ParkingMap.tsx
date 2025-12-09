@@ -384,14 +384,14 @@ export default function AdvancedDepotMap({
 
     // Merge with existing trainStates to preserve the selected train's current position
     setTrainStates((prev) => {
-  const merged: Record<string, { x: number; y: number; moving: boolean }> = {
-    ...finalStates,
-  };
-  if (selected && prev[selected]) {
-    merged[selected] = prev[selected];
-  }
-  return merged;
-});
+      const merged: Record<string, { x: number; y: number; moving: boolean }> = {
+        ...finalStates,
+      };
+      if (selected && prev[selected]) {
+        merged[selected] = prev[selected];
+      }
+      return merged;
+    });
   }, [isSimulating, outputData, depotNodes]);
 
   // When simulation starts, reset train positions to the initial positions from unified.json
@@ -488,7 +488,7 @@ export default function AdvancedDepotMap({
     Object.entries(currentPositions).forEach(([trainId, trackId]) => {
       if (trackId) {
         if (!trackContent[trackId]) trackContent[trackId] = [];
-        
+
         trackContent[trackId].push(trainId);
       }
     });
@@ -1148,39 +1148,24 @@ export default function AdvancedDepotMap({
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+        <div className="flex flex-wrap gap-4 items-center w-full md:w-auto">
           <button
             onClick={() => {
               setIsSimulating(!isSimulating);
               if (!isSimulating) startTimeRef.current = 0;
             }}
+            className="px-6 py-3 rounded-xl font-bold text-white transition-all shadow-lg w-full md:w-auto font-mono text-base"
             style={{
               background: isSimulating
                 ? 'linear-gradient(90deg, #ef4444, #dc2626)'
                 : 'linear-gradient(90deg, #10b981, #059669)',
-              color: 'white',
-              border: 'none',
-              padding: '1rem 2rem',
-              borderRadius: '12px',
-              fontWeight: 'bold',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease',
-              fontFamily: 'monospace',
-              fontSize: '16px',
-              boxShadow: '0 4px 15px rgba(0,0,0,0.3)',
             }}
           >
             {isSimulating ? '⏹️ Stop' : '▶️ Start Simulation'}
           </button>
           <div
-            style={{
-              background: 'rgba(30, 41, 59, 0.8)',
-              padding: '0.75rem 1.5rem',
-              borderRadius: '10px',
-              color: '#e2e8f0',
-              fontFamily: 'monospace',
-              fontSize: '14px',
-            }}
+            className="bg-slate-800/80 px-6 py-3 rounded-xl text-slate-200 font-mono text-sm w-full md:w-auto text-center"
+            style={{}}
           >
             Progress: {Math.round(simProgress * 100)}%
           </div>
@@ -1191,11 +1176,10 @@ export default function AdvancedDepotMap({
         style={{
           background: 'linear-gradient(135deg, #020617, #0f172a)',
           borderRadius: '15px',
-          overflow: 'hidden',
+          overflow: 'auto',
           border: '3px solid rgba(148, 163, 184, 0.2)',
           position: 'relative',
-          boxShadow:
-            'inset 0 0 100px rgba(0,0,0,0.7), 0 20px 60px rgba(0,0,0,0.5)',
+          boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
         }}
       >
         <svg

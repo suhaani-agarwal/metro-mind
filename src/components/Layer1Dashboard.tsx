@@ -28,7 +28,6 @@ const inventory = inventoryData as Record<string, InventoryRecord>;
 // Simplified styles to improve performance
 const styles = {
   container: {
-    padding: '2rem',
     minHeight: '100vh',
     background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)',
     color: '#f8fafc',
@@ -36,12 +35,7 @@ const styles = {
   },
 
   header: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: '2rem',
     marginBottom: '2rem',
-    padding: '1.5rem 2rem',
     background: 'rgba(15, 23, 42, 0.8)',
     borderRadius: '16px',
     border: '1px solid rgba(148, 163, 184, 0.2)',
@@ -89,10 +83,6 @@ const styles = {
   },
 
   main: {
-    display: 'grid',
-    gridTemplateColumns: '400px 1fr',
-    gap: '2rem',
-    alignItems: 'start'
   },
 
   left: {
@@ -166,9 +156,6 @@ const styles = {
   },
 
   rowList: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: '1rem'
   },
 
   smallCard: {
@@ -247,10 +234,6 @@ const styles = {
   },
 
   cleaningItem: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: '1rem',
     background: 'rgba(30, 41, 59, 0.6)',
     borderRadius: '12px',
     border: '1px solid rgba(148, 163, 184, 0.1)',
@@ -262,7 +245,6 @@ const styles = {
   },
 
   itemRight: {
-    textAlign: 'right' as const,
     color: '#cbd5e1'
   },
 
@@ -391,12 +373,12 @@ function CleaningSchedule({ assignments }: { assignments: CleaningAssignment[] }
       ) : (
         <ul style={styles.cleaningList}>
           {assignments.map(a => (
-            <li key={a.train_id} style={styles.cleaningItem}>
+            <li key={a.train_id} style={styles.cleaningItem} className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 gap-4">
               <div style={styles.itemLeft}>
                 <strong>{a.train_id}</strong>
                 <div style={styles.muted}>{a.reason}</div>
               </div>
-              <div style={styles.itemRight}>
+              <div style={styles.itemRight} className="text-left sm:text-right w-full sm:w-auto">
                 <div>{a.start_time} → {a.end_time}</div>
                 <div style={styles.small}>{t('crew')} {a.crew_assigned} • {t('priority')} {a.priority}</div>
               </div>
@@ -433,8 +415,8 @@ export default function Layer1Dashboard() {
 
 
   return (
-    <div style={styles.container}>
-      <header style={styles.header}>
+    <div style={styles.container} className="p-4 md:p-8">
+      <header style={styles.header} className="flex flex-col md:flex-row justify-between items-center gap-4 md:gap-8 p-6">
         <h1 style={styles.title}>{t('title')}</h1>
         <div>
           <button
@@ -456,10 +438,10 @@ export default function Layer1Dashboard() {
 
       {error && <div style={styles.error}>{error}</div>}
 
-      <main style={styles.main}>
-        <div style={styles.left}>
+      <main style={styles.main} className="grid grid-cols-1 lg:grid-cols-[400px_1fr] gap-8 items-start">
+        <div style={styles.left} className="w-full">
           {/* Service and IBL lists */}
-          <div style={styles.rowList}>
+          <div style={styles.rowList} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div style={styles.smallCard}>
               <h4 style={styles.smallCardTitle}>{t('serviceSelected')}</h4>
               <div style={styles.listScroll}>
@@ -526,22 +508,14 @@ export default function Layer1Dashboard() {
                       </div>
                       <div style={{ display: 'grid', gap: '0.5rem' }}>
                         {job.inventory_required.map((inv, i) => (
-                          <div key={i} style={{
-                            background: 'rgba(30, 41, 59, 0.4)',
-                            padding: '0.75rem',
-                            borderRadius: '8px',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            fontSize: '0.85rem'
-                          }}>
+                          <div key={i} className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 p-3 bg-slate-800/40 rounded-lg text-sm">
                             <div>
                               <div style={{ color: '#e2e8f0', fontWeight: '600' }}>{inv.item}</div>
                               <div style={{ color: '#94a3b8', fontSize: '0.8rem', marginTop: '2px' }}>
                                 {t('loc')}: {inv.location}
                               </div>
                             </div>
-                            <div style={{ textAlign: 'right' }}>
+                            <div className="text-left sm:text-right w-full sm:w-auto">
                               <div style={{
                                 color: inv.status === 'In Stock' ? '#4ade80' :
                                   inv.status === 'Low Stock' ? '#fbbf24' : '#f87171',
