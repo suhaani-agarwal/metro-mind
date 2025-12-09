@@ -185,7 +185,7 @@ export default function CBTCPage() {
       if (train.nextTrain) {
         nextTrainData = currentTrains.find(t => t.id === train.nextTrain) || null;
       }
-
+//hello
       // Calculate distance to next train
       let distanceToNext = train.distance || 2000;
       if (nextTrainData) {
