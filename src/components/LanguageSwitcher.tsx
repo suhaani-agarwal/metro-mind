@@ -16,7 +16,7 @@ export default function LanguageSwitcher() {
             router.replace(pathname, { locale: nextLocale });
         });
     }
-
+//hello
     return (
         <div className="fixed top-4 right-4 z-[100]">
             <select
