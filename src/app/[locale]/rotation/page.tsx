@@ -6,7 +6,7 @@ import dynamic from 'next/dynamic';
 import 'leaflet/dist/leaflet.css';
 
 let L: typeof import('leaflet') | undefined;
-
+//hello
 const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5005";
 // Dynamically import leaflet only on client side
 if (typeof window !== 'undefined') {
