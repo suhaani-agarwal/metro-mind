@@ -967,20 +967,29 @@ const RotationPage: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-4 lg:gap-6">
-              <div className="text-right">
-                <div className="text-xl lg:text-2xl font-bold text-teal-300">{rotationData?.total_trains || 0}</div>
-                <div className="text-slate-400 text-xs lg:text-sm">{t('activeTrains')}</div>
-              </div>
-              <div className="h-6 lg:h-8 w-px bg-slate-600"></div>
-              <div className="flex items-center gap-2 lg:gap-3">
-                <div className="bg-slate-700/50 rounded-lg px-2 lg:px-3 py-1 lg:py-2">
-                  <span className="text-teal-300 text-sm lg:text-base">{currentTime}</span>
-                </div>
-                <div className="bg-slate-700/50 rounded-lg px-2 lg:px-3 py-1 lg:py-2">
-                  <span className="text-emerald-300 text-sm lg:text-base">{rotationData?.service_date || 'N/A'}</span>
-                </div>
-              </div>
-            </div>
+  <div className="text-right">
+    <div className="text-xl lg:text-2xl font-bold text-teal-300">{rotationData?.total_trains || 0}</div>
+    <div className="text-slate-400 text-xs lg:text-sm">{t('activeTrains')}</div>
+  </div>
+  <div className="h-6 lg:h-8 w-px bg-slate-600"></div>
+  <div className="flex items-center gap-2 lg:gap-3">
+    <div className="bg-slate-700/50 rounded-lg px-2 lg:px-3 py-1 lg:py-2">
+      <span className="text-teal-300 text-sm lg:text-base">{currentTime}</span>
+    </div>
+    <div className="bg-slate-700/50 rounded-lg px-2 lg:px-3 py-1 lg:py-2">
+      <span className="text-emerald-300 text-sm lg:text-base">{rotationData?.service_date || 'N/A'}</span>
+    </div>
+    
+    {/* Add this button here */}
+    <a
+      href="/cbtc"
+      className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 shadow-lg hover:shadow-blue-500/30 flex items-center gap-2"
+    >
+      <span>🚆</span>
+      <span>Check CBTC Data</span>
+    </a>
+  </div>
+</div>
           </div>
         </div>
 
