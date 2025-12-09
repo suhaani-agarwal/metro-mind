@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { useMap } from 'react-leaflet';
 import dynamic from 'next/dynamic';
@@ -303,6 +303,9 @@ const airportExtensionStations = [
   { id: 'nh_ext_terminal', name: 'NH-544 / Thrissur ext', position: [10.1900, 76.3660] as [number, number], isTerminal: true }
 ];
 
+// Track whether we've already auto-fitted the main line bounds
+let hasFittedMainLineBounds = false;
+
 // NEW: Improved Metro Map Component
 
 // NEW: Metro Map Component with Station Labels
@@ -334,11 +337,15 @@ const MetroMap: React.FC<{ rotationData: RotationData; onStationSelect: (station
     }
   }, []);
 
-  // Calculate bounds for main line (zoomed in view)
+  // Calculate bounds for the whole metro network (zoomed-in initial view)
   const getMainLineBounds = () => {
     if (!L) return null;
-    const mainLinePositions = kochiMetroStations.map(s => s.position);
-    return L.latLngBounds(mainLinePositions);
+    const allPositions = [
+      ...kochiMetroStations,
+      ...kakkanadExtensionStations,
+      ...airportExtensionStations,
+    ].map(s => s.position);
+    return L.latLngBounds(allPositions);
   };
 
   // Custom station icons with different colors per line
@@ -495,24 +502,37 @@ const MetroMap: React.FC<{ rotationData: RotationData; onStationSelect: (station
   // Auto-zoom to main line
   const MapController = () => {
     const map = useMap();
-    const shouldAutoZoom = useRef(true); // Only auto-zoom once
-
     useEffect(() => {
-      if (!map || !L || !shouldAutoZoom.current) return;
+      if (!map || !L) return;
+      if (hasFittedMainLineBounds) return;
 
       try {
+        const handleUserInteraction = () => {
+          // If the user starts interacting before our timeout fires,
+          // mark bounds as already fitted so we never override their zoom.
+          hasFittedMainLineBounds = true;
+        };
+
         const timer = setTimeout(() => {
+          if (hasFittedMainLineBounds) return;
           const bounds = getMainLineBounds();
           if (bounds && map && map.fitBounds && typeof map.fitBounds === 'function') {
             map.fitBounds(bounds, {
               padding: [80, 120],
               maxZoom: 14
             });
-            shouldAutoZoom.current = false; // Disable future auto-zooms
+            hasFittedMainLineBounds = true; // Disable future auto-zooms globally
           }
         }, 100);
 
-        return () => clearTimeout(timer);
+        map.on('zoomstart', handleUserInteraction);
+        map.on('movestart', handleUserInteraction);
+
+        return () => {
+          clearTimeout(timer);
+          map.off('zoomstart', handleUserInteraction);
+          map.off('movestart', handleUserInteraction);
+        };
       } catch (error) {
         console.error('Error fitting map bounds:', error);
       }
@@ -643,8 +663,8 @@ const MetroMap: React.FC<{ rotationData: RotationData; onStationSelect: (station
       <div className="relative bg-gradient-to-br from-slate-900/80 to-slate-800/80 rounded-xl p-4 border border-slate-600/30 h-[400px] lg:h-[700px]">
         <div className="h-full rounded-lg overflow-hidden">
           <MapContainer
-            center={[10.0160, 76.2990]}
-            zoom={3}
+            center={[10.015, 76.30]}
+            zoom={12}
             style={{ height: '100%', width: '100%' }}
             className="rounded-lg"
             zoomControl={true}
@@ -982,7 +1002,7 @@ const RotationPage: React.FC = () => {
     
     {/* Add this button here */}
     <a
-      href="/cbtc"
+      href="/en/cbtc"
       className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 shadow-lg hover:shadow-blue-500/30 flex items-center gap-2"
     >
       <span>🚆</span>
@@ -1292,16 +1312,10 @@ const RotationPage: React.FC = () => {
             )}
 
             {currentView === 'timeline' && (
-              // Fix 4: Add ESLint disable for TimelineView
-              // eslint-disable-next-line @typescript-eslint/no-unused-vars
               <TimelineView
                 events={filteredEvents}
                 trains={rotationData.train_schedules}
-                expandedTrains={expandedTrains}
-                onToggleTrain={toggleTrainExpansion}
                 getDelayColor={getDelayColor}
-                getDelayBgColor={getDelayBgColor}
-                getDelayAnalysis={getDelayAnalysis}
                 selectedTrain={filters.train}
               />
             )}
@@ -1417,42 +1431,90 @@ const OverviewView: React.FC<{
 };
 
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const TimelineView: React.FC<{
   events: StationEvent[];
   trains: TrainSchedule[];
-  expandedTrains: Set<string>;
-  onToggleTrain: (trainId: string) => void;
   getDelayColor: (delay: number) => string;
-  getDelayBgColor: (delay: number) => string;
-  getDelayAnalysis: (train: TrainSchedule) => TrainSchedule['delay_analysis'];
   selectedTrain?: string;
-}> = ({ events, trains, getDelayColor, getDelayBgColor, getDelayAnalysis, selectedTrain: propSelectedTrain = 'All Trains' }) => {
+}> = ({ events, trains, getDelayColor, selectedTrain: propSelectedTrain = 'All Trains' }) => {
   const t = useTranslations('Rotation');
   const [selectedTrain, setSelectedTrain] = useState<string>(propSelectedTrain);
   const [selectedStation, setSelectedStation] = useState<string | null>(null);
   const [currentTrainPosition, setCurrentTrainPosition] = useState<string | null>(null);
 
-  // Get all unique stations in order
+  // Get all unique stations in order, based on the (already filtered) events
   const allStations = useMemo(() => {
-    if (trains.length === 0) return [];
+    if (!events || events.length === 0) return [];
 
     const stationMap = new Map<string, number>();
 
-    trains.forEach(train => {
-      train.station_events.forEach(event => {
-        if (!stationMap.has(event.station)) {
-          stationMap.set(event.station, event.sequence);
-        }
-      });
+    events.forEach(event => {
+      if (!stationMap.has(event.station)) {
+        stationMap.set(event.station, event.sequence);
+      }
     });
 
     return Array.from(stationMap.entries())
       .sort((a, b) => a[1] - b[1])
       .map(([station]) => station);
-  }, [trains]);
+  }, [events]);
 
-  // Get current train's position
+  // Helper to determine if a station has anomaly / maintenance issues
+  const getStationAlertStatus = (stationName: string) => {
+    const stationEvents = events.filter(e => e.station === stationName);
+
+    const hasAnomaly = stationEvents.some(e =>
+      (e.delay_reasons || []).some(reason =>
+        /anomaly|glitch|fault|incident/i.test(reason)
+      )
+    );
+
+    const hasMaintenance = stationEvents.some(e =>
+      (e.delay_reasons || []).some(reason =>
+        /maintenance|maint|breakdown|repair/i.test(reason)
+      )
+    );
+
+    return { hasAnomaly, hasMaintenance };
+  };
+
+  // Simulated preventive maintenance prediction (frontend-only)
+  const preventivePlan = useMemo(() => {
+    if (!events || events.length === 0 || !trains || trains.length === 0) return null;
+
+    // Look for a major delay caused by maintenance within the currently visible events
+    for (const train of trains) {
+      for (const ev of train.station_events) {
+        const inFiltered = events.some(e =>
+          e.station === ev.station &&
+          e.expected_arrival === ev.expected_arrival &&
+          e.rotation === ev.rotation &&
+          e.direction === ev.direction
+        );
+        if (!inFiltered) continue;
+
+        const hasMaintenance = (ev.delay_reasons || []).some(reason =>
+          /maintenance|maint|breakdown|repair/i.test(reason)
+        );
+        const isMajor = ev.significant_delay === 1 || ev.delay_minutes >= 5;
+
+        if (hasMaintenance && isMajor) {
+          const firstStation = train.station_events[0]?.station || ev.station;
+          const lastStation = train.station_events[train.station_events.length - 1]?.station || ev.station;
+          // For simulation: sidetrack at the first station
+          return {
+            trainId: train.train_id,
+            sidetrackStation: firstStation,
+            alternateSidetrackStation: lastStation,
+          };
+        }
+      }
+    }
+
+    return null;
+  }, [events, trains]);
+
+  // Get current train's position (based on full train schedules)
   const getTrainPosition = useMemo(() => {
     if (selectedTrain === 'All Trains' || trains.length === 0) {
       return null;
@@ -1493,39 +1555,47 @@ const TimelineView: React.FC<{
     }
   }, [selectedTrain, getTrainPosition]);
 
-  // Get events for selected station
+  // Get events for selected station (respecting filters & selected train)
   const getStationEvents = (stationName: string) => {
     if (!selectedStation || selectedStation !== stationName) return [];
 
-    const stationEvents: Array<{
-      time: string;
-      delay: number;
-      rotation: number;
-      direction: string;
-      trainId: string;
-      scheduled: string;
-      delayReasons: string[];
-      delayProbability?: number;
-    }> = [];
+    const stationEvents = events
+      .filter(event => event.station === stationName)
+      .filter(event =>
+        selectedTrain === 'All Trains' ? true : findTrainIdForEvent(event) === selectedTrain
+      )
+      .map(event => {
+        const delayReasons = event.delay_reasons || [];
+        const hasAnomaly = delayReasons.some(reason =>
+          /anomaly|glitch|fault|incident/i.test(reason)
+        );
+        const hasMaintenanceGlitch = delayReasons.some(reason =>
+          /maintenance|maint|breakdown|repair/i.test(reason)
+        );
 
-    trains.forEach(train => {
-      train.station_events.forEach(event => {
-        if (event.station === stationName) {
-          stationEvents.push({
-            time: event.expected_arrival,
-            delay: event.delay_minutes,
-            rotation: event.rotation,
-            direction: event.direction,
-            trainId: train.train_id,
-            scheduled: event.scheduled_arrival,
-            delayReasons: event.delay_reasons || [],
-            delayProbability: event.delay_probability || 0
-          });
-        }
-      });
-    });
+        const trainId = findTrainIdForEvent(event);
+        const isSidetrack =
+          !!preventivePlan &&
+          preventivePlan.trainId === trainId &&
+          preventivePlan.sidetrackStation === event.station;
 
-    return stationEvents.sort((a, b) => a.time.localeCompare(b.time));
+        return {
+          time: event.expected_arrival,
+          delay: event.delay_minutes,
+          rotation: event.rotation,
+          direction: event.direction,
+          trainId,
+          scheduled: event.scheduled_arrival,
+          delayReasons,
+          delayProbability: event.delay_probability || 0,
+          hasAnomaly,
+          hasMaintenanceGlitch,
+          isSidetrack,
+        };
+      })
+      .sort((a, b) => a.time.localeCompare(b.time));
+
+    return stationEvents;
   };
 
   const handleStationClick = (station: string) => {
@@ -1562,6 +1632,38 @@ const TimelineView: React.FC<{
             ))}
           </select>
         </div>
+
+        {/* Preventive maintenance banner (simulation / frontend only) */}
+        {preventivePlan && (selectedTrain === 'All Trains' || selectedTrain === preventivePlan.trainId) && (
+          <div className="mt-2 p-4 bg-gradient-to-r from-amber-500/20 via-rose-500/20 to-emerald-500/10 border border-amber-400/60 rounded-xl shadow-lg">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 w-8 h-8 rounded-full bg-amber-500/30 flex items-center justify-center border border-amber-300">
+                  <span className="text-lg">⚙️</span>
+                </div>
+                <div>
+                  <div className="flex flex-wrap items-center gap-2 mb-1">
+                    <span className="text-xs font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full bg-rose-600/80 text-white">
+                      Preventive Maintenance Simulation
+                    </span>
+                    <span className="text-xs font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full bg-amber-500/80 text-slate-900">
+                      Sidetrack Plan
+                    </span>
+                  </div>
+                  <p className="text-sm text-amber-100 font-semibold">
+                    Predicted major delays: preventive maintenance. Send standby train!!
+                  </p>
+                  <p className="text-xs text-amber-100/80 mt-1">
+                    Train <span className="font-bold">{preventivePlan.trainId}</span> will be sidetracked at{" "}
+                    <span className="font-bold">{preventivePlan.sidetrackStation}</span> (first station).{" "}
+                    Standby train to originate from{" "}
+                    <span className="font-bold">{preventivePlan.alternateSidetrackStation}</span>.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Simple Horizontal Metro Line */}
@@ -1575,25 +1677,57 @@ const TimelineView: React.FC<{
             {allStations.map((station, index) => {
               const isSelected = selectedStation === station;
               const isTrainHere = currentTrainPosition === station;
+              const { hasAnomaly, hasMaintenance } = getStationAlertStatus(station);
+              const isSidetrackStation =
+                !!preventivePlan &&
+                (selectedTrain === 'All Trains' || selectedTrain === preventivePlan.trainId) &&
+                preventivePlan.sidetrackStation === station;
 
               return (
                 <div key={station} className="flex flex-col items-center -mt-6">
-                  {/* Station Dot and Line Connection */}
+                    {/* Station Dot and Line Connection */}
                   <div className="relative flex flex-col items-center">
                     {/* Vertical line connecting dot to station name */}
-                    <div className={`h-8 w-0.5 mb-2 ${isSelected ? 'bg-cyan-400' : 'bg-slate-600'}`}></div>
+                    <div className={`h-8 w-0.5 mb-2 ${
+                      isSelected
+                        ? 'bg-cyan-400'
+                        : isSidetrackStation
+                          ? 'bg-amber-400'
+                          : (hasAnomaly || hasMaintenance)
+                            ? 'bg-rose-500'
+                            : 'bg-slate-600'
+                    }`}></div>
 
                     {/* Station Dot */}
                     <button
                       onClick={() => handleStationClick(station)}
-                      className={`relative w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${isSelected
-                        ? 'bg-cyan-500 border-cyan-400 scale-125 shadow-lg shadow-cyan-500/30'
-                        : isTrainHere
-                          ? 'bg-emerald-500 border-emerald-400 shadow-lg shadow-emerald-500/30'
-                          : 'bg-slate-700 border-slate-600 hover:border-teal-400 hover:scale-110'
-                        }`}
+                      className={`relative w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
+                        isSelected
+                          ? 'bg-cyan-500 border-cyan-400 scale-125 shadow-lg shadow-cyan-500/30'
+                          : isTrainHere
+                            ? 'bg-emerald-500 border-emerald-400 shadow-lg shadow-emerald-500/30'
+                            : isSidetrackStation
+                              ? 'bg-amber-500 border-amber-300 shadow-lg shadow-amber-400/50'
+                              : hasAnomaly
+                                ? 'bg-rose-600 border-rose-400 shadow-lg shadow-rose-500/40'
+                                : hasMaintenance
+                                  ? 'bg-amber-500 border-amber-400 shadow-lg shadow-amber-500/40'
+                                  : 'bg-slate-700 border-slate-600 hover:border-teal-400 hover:scale-110'
+                      }`}
                     >
                       <div className={`w-2 h-2 rounded-full ${isSelected ? 'bg-white' : isTrainHere ? 'bg-white' : 'bg-slate-400'}`}></div>
+
+                      {(hasAnomaly || hasMaintenance || isSidetrackStation) && !isSelected && !isTrainHere && (
+                        <span
+                          className={`absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full ${
+                            isSidetrackStation
+                              ? 'bg-amber-300'
+                              : hasAnomaly
+                                ? 'bg-rose-500'
+                                : 'bg-amber-400'
+                          } animate-pulse`}
+                        ></span>
+                      )}
 
                       {/* Train indicator */}
                       {isTrainHere && selectedTrain !== 'All Trains' && (
@@ -1649,9 +1783,26 @@ const TimelineView: React.FC<{
                 {getStationEvents(selectedStation).map((visit, idx) => (
                   <div key={idx} className="p-3 bg-slate-700/40 rounded-lg mb-2 border border-slate-600/30 transition-all duration-200 hover:bg-slate-700/60">
                     <div className="flex items-center justify-between mb-1">
-                      <span className="font-bold text-cyan-300 flex items-center gap-2">
+                      <span className="font-bold text-cyan-300 flex items-center gap-2 flex-wrap">
                         {visit.trainId}
-                        {visit.delay > 1 && <span className="text-rose-400 text-xs font-medium">(Delayed)</span>}
+                        {visit.delay > 1 && (
+                          <span className="text-rose-400 text-xs font-medium">(Delayed)</span>
+                        )}
+                        {visit.hasAnomaly && (
+                          <span className="px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 text-xs font-semibold">
+                            Anomaly
+                          </span>
+                        )}
+                        {visit.hasMaintenanceGlitch && (
+                          <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-xs font-semibold">
+                            Maintenance
+                          </span>
+                        )}
+                        {visit.isSidetrack && (
+                          <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-semibold">
+                            Sidetrack (preventive)
+                          </span>
+                        )}
                       </span>
                       <div className="text-right">
                         <div className={`font-mono font-bold ${getDelayColor(visit.delay)}`}>
