@@ -57,6 +57,87 @@ def get_fitness(train_id: str):
 
     raise HTTPException(status_code=404, detail=f"Train {train_id} not found")
 
+
+def _get_invalid_certificates_by_department(department: str):
+    """
+    Helper to collect all invalid fitness certificates for a given department
+    across all trains, using the same validity logic as get_fitness.
+    """
+    try:
+        with open(UNIFIED_JSON_PATH, "r") as f:
+            data = json.load(f)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="Unified JSON not found")
+
+    department = department.lower()
+    today = datetime.now()
+    invalid_entries = []
+
+    for train in data.get("trains", []):
+        train_id = train.get("id")
+        fitness_data = train.get("fitness_certificates", {}) or {}
+
+        for cert_type, cert_data in fitness_data.items():
+            cert_department = (cert_data.get("department") or cert_type or "").lower()
+            if cert_department != department:
+                continue
+
+            expiry_date = cert_data.get("expiry_date")
+            status = cert_data.get("status", "valid")
+
+            is_expired = status == "expired"
+            if not is_expired and expiry_date:
+                try:
+                    is_expired = datetime.strptime(expiry_date, "%Y-%m-%d") < today
+                except ValueError:
+                    # If date is malformed, treat as expired to be safe
+                    is_expired = True
+
+            if is_expired:
+                invalid_entries.append({
+                    "train_id": train_id,
+                    "certificate_type": cert_type,
+                    "department": cert_department,
+                    "issue_date": cert_data.get("issue_date", ""),
+                    "expiry_date": expiry_date,
+                    "status": status,
+                })
+
+    return {
+        "department": department,
+        "count": len(invalid_entries),
+        "invalid_certificates": invalid_entries,
+    }
+
+
+@router.get("/department/{department}/invalid-certificates")
+def get_invalid_certificates_for_department(department: str):
+    """
+    List all trains whose fitness certificate for the given department
+    is currently invalid/expired.
+
+    Intended for department-level employee dashboards.
+    """
+    return _get_invalid_certificates_by_department(department)
+
+
+@router.get("/rolling-stock/invalid-certificates")
+def get_rolling_stock_invalid_certificates():
+    """Convenience endpoint for the rolling stock employee dashboard."""
+    return _get_invalid_certificates_by_department("rolling_stock")
+
+
+@router.get("/signalling/invalid-certificates")
+def get_signalling_invalid_certificates():
+    """Convenience endpoint for the signalling employee dashboard."""
+    return _get_invalid_certificates_by_department("signalling")
+
+
+@router.get("/telecom/invalid-certificates")
+def get_telecom_invalid_certificates():
+    """Convenience endpoint for the telecom employee dashboard."""
+    return _get_invalid_certificates_by_department("telecom")
+
 @router.post("/update/train")
 def update_train_data(update: NightlyUpdateModel):
     try:
