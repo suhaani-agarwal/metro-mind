@@ -9,7 +9,7 @@ const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5005";
 interface AddEmployeeModalProps {
     onClose: () => void;
 }
-// hello world
+
 interface Depot {
     name: string;
     // Add other properties if your API returns more fields
