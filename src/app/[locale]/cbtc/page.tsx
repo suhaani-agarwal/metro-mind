@@ -190,19 +190,14 @@ export default function CBTCPage() {
     let distanceToNext = train.distance || 2000;
     if (nextTrainData) {
       // Calculate based on positions
-      const currentPos = (train.linePosition / 100) * METRO_CONFIG.ROUTE_LENGTH;
-      const nextPos = (nextTrainData.linePosition / 100) * METRO_CONFIG.ROUTE_LENGTH;
-      let posDiff = nextPos - currentPos;
-      if (posDiff < 0) {
-        posDiff += METRO_CONFIG.ROUTE_LENGTH;
-      }
-      distanceToNext = posDiff;
+      const currentPos = train.linePosition;
+      const nextPos = nextTrainData.linePosition;
+      const posDiff = nextPos > currentPos ? nextPos - currentPos : (100 - currentPos) + nextPos;
+      distanceToNext = (posDiff / 100) * METRO_CONFIG.ROUTE_LENGTH;
     }
     
-    // Calculate braking distance
+    // Rest of the safety calculations remain the same...
     const brakingDistance = calculateBrakingDistance(train.speed, METRO_CONFIG.MAX_DECELERATION);
-    
-    // Calculate safety distance (braking + buffer)
     const safetyDistance = brakingDistance + train.buffer + METRO_CONFIG.MIN_SEPARATION;
     
     // Check for violation (after 10 seconds, make TM019 too close to TM021)
@@ -210,8 +205,6 @@ export default function CBTCPage() {
     if (simulationTime >= 10 && train.id === 'TM019' && !violationTriggered) {
       setViolationTriggered(true);
       warning = true;
-      // Reduce distance for visual effect
-      distanceToNext = safetyDistance * 0.3;
     } else {
       warning = distanceToNext < safetyDistance;
     }
