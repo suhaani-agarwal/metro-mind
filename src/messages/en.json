@@ -656,6 +656,7 @@
         "phoneNumberPlaceholder": "Enter phone number",
         "role": "Role",
         "selectRole": "Select Role",
+        "rolePlaceholder": "Enter role (e.g. Senior Engineer)",
         "depot": "Assigned Depot",
         "selectDepot": "Select Depot",
         "cancel": "Cancel",
