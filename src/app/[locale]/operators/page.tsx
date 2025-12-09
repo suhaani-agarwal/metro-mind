@@ -18,6 +18,7 @@ import {
   Person as PersonIcon,
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
+import RoleBasedNavigation from "@/components/RoleBasedNavigation";
 
 const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5005";
 
@@ -244,7 +245,7 @@ export default function TrainOperatorsPage() {
       if (data.success) {
         setLeaveMessage(
           data.message ||
-            `Marked operator ${selectedOperator} on leave for ${data.service_date}.`,
+          `Marked operator ${selectedOperator} on leave for ${data.service_date}.`,
         );
         // Refresh roster to reflect updated schedule
         fetchDutySummary(serviceDate);
@@ -266,788 +267,793 @@ export default function TrainOperatorsPage() {
   const steps = ['Select Operator', 'View Schedule', 'Generate PDF'];
 
   return (
-    <Container maxWidth="xl" sx={{ py: 4 }}>
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <Paper elevation={3} sx={{
-          p: 4,
-          mb: 4,
-          borderRadius: 2,
-          background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
-          color: '#f8fafc'
-        }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-            <ScheduleIcon sx={{ fontSize: 40, color: '#38bdf8', mr: 2 }} />
-            <Box>
-              <Typography variant="h4" component="h1" fontWeight="bold">
-                Train Operator Duty Scheduler
-              </Typography>
-              <Typography variant="subtitle1" sx={{ color: '#cbd5e1' }}>
-                Generate and manage duty schedules for KMRL train operators
-              </Typography>
-            </Box>
-          </Box>
-
-          <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
-            {steps.map((label) => (
-              <Step key={label}>
-                <StepLabel sx={{ color: '#f8fafc' }}>{label}</StepLabel>
-              </Step>
-            ))}
-          </Stepper>
-
-          {error && (
-            <Alert severity="error" sx={{ mb: 3 }}>
-              {error}
-            </Alert>
-          )}
-
-          {leaveMessage && (
-            <Alert severity="info" sx={{ mb: 3 }}>
-              {leaveMessage}
-            </Alert>
-          )}
-
-          {/* Master daily operator roster */}
-          {dutySummary && (
-            <Card
-              sx={{
-                mb: 4,
-                background: 'rgba(15, 23, 42, 0.9)',
-                borderRadius: 2,
-                border: '1px solid rgba(148, 163, 184, 0.3)',
-              }}
-            >
-              <CardContent>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                  <Box>
-                    <Typography variant="h6" sx={{ color: '#f8fafc' }}>
-                      Daily Operator Roster
-                    </Typography>
-                    <Typography variant="caption" sx={{ color: '#94a3b8' }}>
-                      {new Date(dutySummary.service_date).toLocaleDateString('en-IN', {
-                        weekday: 'long',
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric',
-                      })}
-                    </Typography>
-                  </Box>
-                  <Chip
-                    label={`${dutySummary.duty_assignments.length} duties`}
-                    size="small"
-                    sx={{
-                      background: 'rgba(56, 189, 248, 0.15)',
-                      color: '#38bdf8',
-                      fontWeight: 'bold',
-                      alignSelf: 'center',
-                    }}
-                  />
+    <div className="flex min-h-screen bg-[#0f172a]">
+      <RoleBasedNavigation />
+      <div className="flex-1 md:ml-64 transition-all duration-300">
+        <Container maxWidth="xl" sx={{ py: 4 }}>
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <Paper elevation={3} sx={{
+              p: 4,
+              mb: 4,
+              borderRadius: 2,
+              background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+              color: '#f8fafc'
+            }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                <ScheduleIcon sx={{ fontSize: 40, color: '#38bdf8', mr: 2 }} />
+                <Box>
+                  <Typography variant="h4" component="h1" fontWeight="bold">
+                    Train Operator Duty Scheduler
+                  </Typography>
+                  <Typography variant="subtitle1" sx={{ color: '#cbd5e1' }}>
+                    Generate and manage duty schedules for KMRL train operators
+                  </Typography>
                 </Box>
+              </Box>
 
-                <TableContainer
+              <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
+                {steps.map((label) => (
+                  <Step key={label}>
+                    <StepLabel sx={{ color: '#f8fafc' }}>{label}</StepLabel>
+                  </Step>
+                ))}
+              </Stepper>
+
+              {error && (
+                <Alert severity="error" sx={{ mb: 3 }}>
+                  {error}
+                </Alert>
+              )}
+
+              {leaveMessage && (
+                <Alert severity="info" sx={{ mb: 3 }}>
+                  {leaveMessage}
+                </Alert>
+              )}
+
+              {/* Master daily operator roster */}
+              {dutySummary && (
+                <Card
                   sx={{
-                    maxHeight: 320,
+                    mb: 4,
+                    background: 'rgba(15, 23, 42, 0.9)',
                     borderRadius: 2,
                     border: '1px solid rgba(148, 163, 184, 0.3)',
-                    background: 'rgba(15, 23, 42, 0.9)',
                   }}
                 >
-                  <Table stickyHeader size="small">
-                    <TableHead>
-                      <TableRow>
-                        <TableCell sx={{ color: '#cbd5e1', backgroundColor: '#020617' }}>
-                          Operator
-                        </TableCell>
-                        <TableCell sx={{ color: '#cbd5e1', backgroundColor: '#020617' }}>
-                          Duty ID
-                        </TableCell>
-                        <TableCell sx={{ color: '#cbd5e1', backgroundColor: '#020617' }}>
-                          Shift
-                        </TableCell>
-                        <TableCell sx={{ color: '#cbd5e1', backgroundColor: '#020617' }}>
-                          Train
-                        </TableCell>
-                        <TableCell sx={{ color: '#cbd5e1', backgroundColor: '#020617' }}>
-                          Sign-on
-                        </TableCell>
-                        <TableCell sx={{ color: '#cbd5e1', backgroundColor: '#020617' }}>
-                          Sign-off
-                        </TableCell>
-                        <TableCell sx={{ color: '#cbd5e1', backgroundColor: '#020617' }}>
-                          Hours
-                        </TableCell>
-                        <TableCell sx={{ color: '#cbd5e1', backgroundColor: '#020617' }}>
-                          Status
-                        </TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {dutySummary.duty_assignments.map((row) => {
-                        const shiftUpper = (row.shift || '').toUpperCase();
-                        const isLeave = shiftUpper.includes('LEAVE');
-                        const isOff = shiftUpper.includes('OFF') || isLeave;
-                        const isSpare = shiftUpper.includes('SPARE');
-                        const statusLabel = isLeave
-                          ? 'ON LEAVE'
-                          : isOff
-                            ? 'OFF'
-                            : isSpare
-                              ? 'SPARE'
-                              : 'ON DUTY';
-                        const statusColor = isLeave
-                          ? '#f97316'
-                          : isOff
-                            ? '#64748b'
-                            : isSpare
-                              ? '#fbbf24'
-                              : '#22c55e';
-
-                        return (
-                          <TableRow
-                            key={row.duty_id}
-                            hover
-                            sx={{
-                              cursor: 'pointer',
-                              '&:hover': {
-                                backgroundColor: 'rgba(15, 23, 42, 0.9)',
-                              },
-                            }}
-                            onClick={() => {
-                              setSelectedOperator(row.operator_id);
-                              fetchDutySchedule(row.operator_id);
-                            }}
-                          >
-                            <TableCell sx={{ color: '#e2e8f0' }}>
-                              {row.operator_name}
-                            </TableCell>
-                            <TableCell sx={{ color: '#e2e8f0' }}>{row.duty_id}</TableCell>
-                            <TableCell>
-                              <Chip
-                                label={row.shift}
-                                size="small"
-                                sx={{
-                                  background: 'rgba(148, 163, 184, 0.15)',
-                                  color: getShiftColor(row.shift),
-                                  fontWeight: 'bold',
-                                }}
-                              />
-                            </TableCell>
-                            <TableCell sx={{ color: '#e2e8f0' }}>
-                              {row.train_id || '—'}
-                            </TableCell>
-                            <TableCell sx={{ color: '#e2e8f0' }}>
-                              {row.sign_on ? formatTime(row.sign_on) : '—'}
-                            </TableCell>
-                            <TableCell sx={{ color: '#e2e8f0' }}>
-                              {row.sign_off ? formatTime(row.sign_off) : '—'}
-                            </TableCell>
-                            <TableCell sx={{ color: '#e2e8f0' }}>
-                              {row.total_hours ? `${row.total_hours}h` : '—'}
-                            </TableCell>
-                            <TableCell>
-                              <Chip
-                                label={statusLabel}
-                                size="small"
-                                sx={{
-                                  background: 'rgba(15, 23, 42, 0.9)',
-                                  border: `1px solid ${statusColor}`,
-                                  color: statusColor,
-                                  fontWeight: 'bold',
-                                }}
-                              />
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              </CardContent>
-            </Card>
-          )}
-
-          <Grid container spacing={4} component="div">
-            {/* Left Column - Selection and Summary */}
-            <Grid xs={12} md={4} component="div">
-              <Card sx={{
-                height: '100%',
-                background: 'rgba(15, 23, 42, 0.8)',
-                backdropFilter: 'blur(10px)',
-                border: '1px solid rgba(148, 163, 184, 0.2)',
-                borderRadius: 2
-              }}>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom sx={{ color: '#f8fafc' }}>
-                    <PersonIcon sx={{ mr: 1, verticalAlign: 'middle', color: '#38bdf8' }} />
-                    Operator Selection
-                  </Typography>
-
-                  <FormControl fullWidth sx={{ mb: 3 }}>
-                    <InputLabel sx={{ color: '#94a3b8' }}>Select Operator</InputLabel>
-                    <Select
-                      value={selectedOperator}
-                      label="Select Operator"
-                      onChange={(e: any) => setSelectedOperator(e.target.value)}
-                      disabled={loading}
-                      sx={{
-                        color: '#f8fafc',
-                        '& .MuiOutlinedInput-notchedOutline': {
-                          borderColor: 'rgba(148, 163, 184, 0.3)',
-                        },
-                        '&:hover .MuiOutlinedInput-notchedOutline': {
-                          borderColor: 'rgba(148, 163, 184, 0.5)',
-                        }
-                      }}
-                    >
-                      <MenuItem value="">
-                        <em style={{ color: '#94a3b8' }}>Select an operator</em>
-                      </MenuItem>
-                      {operators.map((operator) => (
-                        <MenuItem key={operator.id} value={operator.id}>
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <Avatar sx={{
-                              width: 36,
-                              height: 36,
-                              mr: 2,
-                              background: `linear-gradient(135deg, #38bdf8 0%, #06d6a0 100%)`,
-                              color: '#0f172a',
-                              fontWeight: 'bold'
-                            }}>
-                              {operator.name.charAt(0)}
-                            </Avatar>
-                            <Box>
-                              <Typography variant="body1" sx={{ color: '#f8fafc' }}>
-                                {operator.name}
-                              </Typography>
-                              <Typography variant="caption" sx={{ color: '#94a3b8' }}>
-                                {operator.employee_id}
-                              </Typography>
-                            </Box>
-                          </Box>
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-
-                  {dutySummary && (
-                    <Box sx={{ mb: 2 }}>
-                      <Typography variant="caption" sx={{ color: '#94a3b8' }}>
-                        Planning for service date:{' '}
-                        <strong>{serviceDate}</strong>
-                      </Typography>
-                    </Box>
-                  )}
-
-                  <Button
-                    variant="contained"
-                    fullWidth
-                    size="large"
-                    onClick={() => fetchDutySchedule(selectedOperator)}
-                    disabled={!selectedOperator || loading}
-                    sx={{
-                      background: 'linear-gradient(135deg, #38bdf8 0%, #06d6a0 100%)',
-                      mb: 2,
-                      py: 1.5,
-                      borderRadius: 2,
-                      fontWeight: 'bold',
-                      '&:hover': {
-                        background: 'linear-gradient(135deg, #06d6a0 0%, #38bdf8 100%)',
-                        transform: 'translateY(-2px)'
-                      }
-                    }}
-                  >
-                    {loading ? <CircularProgress size={24} /> : 'Generate Duty Schedule'}
-                  </Button>
-
-                  <Button
-                    variant="outlined"
-                    fullWidth
-                    size="large"
-                    onClick={markOnLeave}
-                    disabled={!selectedOperator || leaveLoading}
-                    sx={{
-                      mb: 2,
-                      py: 1.25,
-                      borderRadius: 2,
-                      borderColor: 'rgba(248, 250, 252, 0.4)',
-                      color: '#fed7aa',
-                      '&:hover': {
-                        borderColor: '#f97316',
-                        background: 'rgba(249, 115, 22, 0.1)',
-                      },
-                    }}
-                  >
-                    {leaveLoading ? (
-                      <CircularProgress size={24} />
-                    ) : (
-                      'Mark On Leave (Tomorrow) & Reassign'
-                    )}
-                  </Button>
-
-                  {dutySummary && (
-                    <Box sx={{ mt: 3 }}>
-                      <Typography variant="h6" gutterBottom sx={{ color: '#f8fafc' }}>
-                        Daily Summary
-                      </Typography>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                        <Typography variant="body2" sx={{ color: '#94a3b8' }}>Total Operators:</Typography>
-                        <Chip
-                          label={dutySummary.total_operators}
-                          size="small"
-                          sx={{
-                            background: 'rgba(56, 189, 248, 0.2)',
-                            color: '#38bdf8'
-                          }}
-                        />
-                      </Box>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                        <Typography variant="body2" sx={{ color: '#94a3b8' }}>Active Today:</Typography>
-                        <Typography variant="body2" sx={{ color: '#06d6a0' }}>
-                          {dutySummary.duty_assignments?.length || 0}
+                  <CardContent>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                      <Box>
+                        <Typography variant="h6" sx={{ color: '#f8fafc' }}>
+                          Daily Operator Roster
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: '#94a3b8' }}>
+                          {new Date(dutySummary.service_date).toLocaleDateString('en-IN', {
+                            weekday: 'long',
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                          })}
                         </Typography>
                       </Box>
+                      <Chip
+                        label={`${dutySummary.duty_assignments.length} duties`}
+                        size="small"
+                        sx={{
+                          background: 'rgba(56, 189, 248, 0.15)',
+                          color: '#38bdf8',
+                          fontWeight: 'bold',
+                          alignSelf: 'center',
+                        }}
+                      />
                     </Box>
-                  )}
 
-                  {dutySchedule && (
-                    <Box sx={{ mt: 3 }}>
-                      <Typography variant="h6" gutterBottom sx={{ color: '#f8fafc' }}>
-                        Export Options
-                      </Typography>
-                      <Grid container spacing={1} component="div">
-                        <Grid xs={6} component="div">
-                          <Button
-                            variant="outlined"
-                            fullWidth
-                            onClick={generatePDF}
-                            disabled={pdfLoading}
-                            startIcon={pdfLoading ? <CircularProgress size={20} /> : <DownloadIcon />}
-                            sx={{
-                              borderColor: 'rgba(148, 163, 184, 0.3)',
-                              color: '#f8fafc',
-                              '&:hover': {
-                                borderColor: '#38bdf8',
-                                background: 'rgba(56, 189, 248, 0.1)'
-                              }
-                            }}
-                          >
-                            PDF
-                          </Button>
-                        </Grid>
-                        <Grid xs={6} component="div">
-                          <Button
-                            variant="outlined"
-                            fullWidth
-                            onClick={previewPDF}
-                            startIcon={<PreviewIcon />}
-                            sx={{
-                              borderColor: 'rgba(148, 163, 184, 0.3)',
-                              color: '#f8fafc',
-                              '&:hover': {
-                                borderColor: '#fbbf24',
-                                background: 'rgba(251, 191, 36, 0.1)'
-                              }
-                            }}
-                          >
-                            Preview
-                          </Button>
-                        </Grid>
-                      </Grid>
-                    </Box>
-                  )}
-                </CardContent>
-              </Card>
-            </Grid>
+                    <TableContainer
+                      sx={{
+                        maxHeight: 320,
+                        borderRadius: 2,
+                        border: '1px solid rgba(148, 163, 184, 0.3)',
+                        background: 'rgba(15, 23, 42, 0.9)',
+                      }}
+                    >
+                      <Table stickyHeader size="small">
+                        <TableHead>
+                          <TableRow>
+                            <TableCell sx={{ color: '#cbd5e1', backgroundColor: '#020617' }}>
+                              Operator
+                            </TableCell>
+                            <TableCell sx={{ color: '#cbd5e1', backgroundColor: '#020617' }}>
+                              Duty ID
+                            </TableCell>
+                            <TableCell sx={{ color: '#cbd5e1', backgroundColor: '#020617' }}>
+                              Shift
+                            </TableCell>
+                            <TableCell sx={{ color: '#cbd5e1', backgroundColor: '#020617' }}>
+                              Train
+                            </TableCell>
+                            <TableCell sx={{ color: '#cbd5e1', backgroundColor: '#020617' }}>
+                              Sign-on
+                            </TableCell>
+                            <TableCell sx={{ color: '#cbd5e1', backgroundColor: '#020617' }}>
+                              Sign-off
+                            </TableCell>
+                            <TableCell sx={{ color: '#cbd5e1', backgroundColor: '#020617' }}>
+                              Hours
+                            </TableCell>
+                            <TableCell sx={{ color: '#cbd5e1', backgroundColor: '#020617' }}>
+                              Status
+                            </TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {dutySummary.duty_assignments.map((row) => {
+                            const shiftUpper = (row.shift || '').toUpperCase();
+                            const isLeave = shiftUpper.includes('LEAVE');
+                            const isOff = shiftUpper.includes('OFF') || isLeave;
+                            const isSpare = shiftUpper.includes('SPARE');
+                            const statusLabel = isLeave
+                              ? 'ON LEAVE'
+                              : isOff
+                                ? 'OFF'
+                                : isSpare
+                                  ? 'SPARE'
+                                  : 'ON DUTY';
+                            const statusColor = isLeave
+                              ? '#f97316'
+                              : isOff
+                                ? '#64748b'
+                                : isSpare
+                                  ? '#fbbf24'
+                                  : '#22c55e';
 
-            {/* Right Column - Duty Schedule */}
-            <Grid xs={12} md={8} component="div">
-              {dutySchedule ? (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.5 }}
-                >
+                            return (
+                              <TableRow
+                                key={row.duty_id}
+                                hover
+                                sx={{
+                                  cursor: 'pointer',
+                                  '&:hover': {
+                                    backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                                  },
+                                }}
+                                onClick={() => {
+                                  setSelectedOperator(row.operator_id);
+                                  fetchDutySchedule(row.operator_id);
+                                }}
+                              >
+                                <TableCell sx={{ color: '#e2e8f0' }}>
+                                  {row.operator_name}
+                                </TableCell>
+                                <TableCell sx={{ color: '#e2e8f0' }}>{row.duty_id}</TableCell>
+                                <TableCell>
+                                  <Chip
+                                    label={row.shift}
+                                    size="small"
+                                    sx={{
+                                      background: 'rgba(148, 163, 184, 0.15)',
+                                      color: getShiftColor(row.shift),
+                                      fontWeight: 'bold',
+                                    }}
+                                  />
+                                </TableCell>
+                                <TableCell sx={{ color: '#e2e8f0' }}>
+                                  {row.train_id || '—'}
+                                </TableCell>
+                                <TableCell sx={{ color: '#e2e8f0' }}>
+                                  {row.sign_on ? formatTime(row.sign_on) : '—'}
+                                </TableCell>
+                                <TableCell sx={{ color: '#e2e8f0' }}>
+                                  {row.sign_off ? formatTime(row.sign_off) : '—'}
+                                </TableCell>
+                                <TableCell sx={{ color: '#e2e8f0' }}>
+                                  {row.total_hours ? `${row.total_hours}h` : '—'}
+                                </TableCell>
+                                <TableCell>
+                                  <Chip
+                                    label={statusLabel}
+                                    size="small"
+                                    sx={{
+                                      background: 'rgba(15, 23, 42, 0.9)',
+                                      border: `1px solid ${statusColor}`,
+                                      color: statusColor,
+                                      fontWeight: 'bold',
+                                    }}
+                                  />
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  </CardContent>
+                </Card>
+              )}
+
+              <Grid container spacing={4} component="div">
+                {/* Left Column - Selection and Summary */}
+                <Grid xs={12} md={4} component="div">
                   <Card sx={{
+                    height: '100%',
                     background: 'rgba(15, 23, 42, 0.8)',
                     backdropFilter: 'blur(10px)',
                     border: '1px solid rgba(148, 163, 184, 0.2)',
                     borderRadius: 2
                   }}>
                     <CardContent>
-                      {/* Header */}
-                      <Box sx={{
-                        background: 'linear-gradient(135deg, #003366 0%, #0066cc 100%)',
-                        color: 'white',
-                        p: 3,
-                        borderRadius: 1,
-                        textAlign: 'center',
-                        mb: 3
-                      }}>
-                        <Typography variant="h5" gutterBottom>
-                          KOCHI METRO RAIL LIMITED (KMRL)
-                        </Typography>
-                        <Typography variant="subtitle1">
-                          TRAIN OPERATOR DUTY SCHEDULE
-                        </Typography>
-                      </Box>
+                      <Typography variant="h6" gutterBottom sx={{ color: '#f8fafc' }}>
+                        <PersonIcon sx={{ mr: 1, verticalAlign: 'middle', color: '#38bdf8' }} />
+                        Operator Selection
+                      </Typography>
 
-                      {/* Operator Info */}
-                      <Grid container spacing={2} sx={{ mb: 3 }} component="div">
-                        <Grid xs={12} sm={4} component="div">
-                          <Paper sx={{
-                            p: 2,
-                            background: 'rgba(30, 41, 59, 0.6)',
-                            border: '1px solid rgba(148, 163, 184, 0.2)',
-                            borderRadius: 2
-                          }}>
-                            <Typography variant="caption" sx={{ color: '#94a3b8', display: 'block' }}>
-                              DATE
-                            </Typography>
-                            <Typography variant="body1" sx={{ color: '#f8fafc' }}>
-                              {new Date(dutySchedule.date).toLocaleDateString('en-IN', {
-                                weekday: 'long',
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric'
-                              })}
-                            </Typography>
-                          </Paper>
-                        </Grid>
-                        <Grid xs={12} sm={4} component="div">
-                          <Paper sx={{
-                            p: 2,
-                            background: 'rgba(30, 41, 59, 0.6)',
-                            border: '1px solid rgba(148, 163, 184, 0.2)',
-                            borderRadius: 2
-                          }}>
-                            <Typography variant="caption" sx={{ color: '#94a3b8', display: 'block' }}>
-                              DUTY ID
-                            </Typography>
-                            <Typography variant="body1" sx={{ color: '#f8fafc' }}>
-                              {dutySchedule.duty_id}
-                            </Typography>
-                          </Paper>
-                        </Grid>
-                        <Grid xs={12} sm={4} component="div">
-                          <Paper sx={{
-                            p: 2,
-                            background: 'rgba(30, 41, 59, 0.6)',
-                            border: `1px solid ${getShiftColor(dutySchedule.shift)}`,
-                            borderRadius: 2
-                          }}>
-                            <Typography variant="caption" sx={{ color: '#94a3b8', display: 'block' }}>
-                              SHIFT
-                            </Typography>
-                            <Typography variant="body1" sx={{ color: getShiftColor(dutySchedule.shift), fontWeight: 'bold' }}>
-                              {dutySchedule.shift}
-                            </Typography>
-                          </Paper>
-                        </Grid>
-                      </Grid>
+                      <FormControl fullWidth sx={{ mb: 3 }}>
+                        <InputLabel sx={{ color: '#94a3b8' }}>Select Operator</InputLabel>
+                        <Select
+                          value={selectedOperator}
+                          label="Select Operator"
+                          onChange={(e: any) => setSelectedOperator(e.target.value)}
+                          disabled={loading}
+                          sx={{
+                            color: '#f8fafc',
+                            '& .MuiOutlinedInput-notchedOutline': {
+                              borderColor: 'rgba(148, 163, 184, 0.3)',
+                            },
+                            '&:hover .MuiOutlinedInput-notchedOutline': {
+                              borderColor: 'rgba(148, 163, 184, 0.5)',
+                            }
+                          }}
+                        >
+                          <MenuItem value="">
+                            <em style={{ color: '#94a3b8' }}>Select an operator</em>
+                          </MenuItem>
+                          {operators.map((operator) => (
+                            <MenuItem key={operator.id} value={operator.id}>
+                              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                <Avatar sx={{
+                                  width: 36,
+                                  height: 36,
+                                  mr: 2,
+                                  background: `linear-gradient(135deg, #38bdf8 0%, #06d6a0 100%)`,
+                                  color: '#0f172a',
+                                  fontWeight: 'bold'
+                                }}>
+                                  {operator.name.charAt(0)}
+                                </Avatar>
+                                <Box>
+                                  <Typography variant="body1" sx={{ color: '#f8fafc' }}>
+                                    {operator.name}
+                                  </Typography>
+                                  <Typography variant="caption" sx={{ color: '#94a3b8' }}>
+                                    {operator.employee_id}
+                                  </Typography>
+                                </Box>
+                              </Box>
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
 
-                      {/* Operator Details */}
-                      <Paper sx={{
-                        p: 2,
-                        mb: 3,
-                        background: 'rgba(30, 41, 59, 0.6)',
+                      {dutySummary && (
+                        <Box sx={{ mb: 2 }}>
+                          <Typography variant="caption" sx={{ color: '#94a3b8' }}>
+                            Planning for service date:{' '}
+                            <strong>{serviceDate}</strong>
+                          </Typography>
+                        </Box>
+                      )}
+
+                      <Button
+                        variant="contained"
+                        fullWidth
+                        size="large"
+                        onClick={() => fetchDutySchedule(selectedOperator)}
+                        disabled={!selectedOperator || loading}
+                        sx={{
+                          background: 'linear-gradient(135deg, #38bdf8 0%, #06d6a0 100%)',
+                          mb: 2,
+                          py: 1.5,
+                          borderRadius: 2,
+                          fontWeight: 'bold',
+                          '&:hover': {
+                            background: 'linear-gradient(135deg, #06d6a0 0%, #38bdf8 100%)',
+                            transform: 'translateY(-2px)'
+                          }
+                        }}
+                      >
+                        {loading ? <CircularProgress size={24} /> : 'Generate Duty Schedule'}
+                      </Button>
+
+                      <Button
+                        variant="outlined"
+                        fullWidth
+                        size="large"
+                        onClick={markOnLeave}
+                        disabled={!selectedOperator || leaveLoading}
+                        sx={{
+                          mb: 2,
+                          py: 1.25,
+                          borderRadius: 2,
+                          borderColor: 'rgba(248, 250, 252, 0.4)',
+                          color: '#fed7aa',
+                          '&:hover': {
+                            borderColor: '#f97316',
+                            background: 'rgba(249, 115, 22, 0.1)',
+                          },
+                        }}
+                      >
+                        {leaveLoading ? (
+                          <CircularProgress size={24} />
+                        ) : (
+                          'Mark On Leave (Tomorrow) & Reassign'
+                        )}
+                      </Button>
+
+                      {dutySummary && (
+                        <Box sx={{ mt: 3 }}>
+                          <Typography variant="h6" gutterBottom sx={{ color: '#f8fafc' }}>
+                            Daily Summary
+                          </Typography>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                            <Typography variant="body2" sx={{ color: '#94a3b8' }}>Total Operators:</Typography>
+                            <Chip
+                              label={dutySummary.total_operators}
+                              size="small"
+                              sx={{
+                                background: 'rgba(56, 189, 248, 0.2)',
+                                color: '#38bdf8'
+                              }}
+                            />
+                          </Box>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                            <Typography variant="body2" sx={{ color: '#94a3b8' }}>Active Today:</Typography>
+                            <Typography variant="body2" sx={{ color: '#06d6a0' }}>
+                              {dutySummary.duty_assignments?.length || 0}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      )}
+
+                      {dutySchedule && (
+                        <Box sx={{ mt: 3 }}>
+                          <Typography variant="h6" gutterBottom sx={{ color: '#f8fafc' }}>
+                            Export Options
+                          </Typography>
+                          <Grid container spacing={1} component="div">
+                            <Grid xs={6} component="div">
+                              <Button
+                                variant="outlined"
+                                fullWidth
+                                onClick={generatePDF}
+                                disabled={pdfLoading}
+                                startIcon={pdfLoading ? <CircularProgress size={20} /> : <DownloadIcon />}
+                                sx={{
+                                  borderColor: 'rgba(148, 163, 184, 0.3)',
+                                  color: '#f8fafc',
+                                  '&:hover': {
+                                    borderColor: '#38bdf8',
+                                    background: 'rgba(56, 189, 248, 0.1)'
+                                  }
+                                }}
+                              >
+                                PDF
+                              </Button>
+                            </Grid>
+                            <Grid xs={6} component="div">
+                              <Button
+                                variant="outlined"
+                                fullWidth
+                                onClick={previewPDF}
+                                startIcon={<PreviewIcon />}
+                                sx={{
+                                  borderColor: 'rgba(148, 163, 184, 0.3)',
+                                  color: '#f8fafc',
+                                  '&:hover': {
+                                    borderColor: '#fbbf24',
+                                    background: 'rgba(251, 191, 36, 0.1)'
+                                  }
+                                }}
+                              >
+                                Preview
+                              </Button>
+                            </Grid>
+                          </Grid>
+                        </Box>
+                      )}
+                    </CardContent>
+                  </Card>
+                </Grid>
+
+                {/* Right Column - Duty Schedule */}
+                <Grid xs={12} md={8} component="div">
+                  {dutySchedule ? (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.5 }}
+                    >
+                      <Card sx={{
+                        background: 'rgba(15, 23, 42, 0.8)',
+                        backdropFilter: 'blur(10px)',
                         border: '1px solid rgba(148, 163, 184, 0.2)',
                         borderRadius: 2
                       }}>
-                        <Grid container spacing={2} alignItems="center" component="div">
-                          <Grid xs={12} md={6} component="div">
-                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                              <Avatar sx={{
-                                width: 48,
-                                height: 48,
-                                mr: 2,
-                                background: `linear-gradient(135deg, ${getShiftColor(dutySchedule.shift)} 0%, #38bdf8 100%)`,
-                                color: '#0f172a',
-                                fontSize: '1.25rem',
-                                fontWeight: 'bold'
-                              }}>
-                                {dutySchedule.operator_name.charAt(0)}
-                              </Avatar>
-                              <Box>
-                                <Typography variant="h6" sx={{ color: '#f8fafc' }}>
-                                  {dutySchedule.operator_name}
-                                </Typography>
-                                <Typography variant="caption" sx={{ color: '#94a3b8' }}>
-                                  {dutySchedule.employee_id}
-                                </Typography>
-                              </Box>
-                            </Box>
-                          </Grid>
-                          <Grid xs={12} md={6} component="div">
-                            <Typography variant="body1" sx={{ color: '#f8fafc' }}>
-                              <strong>Phone:</strong> {dutySchedule.phone}
+                        <CardContent>
+                          {/* Header */}
+                          <Box sx={{
+                            background: 'linear-gradient(135deg, #003366 0%, #0066cc 100%)',
+                            color: 'white',
+                            p: 3,
+                            borderRadius: 1,
+                            textAlign: 'center',
+                            mb: 3
+                          }}>
+                            <Typography variant="h5" gutterBottom>
+                              KOCHI METRO RAIL LIMITED (KMRL)
                             </Typography>
-                          </Grid>
-                        </Grid>
-                      </Paper>
+                            <Typography variant="subtitle1">
+                              TRAIN OPERATOR DUTY SCHEDULE
+                            </Typography>
+                          </Box>
 
-                      {/* Duty Summary */}
-                      <Paper sx={{
-                        p: 2,
-                        mb: 3,
-                        background: 'rgba(56, 189, 248, 0.1)',
-                        border: '1px solid rgba(56, 189, 248, 0.3)',
-                        borderRadius: 2
-                      }}>
-                        <Typography variant="h6" sx={{ color: '#38bdf8', mb: 2 }}>
-                          Duty Summary
-                        </Typography>
-
-                        <Grid container spacing={2} component="div">
-                          {[
-                            { label: 'Sign-on', value: formatTime(dutySchedule.sign_on), color: '#06d6a0' },
-                            { label: 'Sign-off', value: formatTime(dutySchedule.sign_off), color: '#fbbf24' },
-                            { label: 'Total Duty', value: `${dutySchedule.total_hours}h`, color: '#38bdf8' },
-                            { label: 'Driving', value: `${dutySchedule.driving_hours}h`, color: '#06d6a0' }
-                          ].map((item, index) => (
-                            <Grid xs={6} sm={3} key={index} component="div">
-                              <Box sx={{ textAlign: 'center' }}>
+                          {/* Operator Info */}
+                          <Grid container spacing={2} sx={{ mb: 3 }} component="div">
+                            <Grid xs={12} sm={4} component="div">
+                              <Paper sx={{
+                                p: 2,
+                                background: 'rgba(30, 41, 59, 0.6)',
+                                border: '1px solid rgba(148, 163, 184, 0.2)',
+                                borderRadius: 2
+                              }}>
                                 <Typography variant="caption" sx={{ color: '#94a3b8', display: 'block' }}>
-                                  {item.label}
+                                  DATE
                                 </Typography>
-                                <Typography variant="body1" sx={{ color: item.color, fontWeight: 'medium' }}>
-                                  {item.value}
+                                <Typography variant="body1" sx={{ color: '#f8fafc' }}>
+                                  {new Date(dutySchedule.date).toLocaleDateString('en-IN', {
+                                    weekday: 'long',
+                                    year: 'numeric',
+                                    month: 'long',
+                                    day: 'numeric'
+                                  })}
                                 </Typography>
-                              </Box>
+                              </Paper>
                             </Grid>
-                          ))}
-                        </Grid>
-                      </Paper>
+                            <Grid xs={12} sm={4} component="div">
+                              <Paper sx={{
+                                p: 2,
+                                background: 'rgba(30, 41, 59, 0.6)',
+                                border: '1px solid rgba(148, 163, 184, 0.2)',
+                                borderRadius: 2
+                              }}>
+                                <Typography variant="caption" sx={{ color: '#94a3b8', display: 'block' }}>
+                                  DUTY ID
+                                </Typography>
+                                <Typography variant="body1" sx={{ color: '#f8fafc' }}>
+                                  {dutySchedule.duty_id}
+                                </Typography>
+                              </Paper>
+                            </Grid>
+                            <Grid xs={12} sm={4} component="div">
+                              <Paper sx={{
+                                p: 2,
+                                background: 'rgba(30, 41, 59, 0.6)',
+                                border: `1px solid ${getShiftColor(dutySchedule.shift)}`,
+                                borderRadius: 2
+                              }}>
+                                <Typography variant="caption" sx={{ color: '#94a3b8', display: 'block' }}>
+                                  SHIFT
+                                </Typography>
+                                <Typography variant="body1" sx={{ color: getShiftColor(dutySchedule.shift), fontWeight: 'bold' }}>
+                                  {dutySchedule.shift}
+                                </Typography>
+                              </Paper>
+                            </Grid>
+                          </Grid>
 
-                      {/* Train Assignment */}
-                      <Paper sx={{
-                        p: 2,
-                        mb: 3,
-                        background: 'rgba(251, 191, 36, 0.1)',
-                        border: '1px solid rgba(251, 191, 36, 0.3)',
-                        borderRadius: 2
-                      }}>
-                        <Typography variant="h6" sx={{ color: '#fbbf24', mb: 2 }}>
-                          Train Assignment
-                        </Typography>
-
-                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                          <Chip
-                            label={dutySchedule.train_id}
-                            sx={{
-                              background: 'rgba(251, 191, 36, 0.2)',
-                              color: '#fbbf24',
-                              fontWeight: 'bold',
-                              mr: 2
-                            }}
-                          />
-                          <Typography variant="body1" sx={{ color: '#f8fafc' }}>
-                            {typeof dutySchedule.train_config === 'string'
-                              ? dutySchedule.train_config
-                              : (dutySchedule.train_config as any).config_string}
-                          </Typography>
-                          {typeof dutySchedule.train_config !== 'string' &&
-                            (dutySchedule.train_config as any).known_issues &&
-                            (dutySchedule.train_config as any).known_issues.length > 0 && (
-                              <Box sx={{ mt: 1 }}>
-                                {(dutySchedule.train_config as any).known_issues.map((issue: string, i: number) => (
-                                  <Chip
-                                    key={i}
-                                    label={issue}
-                                    size="small"
-                                    sx={{
-                                      mr: 0.5,
-                                      mb: 0.5,
-                                      background: 'rgba(245, 158, 11, 0.2)',
-                                      color: '#fbbf24',
-                                      border: '1px solid rgba(245, 158, 11, 0.3)',
-                                    }}
-                                  />
-                                ))}
-                              </Box>
-                            )}
-                        </Box>
-                      </Paper>
-
-                      {/* Trip Schedule */}
-                      {dutySchedule.trips && Array.isArray(dutySchedule.trips) && dutySchedule.trips.length > 0 && (
-                        <Paper
-                          sx={{
+                          {/* Operator Details */}
+                          <Paper sx={{
                             p: 2,
                             mb: 3,
-                            background: 'rgba(15, 23, 42, 0.9)',
+                            background: 'rgba(30, 41, 59, 0.6)',
                             border: '1px solid rgba(148, 163, 184, 0.2)',
-                            borderRadius: 2,
-                          }}
-                        >
-                          <Typography variant="h6" sx={{ color: '#e2e8f0', mb: 2 }}>
-                            Trip Schedule
-                          </Typography>
-                          <TableContainer
-                            sx={{
-                              maxHeight: 260,
-                              borderRadius: 1,
-                              border: '1px solid rgba(148, 163, 184, 0.3)',
-                              background: 'rgba(15, 23, 42, 0.9)',
-                            }}
-                          >
-                            <Table size="small" stickyHeader>
-                              <TableHead>
-                                <TableRow>
-                                  <TableCell sx={{ color: '#cbd5e1', backgroundColor: '#020617' }}>
-                                    #
-                                  </TableCell>
-                                  <TableCell sx={{ color: '#cbd5e1', backgroundColor: '#020617' }}>
-                                    Route
-                                  </TableCell>
-                                  <TableCell sx={{ color: '#cbd5e1', backgroundColor: '#020617' }}>
-                                    Depart
-                                  </TableCell>
-                                  <TableCell sx={{ color: '#cbd5e1', backgroundColor: '#020617' }}>
-                                    Arrive
-                                  </TableCell>
-                                  <TableCell sx={{ color: '#cbd5e1', backgroundColor: '#020617' }}>
-                                    Dur.
-                                  </TableCell>
-                                  <TableCell sx={{ color: '#cbd5e1', backgroundColor: '#020617' }}>
-                                    Pax
-                                  </TableCell>
-                                  <TableCell sx={{ color: '#cbd5e1', backgroundColor: '#020617' }}>
-                                    Notes
-                                  </TableCell>
-                                </TableRow>
-                              </TableHead>
-                              <TableBody>
-                                {dutySchedule.trips.map((trip, idx) => {
-                                  // Safely access trip properties with fallbacks
-                                  const tripNumber = trip?.trip_number || `T${idx + 1}`;
-                                  const route = trip?.route || '—';
-                                  const departure = trip?.departure || '—';
-                                  const arrival = trip?.arrival || '—';
-                                  const duration = trip?.duration || '—';
-                                  const paxEstimate = trip?.pax_estimate || '—';
-                                  const notes = trip?.notes || '—';
+                            borderRadius: 2
+                          }}>
+                            <Grid container spacing={2} alignItems="center" component="div">
+                              <Grid xs={12} md={6} component="div">
+                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                  <Avatar sx={{
+                                    width: 48,
+                                    height: 48,
+                                    mr: 2,
+                                    background: `linear-gradient(135deg, ${getShiftColor(dutySchedule.shift)} 0%, #38bdf8 100%)`,
+                                    color: '#0f172a',
+                                    fontSize: '1.25rem',
+                                    fontWeight: 'bold'
+                                  }}>
+                                    {dutySchedule.operator_name.charAt(0)}
+                                  </Avatar>
+                                  <Box>
+                                    <Typography variant="h6" sx={{ color: '#f8fafc' }}>
+                                      {dutySchedule.operator_name}
+                                    </Typography>
+                                    <Typography variant="caption" sx={{ color: '#94a3b8' }}>
+                                      {dutySchedule.employee_id}
+                                    </Typography>
+                                  </Box>
+                                </Box>
+                              </Grid>
+                              <Grid xs={12} md={6} component="div">
+                                <Typography variant="body1" sx={{ color: '#f8fafc' }}>
+                                  <strong>Phone:</strong> {dutySchedule.phone}
+                                </Typography>
+                              </Grid>
+                            </Grid>
+                          </Paper>
 
-                                  // Check for delays safely
-                                  const predictedDelay = trip?.predicted_delay_minutes;
-                                  const delaySummary = trip?.predicted_delay_summary;
-                                  const hasDelay = typeof predictedDelay === 'number' && predictedDelay >= 5;
+                          {/* Duty Summary */}
+                          <Paper sx={{
+                            p: 2,
+                            mb: 3,
+                            background: 'rgba(56, 189, 248, 0.1)',
+                            border: '1px solid rgba(56, 189, 248, 0.3)',
+                            borderRadius: 2
+                          }}>
+                            <Typography variant="h6" sx={{ color: '#38bdf8', mb: 2 }}>
+                              Duty Summary
+                            </Typography>
 
-                                  let displayNotes = notes;
-                                  if (hasDelay && delaySummary) {
-                                    displayNotes = `${delaySummary} (${predictedDelay} min delay)`;
-                                  }
+                            <Grid container spacing={2} component="div">
+                              {[
+                                { label: 'Sign-on', value: formatTime(dutySchedule.sign_on), color: '#06d6a0' },
+                                { label: 'Sign-off', value: formatTime(dutySchedule.sign_off), color: '#fbbf24' },
+                                { label: 'Total Duty', value: `${dutySchedule.total_hours}h`, color: '#38bdf8' },
+                                { label: 'Driving', value: `${dutySchedule.driving_hours}h`, color: '#06d6a0' }
+                              ].map((item, index) => (
+                                <Grid xs={6} sm={3} key={index} component="div">
+                                  <Box sx={{ textAlign: 'center' }}>
+                                    <Typography variant="caption" sx={{ color: '#94a3b8', display: 'block' }}>
+                                      {item.label}
+                                    </Typography>
+                                    <Typography variant="body1" sx={{ color: item.color, fontWeight: 'medium' }}>
+                                      {item.value}
+                                    </Typography>
+                                  </Box>
+                                </Grid>
+                              ))}
+                            </Grid>
+                          </Paper>
 
-                                  return (
-                                    <TableRow key={idx}>
-                                      <TableCell sx={{ color: '#e2e8f0' }}>
-                                        {tripNumber}
+                          {/* Train Assignment */}
+                          <Paper sx={{
+                            p: 2,
+                            mb: 3,
+                            background: 'rgba(251, 191, 36, 0.1)',
+                            border: '1px solid rgba(251, 191, 36, 0.3)',
+                            borderRadius: 2
+                          }}>
+                            <Typography variant="h6" sx={{ color: '#fbbf24', mb: 2 }}>
+                              Train Assignment
+                            </Typography>
+
+                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                              <Chip
+                                label={dutySchedule.train_id}
+                                sx={{
+                                  background: 'rgba(251, 191, 36, 0.2)',
+                                  color: '#fbbf24',
+                                  fontWeight: 'bold',
+                                  mr: 2
+                                }}
+                              />
+                              <Typography variant="body1" sx={{ color: '#f8fafc' }}>
+                                {typeof dutySchedule.train_config === 'string'
+                                  ? dutySchedule.train_config
+                                  : (dutySchedule.train_config as any).config_string}
+                              </Typography>
+                              {typeof dutySchedule.train_config !== 'string' &&
+                                (dutySchedule.train_config as any).known_issues &&
+                                (dutySchedule.train_config as any).known_issues.length > 0 && (
+                                  <Box sx={{ mt: 1 }}>
+                                    {(dutySchedule.train_config as any).known_issues.map((issue: string, i: number) => (
+                                      <Chip
+                                        key={i}
+                                        label={issue}
+                                        size="small"
+                                        sx={{
+                                          mr: 0.5,
+                                          mb: 0.5,
+                                          background: 'rgba(245, 158, 11, 0.2)',
+                                          color: '#fbbf24',
+                                          border: '1px solid rgba(245, 158, 11, 0.3)',
+                                        }}
+                                      />
+                                    ))}
+                                  </Box>
+                                )}
+                            </Box>
+                          </Paper>
+
+                          {/* Trip Schedule */}
+                          {dutySchedule.trips && Array.isArray(dutySchedule.trips) && dutySchedule.trips.length > 0 && (
+                            <Paper
+                              sx={{
+                                p: 2,
+                                mb: 3,
+                                background: 'rgba(15, 23, 42, 0.9)',
+                                border: '1px solid rgba(148, 163, 184, 0.2)',
+                                borderRadius: 2,
+                              }}
+                            >
+                              <Typography variant="h6" sx={{ color: '#e2e8f0', mb: 2 }}>
+                                Trip Schedule
+                              </Typography>
+                              <TableContainer
+                                sx={{
+                                  maxHeight: 260,
+                                  borderRadius: 1,
+                                  border: '1px solid rgba(148, 163, 184, 0.3)',
+                                  background: 'rgba(15, 23, 42, 0.9)',
+                                }}
+                              >
+                                <Table size="small" stickyHeader>
+                                  <TableHead>
+                                    <TableRow>
+                                      <TableCell sx={{ color: '#cbd5e1', backgroundColor: '#020617' }}>
+                                        #
                                       </TableCell>
-                                      <TableCell sx={{ color: '#e2e8f0' }}>
-                                        {route}
+                                      <TableCell sx={{ color: '#cbd5e1', backgroundColor: '#020617' }}>
+                                        Route
                                       </TableCell>
-                                      <TableCell sx={{ color: '#e2e8f0' }}>
-                                        {departure}
+                                      <TableCell sx={{ color: '#cbd5e1', backgroundColor: '#020617' }}>
+                                        Depart
                                       </TableCell>
-                                      <TableCell sx={{ color: '#e2e8f0' }}>
-                                        {arrival}
+                                      <TableCell sx={{ color: '#cbd5e1', backgroundColor: '#020617' }}>
+                                        Arrive
                                       </TableCell>
-                                      <TableCell sx={{ color: '#e2e8f0' }}>
-                                        {duration}
+                                      <TableCell sx={{ color: '#cbd5e1', backgroundColor: '#020617' }}>
+                                        Dur.
                                       </TableCell>
-                                      <TableCell sx={{ color: '#e2e8f0' }}>
-                                        {paxEstimate}
+                                      <TableCell sx={{ color: '#cbd5e1', backgroundColor: '#020617' }}>
+                                        Pax
                                       </TableCell>
-                                      <TableCell sx={{ color: hasDelay ? '#f97316' : '#e2e8f0' }}>
-                                        {displayNotes || '—'}
+                                      <TableCell sx={{ color: '#cbd5e1', backgroundColor: '#020617' }}>
+                                        Notes
                                       </TableCell>
                                     </TableRow>
-                                  );
-                                })}
-                              </TableBody>
-                            </Table>
-                          </TableContainer>
-                        </Paper>
-                      )}
+                                  </TableHead>
+                                  <TableBody>
+                                    {dutySchedule.trips.map((trip, idx) => {
+                                      // Safely access trip properties with fallbacks
+                                      const tripNumber = trip?.trip_number || `T${idx + 1}`;
+                                      const route = trip?.route || '—';
+                                      const departure = trip?.departure || '—';
+                                      const arrival = trip?.arrival || '—';
+                                      const duration = trip?.duration || '—';
+                                      const paxEstimate = trip?.pax_estimate || '—';
+                                      const notes = trip?.notes || '—';
 
-                      {/* Footer */}
-                      <Box sx={{
-                        mt: 3,
-                        pt: 2,
-                        borderTop: '1px solid rgba(148, 163, 184, 0.2)',
-                        textAlign: 'center'
-                      }}>
-                        <Typography variant="caption" sx={{ color: '#94a3b8' }}>
-                          Generated: KMRL Crew System v2.3 | {new Date(dutySchedule.generated_at).toLocaleString()}
+                                      // Check for delays safely
+                                      const predictedDelay = trip?.predicted_delay_minutes;
+                                      const delaySummary = trip?.predicted_delay_summary;
+                                      const hasDelay = typeof predictedDelay === 'number' && predictedDelay >= 5;
+
+                                      let displayNotes = notes;
+                                      if (hasDelay && delaySummary) {
+                                        displayNotes = `${delaySummary} (${predictedDelay} min delay)`;
+                                      }
+
+                                      return (
+                                        <TableRow key={idx}>
+                                          <TableCell sx={{ color: '#e2e8f0' }}>
+                                            {tripNumber}
+                                          </TableCell>
+                                          <TableCell sx={{ color: '#e2e8f0' }}>
+                                            {route}
+                                          </TableCell>
+                                          <TableCell sx={{ color: '#e2e8f0' }}>
+                                            {departure}
+                                          </TableCell>
+                                          <TableCell sx={{ color: '#e2e8f0' }}>
+                                            {arrival}
+                                          </TableCell>
+                                          <TableCell sx={{ color: '#e2e8f0' }}>
+                                            {duration}
+                                          </TableCell>
+                                          <TableCell sx={{ color: '#e2e8f0' }}>
+                                            {paxEstimate}
+                                          </TableCell>
+                                          <TableCell sx={{ color: hasDelay ? '#f97316' : '#e2e8f0' }}>
+                                            {displayNotes || '—'}
+                                          </TableCell>
+                                        </TableRow>
+                                      );
+                                    })}
+                                  </TableBody>
+                                </Table>
+                              </TableContainer>
+                            </Paper>
+                          )}
+
+                          {/* Footer */}
+                          <Box sx={{
+                            mt: 3,
+                            pt: 2,
+                            borderTop: '1px solid rgba(148, 163, 184, 0.2)',
+                            textAlign: 'center'
+                          }}>
+                            <Typography variant="caption" sx={{ color: '#94a3b8' }}>
+                              Generated: KMRL Crew System v2.3 | {new Date(dutySchedule.generated_at).toLocaleString()}
+                            </Typography>
+                          </Box>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  ) : (
+                    <Card sx={{
+                      height: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      p: 8,
+                      background: 'rgba(15, 23, 42, 0.8)',
+                      backdropFilter: 'blur(10px)',
+                      border: '1px solid rgba(148, 163, 184, 0.2)',
+                      borderRadius: 2
+                    }}>
+                      <Box textAlign="center">
+                        <ScheduleIcon sx={{ fontSize: 60, color: 'rgba(148, 163, 184, 0.3)', mb: 2 }} />
+                        <Typography variant="h6" sx={{ color: '#94a3b8', mb: 2 }}>
+                          No Duty Schedule Selected
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: '#64748b' }}>
+                          Select an operator and generate a duty schedule to view details here
                         </Typography>
                       </Box>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ) : (
-                <Card sx={{
-                  height: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  p: 8,
-                  background: 'rgba(15, 23, 42, 0.8)',
-                  backdropFilter: 'blur(10px)',
-                  border: '1px solid rgba(148, 163, 184, 0.2)',
-                  borderRadius: 2
-                }}>
-                  <Box textAlign="center">
-                    <ScheduleIcon sx={{ fontSize: 60, color: 'rgba(148, 163, 184, 0.3)', mb: 2 }} />
-                    <Typography variant="h6" sx={{ color: '#94a3b8', mb: 2 }}>
-                      No Duty Schedule Selected
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: '#64748b' }}>
-                      Select an operator and generate a duty schedule to view details here
-                    </Typography>
-                  </Box>
-                </Card>
-              )}
-            </Grid>
-          </Grid>
-        </Paper>
+                    </Card>
+                  )}
+                </Grid>
+              </Grid>
+            </Paper>
 
-        {/* PDF Preview Dialog */}
-        <Dialog
-          open={previewOpen}
-          onClose={() => setPreviewOpen(false)}
-          maxWidth="lg"
-          fullWidth
-        >
-          <DialogTitle>
-            PDF Preview - {dutySchedule?.operator_name}'s Duty Schedule
-          </DialogTitle>
-          <DialogContent dividers>
-            {dutySchedule && (
-              <iframe
-                src={`${API_BASE}/api/operators/${selectedOperator}/duty/pdf/download`}
-                width="100%"
-                height="600"
-                style={{ border: 'none' }}
-                title="PDF Preview"
-              />
-            )}
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setPreviewOpen(false)}>Close</Button>
-            <Button
-              variant="contained"
-              onClick={generatePDF}
-              startIcon={<DownloadIcon />}
+            {/* PDF Preview Dialog */}
+            <Dialog
+              open={previewOpen}
+              onClose={() => setPreviewOpen(false)}
+              maxWidth="lg"
+              fullWidth
             >
-              Download PDF
-            </Button>
-          </DialogActions>
-        </Dialog>
-      </motion.div>
-    </Container>
+              <DialogTitle>
+                PDF Preview - {dutySchedule?.operator_name}'s Duty Schedule
+              </DialogTitle>
+              <DialogContent dividers>
+                {dutySchedule && (
+                  <iframe
+                    src={`${API_BASE}/api/operators/${selectedOperator}/duty/pdf/download`}
+                    width="100%"
+                    height="600"
+                    style={{ border: 'none' }}
+                    title="PDF Preview"
+                  />
+                )}
+              </DialogContent>
+              <DialogActions>
+                <Button onClick={() => setPreviewOpen(false)}>Close</Button>
+                <Button
+                  variant="contained"
+                  onClick={generatePDF}
+                  startIcon={<DownloadIcon />}
+                >
+                  Download PDF
+                </Button>
+              </DialogActions>
+            </Dialog>
+          </motion.div>
+        </Container>
+      </div>
+    </div>
   );
 }
 

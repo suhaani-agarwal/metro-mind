@@ -5,6 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { auth } from "@/firebase/config";
 import { signOut } from "firebase/auth";
 import { LogOut, Plus, Train, UserPlus } from "lucide-react";
+import RoleBasedNavigation from "@/components/RoleBasedNavigation";
 import DepotCard from "./DepotCard";
 import AddTrainModal from "./AddTrainModal";
 import AddEmployeeModal from "./AddEmployeeModal";
@@ -79,131 +80,134 @@ export default function AdminDashboardPage() {
   }
 
   return (
-    <div
-      className="min-h-screen w-full"
-      style={{
-        background:
-          "linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)",
-      }}
-    >
-      <div className="max-w-7xl mx-auto p-4 md:p-8 space-y-6 md:space-y-8">
-        {/* HEADER */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-slate-50 drop-shadow-lg">
-              {t("title")}
-            </h1>
-            <p className="text-slate-300 mt-2 text-lg">{t("welcome")}</p>
-          </div>
-          <button
-            onClick={handleLogout}
-            className="px-6 py-3 rounded-xl bg-slate-800/40 border border-slate-700/40 
+    <div className="flex min-h-screen bg-slate-900">
+      <RoleBasedNavigation />
+      <div
+        className="flex-1 md:ml-64 w-full transition-all duration-300"
+        style={{
+          background:
+            "linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)",
+        }}
+      >
+        <div className="max-w-7xl mx-auto p-4 md:p-8 space-y-6 md:space-y-8">
+          {/* HEADER */}
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+              <h1 className="text-3xl md:text-4xl font-bold text-slate-50 drop-shadow-lg">
+                {t("title")}
+              </h1>
+              <p className="text-slate-300 mt-2 text-lg">{t("welcome")}</p>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="px-6 py-3 rounded-xl bg-slate-800/40 border border-slate-700/40 
              text-slate-200 backdrop-blur-sm shadow-lg 
              hover:border-red-400/50 hover:text-red-400              hover:shadow-red-500/20 hover:scale-[1.03] 
               transition-all duration-300 flex items-center justify-center gap-2 w-full md:w-auto"
-          >
-            <LogOut size={20} />
-            {t("logout")}
-          </button>
-        </div>
-
-        {/* Decorative Line */}
-        <div className="w-24 h-1 rounded-full bg-gradient-to-r from-sky-400 to-emerald-400"></div>
-
-        {/* ACTION AREA */}
-        <div>
-          {depots.length === 0 ? (
-            <div
-              className="text-center py-16 rounded-2xl border border-slate-600/30 shadow-2xl backdrop-blur-md hover:shadow-3xl transition-all duration-300"
-              style={{ backgroundColor: "rgba(15, 23, 42, 0.8)" }}
             >
-              <h2 className="text-4xl font-semibold text-slate-50 mb-4">
-                {t("noDepotsTitle")}
-              </h2>
-              <p className="text-slate-400 mb-8 text-lg">{t("noDepotsDesc")}</p>
-              <div className="flex flex-col sm:flex-row justify-center gap-4">
-                <button
-                  onClick={handleAddDepot}
-                  className="px-8 py-4 bg-gradient-to-r from-sky-400 to-emerald-400 text-slate-900 rounded-xl hover:shadow-lg transition shadow-md text-lg font-semibold flex items-center gap-2 hover:scale-105 duration-200"
-                >
-                  <Plus size={22} />
-                  {t("addDepot")}
-                </button>
-                <button
-                  onClick={() => setShowAddTrainModal(true)}
-                  className="px-8 py-4 bg-slate-700 text-slate-50 rounded-xl hover:bg-slate-600 transition shadow-md text-lg font-semibold flex items-center gap-2 hover:scale-105 duration-200"
-                >
-                  <Train size={22} />
-                  {t("addTrain")}
-                </button>
-                <button
-                  onClick={() => setShowAddEmployeeModal(true)}
-                  className="px-8 py-4 bg-slate-700 text-slate-50 rounded-xl hover:bg-slate-600 transition shadow-md text-lg font-semibold flex items-center justify-center gap-2 hover:scale-105 duration-200 w-full md:w-auto"
-                >
-                  <UserPlus size={22} />
-                  {t("addEmployee")}
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-6">
-              {/* Section Header */}
-              <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-                <h2 className="text-4xl font-bold text-slate-50">
-                  {t("yourDepots")}
+              <LogOut size={20} />
+              {t("logout")}
+            </button>
+          </div>
+
+          {/* Decorative Line */}
+          <div className="w-24 h-1 rounded-full bg-gradient-to-r from-sky-400 to-emerald-400"></div>
+
+          {/* ACTION AREA */}
+          <div>
+            {depots.length === 0 ? (
+              <div
+                className="text-center py-16 rounded-2xl border border-slate-600/30 shadow-2xl backdrop-blur-md hover:shadow-3xl transition-all duration-300"
+                style={{ backgroundColor: "rgba(15, 23, 42, 0.8)" }}
+              >
+                <h2 className="text-4xl font-semibold text-slate-50 mb-4">
+                  {t("noDepotsTitle")}
                 </h2>
-                <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+                <p className="text-slate-400 mb-8 text-lg">{t("noDepotsDesc")}</p>
+                <div className="flex flex-col sm:flex-row justify-center gap-4">
+                  <button
+                    onClick={handleAddDepot}
+                    className="px-8 py-4 bg-gradient-to-r from-sky-400 to-emerald-400 text-slate-900 rounded-xl hover:shadow-lg transition shadow-md text-lg font-semibold flex items-center gap-2 hover:scale-105 duration-200"
+                  >
+                    <Plus size={22} />
+                    {t("addDepot")}
+                  </button>
                   <button
                     onClick={() => setShowAddTrainModal(true)}
-                    className="px-6 py-3 bg-slate-700 text-slate-50 rounded-xl hover:bg-slate-600 transition shadow-md font-semibold flex items-center justify-center gap-2 hover:scale-105 duration-200 w-full md:w-auto"
+                    className="px-8 py-4 bg-slate-700 text-slate-50 rounded-xl hover:bg-slate-600 transition shadow-md text-lg font-semibold flex items-center gap-2 hover:scale-105 duration-200"
                   >
-                    <Train size={20} />
+                    <Train size={22} />
                     {t("addTrain")}
                   </button>
                   <button
                     onClick={() => setShowAddEmployeeModal(true)}
-                    className="px-6 py-3 bg-slate-700 text-slate-50 rounded-xl hover:bg-slate-600 transition shadow-md font-semibold flex items-center justify-center gap-2 hover:scale-105 duration-200 w-full md:w-auto"
+                    className="px-8 py-4 bg-slate-700 text-slate-50 rounded-xl hover:bg-slate-600 transition shadow-md text-lg font-semibold flex items-center justify-center gap-2 hover:scale-105 duration-200 w-full md:w-auto"
                   >
-                    <UserPlus size={20} />
+                    <UserPlus size={22} />
                     {t("addEmployee")}
-                  </button>
-                  <button
-                    onClick={handleAddDepot}
-                    className="px-6 py-3 rounded-xl bg-gradient-to-r from-sky-500/80 to-emerald-500/80 
-             text-slate-900 font-semibold shadow-lg 
-             hover:from-sky-400 hover:to-emerald-400              hover:shadow-xl hover:scale-[1.05] 
-              transition-all duration-300 flex items-center justify-center gap-2 w-full md:w-auto"
-                  >
-                    <Plus size={20} />
-                    {t("addAnotherDepot")}
                   </button>
                 </div>
               </div>
+            ) : (
+              <div className="space-y-6">
+                {/* Section Header */}
+                <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+                  <h2 className="text-4xl font-bold text-slate-50">
+                    {t("yourDepots")}
+                  </h2>
+                  <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+                    <button
+                      onClick={() => setShowAddTrainModal(true)}
+                      className="px-6 py-3 bg-slate-700 text-slate-50 rounded-xl hover:bg-slate-600 transition shadow-md font-semibold flex items-center justify-center gap-2 hover:scale-105 duration-200 w-full md:w-auto"
+                    >
+                      <Train size={20} />
+                      {t("addTrain")}
+                    </button>
+                    <button
+                      onClick={() => setShowAddEmployeeModal(true)}
+                      className="px-6 py-3 bg-slate-700 text-slate-50 rounded-xl hover:bg-slate-600 transition shadow-md font-semibold flex items-center justify-center gap-2 hover:scale-105 duration-200 w-full md:w-auto"
+                    >
+                      <UserPlus size={20} />
+                      {t("addEmployee")}
+                    </button>
+                    <button
+                      onClick={handleAddDepot}
+                      className="px-6 py-3 rounded-xl bg-gradient-to-r from-sky-500/80 to-emerald-500/80 
+             text-slate-900 font-semibold shadow-lg 
+             hover:from-sky-400 hover:to-emerald-400              hover:shadow-xl hover:scale-[1.05] 
+              transition-all duration-300 flex items-center justify-center gap-2 w-full md:w-auto"
+                    >
+                      <Plus size={20} />
+                      {t("addAnotherDepot")}
+                    </button>
+                  </div>
+                </div>
 
-              {/* Depots Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {depots.map((depot, index) => (
-                  <DepotCard
-                    key={index}
-                    depot={depot}
-                    onDelete={handleDeleteDepot}
-                  />
-                ))}
+                {/* Depots Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {depots.map((depot, index) => (
+                    <DepotCard
+                      key={index}
+                      depot={depot}
+                      onDelete={handleDeleteDepot}
+                    />
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
+
+        {/* Add Train Modal */}
+        {showAddTrainModal && (
+          <AddTrainModal onClose={() => setShowAddTrainModal(false)} />
+        )}
+
+        {/* Add Employee Modal */}
+        {showAddEmployeeModal && (
+          <AddEmployeeModal isOpen={showAddEmployeeModal} onClose={() => setShowAddEmployeeModal(false)} />
+        )}
       </div>
-
-      {/* Add Train Modal */}
-      {showAddTrainModal && (
-        <AddTrainModal onClose={() => setShowAddTrainModal(false)} />
-      )}
-
-      {/* Add Employee Modal */}
-      {showAddEmployeeModal && (
-        <AddEmployeeModal onClose={() => setShowAddEmployeeModal(false)} />
-      )}
     </div>
   );
 }

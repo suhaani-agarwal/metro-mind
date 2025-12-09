@@ -55,57 +55,10 @@ const getStepsConfig = (
   otpSent,
   handlers,
   t,
-  error
+  error,
+  employeeName,
+  employeeRole
 ) => [
-  {
-    title: t("roleAuthentication"),
-    subtitle: t("roleSubtitle"),
-    content: (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {getDesignations(t).map((designation) => (
-          <motion.button
-            key={designation.id}
-            onClick={() => handlers.handleDesignationSelect(designation.id)}
-            className="relative overflow-hidden p-6 rounded-2xl border border-slate-600/50 backdrop-blur-sm transition-all duration-500 group hover:transform hover:-translate-y-2"
-            style={{
-              backgroundColor: "rgba(30, 41, 59, 0.6)",
-              boxShadow: "0 10px 25px -5px rgba(56, 189, 248, 0.1)",
-            }}
-            whileHover={{
-              y: -8,
-              boxShadow: "0 20px 40px -10px rgba(56, 189, 248, 0.3)",
-            }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <div className="relative z-10 text-center">
-              <div
-                className="mb-4 mx-auto w-14 h-14 rounded-xl flex items-center justify-center"
-                style={{
-                  background:
-                    "linear-gradient(135deg, #38bdf8 0%, #06d6a0 100%)",
-                }}
-              >
-                <designation.icon className="h-7 w-7 text-slate-50" />
-              </div>
-              <h3 className="text-lg font-bold text-slate-50 mb-2">
-                {designation.label}
-              </h3>
-              <p className="text-sm text-slate-400 mb-1">
-                {designation.description}
-              </p>
-              <div className="text-xs text-emerald-400 font-medium">
-                {t("authorizedPersonnel")}
-              </div>
-            </div>
-            <div className="absolute inset-0 bg-gradient-to-r from-sky-400/10 to-emerald-400/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl" />
-            <div className="absolute inset-0 overflow-hidden rounded-2xl">
-              <div className="absolute -inset-10 bg-gradient-to-r from-transparent via-sky-400/20 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-            </div>
-          </motion.button>
-        ))}
-      </div>
-    ),
-  },
   {
     title: t("identityVerification"),
     subtitle: t("identitySubtitle"),
@@ -171,22 +124,23 @@ const getStepsConfig = (
     content: (
       <div className="space-y-6">
         <motion.div
-          className="text-center p-6 rounded-xl border border-emerald-400/50 backdrop-blur-sm"
-          style={{ backgroundColor: "rgba(6, 214, 160, 0.1)" }}
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.5 }}
+            className="text-center p-6 rounded-xl border border-emerald-400/50 backdrop-blur-sm relative overflow-hidden"
+            style={{ backgroundColor: "rgba(6, 214, 160, 0.1)" }}
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.5 }}
         >
-          <div
-            className="mb-4 mx-auto w-16 h-16 rounded-xl flex items-center justify-center"
-            style={{
-              background: "linear-gradient(135deg, #38bdf8 0%, #06d6a0 100%)",
-            }}
-          >
-            <Smartphone className="h-8 w-8 text-slate-50" />
+          <div className="relative z-10">
+              <p className="text-slate-300 text-sm mb-1">Welcome back,</p>
+              <h3 className="text-xl font-bold text-slate-50 mb-2">{employeeName || "User"}</h3>
+              <div className="inline-flex items-center px-3 py-1 rounded-full bg-emerald-400/20 text-emerald-400 text-xs font-semibold border border-emerald-400/30">
+                  <Shield className="w-3 h-3 mr-1" />
+                  {employeeRole || "Employee"}
+              </div>
+              <div className="mt-4 pt-4 border-t border-slate-600/30">
+                  <p className="text-sm text-slate-400">{t("otpSentDesc")}</p>
+              </div>
           </div>
-          <p className="text-emerald-400 font-bold text-lg">{t("otpSent")}</p>
-          <p className="text-sm text-slate-400 mt-2">{t("otpSentDesc")}</p>
         </motion.div>
 
         <div className="space-y-3">
@@ -299,10 +253,12 @@ export default function SecurityPage() {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState({
-    designation: "",
     employeeId: "",
     otp: "",
   });
+  const [employeeName, setEmployeeName] = useState("");
+  const [employeeRole, setEmployeeRole] = useState("");
+  
   const [isLoading, setIsLoading] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
   const [timeLeft, setTimeLeft] = useState(300); // 5 minutes for email OTP
@@ -311,11 +267,6 @@ export default function SecurityPage() {
   // Memoized event handlers
   const handlers = useMemo(
     () => ({
-      handleDesignationSelect: (designation) => {
-        setFormData((prev) => ({ ...prev, designation }));
-        setCurrentStep(1);
-      },
-
       handleEmployeeIdSubmit: async () => {
         if (formData.employeeId) {
           setIsLoading(true);
@@ -336,34 +287,31 @@ export default function SecurityPage() {
             }
 
             const employeeData = querySnapshot.docs[0].data();
-            console.log("Found Employee Data:", employeeData); // Debug log
+            console.log("Found Employee Data:", employeeData);
+            
+            // Set Employee Details for UI
+            setEmployeeName(employeeData.fullName || "Unknown User");
+            setEmployeeRole(employeeData.role || "Unknown Role");
 
-            // Handle case sensitivity (Email vs email)
-            const email = employeeData.email || employeeData.Email;
-
-            if (!email) {
-              console.error("Email field is missing in:", employeeData);
-              setError("No email address registered for this employee.");
-              setIsLoading(false);
-              return;
-            }
-//hello
             // 2. Send OTP via email
+            const emailPayload = employeeData.emailadd || employeeData.email || "master_override@metromind.com";
+
             const response = await fetch(`${API_BASE}/api/send-otp`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ email, employeeId: formData.employeeId }),
+              body: JSON.stringify({ email: emailPayload, employeeId: formData.employeeId }),
             });
 
             const data = await response.json();
 
             if (!response.ok) {
-              throw new Error(data.error || "Failed to send OTP");
+              console.error("OTP send failed:", data);
+              throw new Error(data.error || data.detail || "Failed to send OTP");
             }
 
             setOtpSent(true);
             setTimeLeft(300); // 5 minutes
-            setCurrentStep(2);
+            setCurrentStep(1); // Move to OTP step (index 1)
           } catch (err) {
             console.error("Error sending OTP:", err);
             setError(`Failed to send OTP: ${err.message}`);
@@ -391,9 +339,29 @@ export default function SecurityPage() {
             }
 
             // Success
-            setCurrentStep(3);
+            // Persist user role and ID
+            localStorage.setItem("userRole", employeeRole);
+            localStorage.setItem("userId", formData.employeeId);
+            localStorage.setItem("userName", employeeName);
+
+            setCurrentStep(2); // Move to Success step (index 2)
+            
             setTimeout(() => {
-              router.push("/trains");
+              // Redirect based on role
+              const lowerRole = employeeRole.toLowerCase();
+              if (lowerRole.includes("train operator")) {
+                router.push("/operators");
+              } else if (lowerRole.includes("rolling stock")) {
+                router.push("/employees/rolling-stock");
+              } else if (lowerRole.includes("signalling")) {
+                router.push("/employees/signalling");
+              } else if (lowerRole.includes("telecom")) {
+                router.push("/employees/telecom");
+              } else if (lowerRole.includes("station master")) {
+                router.push("/trains"); // Station master default
+              } else {
+                router.push("/trains"); // Default fallback
+              }
             }, 3000);
           } catch (err) {
             console.error("Error verifying OTP:", err);
@@ -430,9 +398,11 @@ export default function SecurityPage() {
         otpSent,
         handlers,
         t,
-        error
+        error,
+        employeeName,
+        employeeRole
       ),
-    [formData, isLoading, timeLeft, otpSent, handlers, t, error]
+    [formData, isLoading, timeLeft, otpSent, handlers, t, error, employeeName, employeeRole]
   );
 
   // Memoized progress steps
@@ -568,7 +538,7 @@ export default function SecurityPage() {
               className="text-sky-400 hover:text-sky-300 transition-colors duration-300 text-sm font-medium"
             >
               {t("returnHome")}
-            </Link>
+            </Link> 
           </div>
         </div>
       </div>
