@@ -1,6 +1,6 @@
 import { OptimizationResponse } from "./types";
 
-const BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5005";
+const BASE = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5005";
 
 async function handleRes<T = unknown>(res: Response): Promise<T> {
   if (!res.ok) throw new Error(await res.text());
