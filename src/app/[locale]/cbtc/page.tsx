@@ -200,11 +200,19 @@ export default function CBTCPage() {
       const brakingDistance = calculateBrakingDistance(train.speed, METRO_CONFIG.MAX_DECELERATION);
       const safetyDistance = brakingDistance + train.buffer + METRO_CONFIG.MIN_SEPARATION;
 
-      // Check for violation (after 10 seconds, make TM019 too close to TM021)
+      // Check for violation (scripted scenario for TM019)
       let warning = false;
-      if (simulationTime >= 10 && train.id === 'TM019' && !violationTriggered) {
-        setViolationTriggered(true);
-        warning = true;
+
+      // Scripted violation scenario:
+      // 1. 0s-10s: Normal operation
+      // 2. 10s-25s: Forced proximity warning (persistent "reddish part")
+      // 3. >25s: Recovery
+      if (train.id === 'TM019') {
+        if (simulationTime >= 10 && simulationTime < 25) {
+          warning = true; // Force warning during violation phase
+        } else {
+          warning = distanceToNext < safetyDistance;
+        }
       } else {
         warning = distanceToNext < safetyDistance;
       }
@@ -243,7 +251,7 @@ export default function CBTCPage() {
         signalAspect,
       };
     });
-  }, [simulationTime, violationTriggered]);
+  }, [simulationTime]);
 
   // Update train dynamics realistically
   const updateTrains = useCallback(() => {
@@ -282,6 +290,25 @@ export default function CBTCPage() {
           newStatus = 'moving';
           newAcceleration = 0;
         }
+
+        // --- SCRIPTED SCENARIO FOR TM019 ---
+        if (train.id === 'TM019') {
+          if (simulationTime >= 10 && simulationTime < 20) {
+            // Phase 2: Approach/Violation
+            // Intentionally move faster than allowed or ignore braking to close the gap
+            // If the preceding train is slower, we will catch up
+            if (newSpeed < METRO_CONFIG.MAX_SPEED) {
+              newAcceleration = 0.5; // Slight acceleration to gain proximity
+              newStatus = 'accelerating';
+            }
+          } else if (simulationTime >= 20 && simulationTime < 28) {
+            // Phase 3: Recovery / Hard Braking
+            // Apply brakes to restore distance
+            newAcceleration = METRO_CONFIG.MAX_DECELERATION * 1.5; // Strong braking
+            newStatus = 'braking';
+          }
+        }
+        // -----------------------------------
 
         // Apply acceleration to speed
         if (newAcceleration !== 0) {
@@ -442,11 +469,11 @@ export default function CBTCPage() {
           </div>
           <div className="flex flex-wrap items-center justify-center gap-4 w-full md:w-auto">
             <div className="bg-gray-800 px-4 py-2 rounded-lg">
-              <div className="text-sm text-gray-400">System Time</div>
-              <div className="text-xl font-mono text-teal-400 flex items-center">
+              {/* <div className="text-sm text-gray-400">System Time</div> */}
+              {/* <div className="text-xl font-mono text-teal-400 flex items-center">
                 <Clock size={16} className="mr-2" />
                 {Math.floor(simulationTime / 60)}:{(simulationTime % 60).toString().padStart(2, '0')}
-              </div>
+              </div> */}
             </div>
             <button
               onClick={toggleSimulation}
@@ -499,7 +526,7 @@ export default function CBTCPage() {
 
             {/* Trains on track */}
             {trains.map((train, index) => {
-              const isViolation = simulationTime >= 10 && train.id === 'T103';
+              const isViolation = train.warning;
               return (
                 <div
                   key={train.id}
@@ -510,41 +537,41 @@ export default function CBTCPage() {
                   {/* Train shape with realistic design */}
                   <div
                     className={`
-                    w-32 h-16 rounded-lg flex items-center justify-center shadow-xl
+                    w-16 h-8 rounded-lg flex items-center justify-center shadow-xl
                     ${isViolation
-                        ? 'bg-gradient-to-r from-red-600 to-red-700 border-2 border-red-400'
-                        : 'bg-gradient-to-r from-teal-600 to-blue-600 border-2 border-teal-400'
+                        ? 'bg-gradient-to-r from-red-600 to-red-700 border border-red-400'
+                        : 'bg-gradient-to-r from-teal-600 to-blue-600 border border-teal-400'
                       }
                     ${train.status === 'stopped' ? 'opacity-80' : ''}
                   `}
                     onClick={() => setSelectedTrain(train)}
                   >
                     {/* Train windows */}
-                    <div className="flex space-x-2">
-                      <div className="w-6 h-6 bg-blue-300/30 rounded"></div>
-                      <div className="w-6 h-6 bg-blue-300/30 rounded"></div>
-                      <div className="w-6 h-6 bg-blue-300/30 rounded"></div>
+                    <div className="flex space-x-1">
+                      <div className="w-3 h-3 bg-blue-300/30 rounded"></div>
+                      <div className="w-3 h-3 bg-blue-300/30 rounded"></div>
+                      <div className="w-3 h-3 bg-blue-300/30 rounded"></div>
                     </div>
 
                     {/* Train ID on side */}
-                    <div className="absolute -left-2 top-1/2 transform -translate-y-1/2 bg-gray-900 text-white text-xs font-bold px-2 py-1 rounded-r">
+                    <div className="absolute -left-2 top-1/2 transform -translate-y-1/2 bg-gray-900 text-white text-[8px] font-bold px-1 rounded-r">
                       {train.id}
                     </div>
 
                     {/* Speed indicator */}
-                    <div className="absolute -right-2 top-0 bg-gray-900 text-teal-300 text-xs px-2 py-1 rounded-l">
-                      {train.speed.toFixed(0)} km/h
+                    <div className="absolute -right-2 top-0 bg-gray-900 text-teal-300 text-[8px] px-1 rounded-l">
+                      {train.speed.toFixed(0)}
                     </div>
 
                     {/* Status indicator */}
-                    <div className="absolute -right-2 bottom-0">
-                      <div className={`w-3 h-3 rounded-full ${getStatusColor(train.status, train.warning)}`}></div>
+                    <div className="absolute -right-1 bottom-0">
+                      <div className={`w-2 h-2 rounded-full ${getStatusColor(train.status, train.warning)}`}></div>
                     </div>
 
                     {/* Direction indicator (headlights) */}
-                    <div className="absolute left-2 top-1/2 transform -translate-y-1/2 flex space-x-1">
-                      <div className="w-2 h-2 bg-yellow-300 rounded-full"></div>
-                      <div className="w-2 h-2 bg-yellow-300 rounded-full"></div>
+                    <div className="absolute left-1 top-1/2 transform -translate-y-1/2 flex space-x-[2px]">
+                      <div className="w-1 h-1 bg-yellow-300 rounded-full"></div>
+                      <div className="w-1 h-1 bg-yellow-300 rounded-full"></div>
                     </div>
                   </div>
 
