@@ -10,12 +10,12 @@ import os
 import logging
 from typing import Dict, Any, List, Optional
 from pathlib import Path
+import uuid
 from datetime import date, datetime, timedelta
 import random
 from fastapi.responses import FileResponse
 from app.services.operators import TrainOperatorService
 from app.services.pdf_generator import DutyPDFGenerator
-import uuid
 
 
 # Load environment variables
@@ -1145,6 +1145,35 @@ async def get_schedule_pdf():
 # OTP Storage (In-memory for now)
 otp_store = {}
 
+# Static Files for Uploads
+from fastapi.staticfiles import StaticFiles
+from config import UPLOAD_DIR
+import shutil
+
+# Ensure upload directory exists
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+# Mount the upload directory to serve images
+app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
+
+@app.post("/api/upload/employee-image")
+async def upload_employee_image(file: UploadFile = File(...)):
+    try:
+        # Generate unique filename
+        file_extension = os.path.splitext(file.filename)[1]
+        unique_filename = f"employee_{uuid.uuid4()}{file_extension}"
+        file_path = os.path.join(UPLOAD_DIR, unique_filename)
+        
+        # Save file
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+            
+        # Return URL (relative path)
+        return {"url": f"/uploads/{unique_filename}", "filename": unique_filename}
+    except Exception as e:
+        logger.error(f"Image upload failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Image upload failed: {str(e)}")
+
 class OTPRequest(BaseModel):
     email: str
     employeeId: str
@@ -1271,14 +1300,20 @@ async def send_otp(request: OTPRequest):
         </html>
         """
 
+        # Determine recipient email
+        # Hardcoded master authorized email as per user request
+        recipient_email = "sakshiaggarwal2706@gmail.com"
+        
+        print(f"DEBUG: Sending OTP to master email: {recipient_email}")
+
         r = resend.Emails.send({
             "from": "MetroMind <onboarding@resend.dev>",
-            "to": [request.email],
+            "to": [recipient_email],
             "subject": "Your MetroMind Security Code",
             "html": html_content
         })
         
-        print(f"📧 Email sent to {request.email} (ID: {r.get('id')})")
+        print(f"📧 Email sent to {recipient_email} (ID: {r.get('id')})")
         
         return {"success": True, "message": "OTP sent successfully", "messageId": r.get('id')}
     except Exception as e:

@@ -1,12 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { X } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { X, Upload, Camera, Image as ImageIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { db } from "@/firebase/config";
+import { collection, addDoc } from "firebase/firestore";
 
 const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5005";
 
 interface AddEmployeeModalProps {
+    isOpen: boolean; // Added isOpen prop
     onClose: () => void;
 }
 
@@ -17,9 +20,10 @@ interface Depot {
     location?: string;
 }
 
-export default function AddEmployeeModal({ onClose }: AddEmployeeModalProps) {
+export default function AddEmployeeModal({ isOpen, onClose }: AddEmployeeModalProps) {
     const t = useTranslations("AddEmployeeModal");
     const [depots, setDepots] = useState<string[]>([]);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Form State
     const [fullName, setFullName] = useState("");
@@ -29,13 +33,74 @@ export default function AddEmployeeModal({ onClose }: AddEmployeeModalProps) {
     const [role, setRole] = useState("");
     const [selectedDepot, setSelectedDepot] = useState("");
 
-    const roles = [
-        "Manager",
-        "Maintenance Staff",
-        "Operations Staff",
-        "Security",
-        "Cleaning Staff"
-    ];
+    // Image State
+    const [imageFile, setImageFile] = useState<File | null>(null);
+    const [previewUrl, setPreviewUrl] = useState<string>("");
+    const [isCameraOpen, setIsCameraOpen] = useState(false);
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+
+    // Image Handlers
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            setImageFile(file);
+            setPreviewUrl(URL.createObjectURL(file));
+        }
+    };
+
+    const startCamera = async () => {
+        try {
+            setIsCameraOpen(true);
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            if (videoRef.current) {
+                videoRef.current.srcObject = stream;
+            }
+        } catch (err) {
+            console.error("Error accessing camera:", err);
+            alert("Could not access camera");
+            setIsCameraOpen(false);
+        }
+    };
+
+    const stopCamera = () => {
+        if (videoRef.current && videoRef.current.srcObject) {
+            const stream = videoRef.current.srcObject as MediaStream;
+            stream.getTracks().forEach(track => track.stop());
+            videoRef.current.srcObject = null;
+        }
+        setIsCameraOpen(false);
+    };
+
+    const capturePhoto = () => {
+        if (videoRef.current && canvasRef.current) {
+            const video = videoRef.current;
+            const canvas = canvasRef.current;
+            const context = canvas.getContext("2d");
+
+            if (context) {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                canvas.toBlob((blob) => {
+                    if (blob) {
+                        const file = new File([blob], `capture-${Date.now()}.jpg`, { type: "image/jpeg" });
+                        setImageFile(file);
+                        setPreviewUrl(URL.createObjectURL(file));
+                        stopCamera();
+                    }
+                }, "image/jpeg");
+            }
+        }
+    };
+
+    // Close logic needs to stop camera if open
+    useEffect(() => {
+        if (!isOpen) {
+            stopCamera();
+        }
+    }, [isOpen]);
 
     useEffect(() => {
         async function fetchDepots() {
@@ -52,7 +117,7 @@ export default function AddEmployeeModal({ onClose }: AddEmployeeModalProps) {
         fetchDepots();
     }, []);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
         if (
@@ -66,9 +131,64 @@ export default function AddEmployeeModal({ onClose }: AddEmployeeModalProps) {
             return;
         }
 
-        // Success message (Mock submission)
-        alert(t("successMessage"));
-        onClose();
+        setIsSubmitting(true);
+
+        try {
+            let profileImageUrl = "";
+
+            // Upload Image if exists (Local Backend)
+            if (imageFile) {
+                const formData = new FormData();
+                formData.append("file", imageFile);
+
+                const uploadResponse = await fetch(`${API_BASE}/api/upload/employee-image`, {
+                    method: "POST",
+                    body: formData,
+                });
+
+                if (!uploadResponse.ok) {
+                    throw new Error("Failed to upload image to backend");
+                }
+
+                const uploadData = await uploadResponse.json();
+                // Construct full URL so it can be used directly in <img> tags
+                // uploadData.url is something like "/uploads/filename.jpg"
+                profileImageUrl = `${API_BASE}${uploadData.url}`;
+            }
+
+            const employeeData = {
+                fullName,
+                employeeId,
+                emailadd: email, // Saved as 'emailadd' per user request to avoid auth matching
+                phoneNumber,
+                role,
+                depot: selectedDepot,
+                profileImageUrl, // Save Full Backend URL to Firestore
+                createdAt: new Date().toISOString()
+            };
+
+            const docRef = await addDoc(collection(db, "employees"), employeeData);
+
+            // Close logic
+            onClose();
+
+            // Reset form
+            setFullName("");
+            setEmployeeId("");
+            setEmail("");
+            setPhoneNumber("");
+            setRole("");
+            setSelectedDepot("");
+            setImageFile(null);
+            setPreviewUrl("");
+
+            alert(t("successMessage"));
+        } catch (err: any) {
+            console.error("Error adding employee:", err);
+            alert(`Error adding employee: ${err.message}`);
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -85,7 +205,69 @@ export default function AddEmployeeModal({ onClose }: AddEmployeeModalProps) {
                     </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <form onSubmit={handleSubmit} className="p-6 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
+
+                    {/* Image Upload Section */}
+                    <div className="space-y-4">
+                        <label className="text-sm font-medium text-slate-300">Profile Photo</label>
+
+                        <div className="flex flex-col items-center gap-4 p-4 rounded-xl bg-slate-800/50 border border-slate-700">
+                            {isCameraOpen ? (
+                                <div className="relative w-full max-w-sm aspect-video bg-black rounded-lg overflow-hidden">
+                                    <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover" />
+                                    <canvas ref={canvasRef} className="hidden" />
+                                    <button
+                                        type="button"
+                                        onClick={capturePhoto}
+                                        className="absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 bg-white text-black rounded-full font-medium shadow-lg hover:bg-slate-200 transition-colors"
+                                    >
+                                        Capture
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={stopCamera}
+                                        className="absolute top-2 right-2 p-1 bg-black/50 text-white rounded-full hover:bg-black/70"
+                                    >
+                                        <X size={20} />
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="flex items-center gap-6 w-full">
+                                    <div className="relative w-24 h-24 rounded-full bg-slate-700/50 border-2 border-slate-600 flex items-center justify-center overflow-hidden shrink-0">
+                                        {previewUrl ? (
+                                            <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
+                                        ) : (
+                                            <ImageIcon className="w-8 h-8 text-slate-500" />
+                                        )}
+                                    </div>
+
+                                    <div className="flex flex-col gap-3 w-full">
+                                        <div className="flex gap-3">
+                                            <label className="flex-1 flex items-center justify-center gap-2 p-3 rounded-xl bg-slate-700 hover:bg-slate-600 transition-colors cursor-pointer text-sm font-medium text-slate-200 border border-slate-600">
+                                                <Upload size={18} />
+                                                Upload Image
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    onChange={handleFileChange}
+                                                    className="hidden"
+                                                />
+                                            </label>
+                                            <button
+                                                type="button"
+                                                onClick={startCamera}
+                                                className="flex-1 flex items-center justify-center gap-2 p-3 rounded-xl bg-slate-700 hover:bg-slate-600 transition-colors text-sm font-medium text-slate-200 border border-slate-600"
+                                            >
+                                                <Camera size={18} />
+                                                Take Photo
+                                            </button>
+                                        </div>
+                                        <p className="text-xs text-slate-400">Supported formats: JPG, PNG. Max size: 5MB.</p>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
 
                     {/* Employee Details */}
                     <div className="space-y-4">
@@ -145,16 +327,13 @@ export default function AddEmployeeModal({ onClose }: AddEmployeeModalProps) {
                             {/* Role */}
                             <div className="space-y-2">
                                 <label className="text-sm font-medium text-slate-300">{t("role")}</label>
-                                <select
+                                <input
+                                    type="text"
                                     value={role}
                                     onChange={(e) => setRole(e.target.value)}
+                                    placeholder={t("rolePlaceholder") || "Enter role"}
                                     className="w-full p-3 rounded-xl bg-slate-800 border border-slate-600 text-slate-50 focus:border-sky-400 outline-none"
-                                >
-                                    <option value="">{t("selectRole")}</option>
-                                    {roles.map((r, idx) => (
-                                        <option key={idx} value={r}>{r}</option>
-                                    ))}
-                                </select>
+                                />
                             </div>
 
                             {/* Assigned Depot */}
@@ -185,9 +364,10 @@ export default function AddEmployeeModal({ onClose }: AddEmployeeModalProps) {
                         </button>
                         <button
                             type="submit"
-                            className="flex-1 py-3 bg-gradient-to-r from-sky-500 to-emerald-500 hover:from-sky-400 hover:to-emerald-400 text-white rounded-xl transition font-semibold shadow-lg"
+                            disabled={isSubmitting}
+                            className={`flex-1 py-3 bg-gradient-to-r from-sky-500 to-emerald-500 hover:from-sky-400 hover:to-emerald-400 text-white rounded-xl transition font-semibold shadow-lg ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
                         >
-                            {t("submit")}
+                            {isSubmitting ? "Submitting..." : t("submit")}
                         </button>
                     </div>
 
