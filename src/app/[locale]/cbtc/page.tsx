@@ -1,4 +1,33 @@
 // app/cbtc/page.tsx
+/*
+  This page is a client-side simulation and visualization that demonstrates
+  how the app will consume and integrate real-time CBTC telemetry once
+  access to live data is available.
+
+  What this page does:
+  - Simulates train dynamics (speed, acceleration, ETA, track position).
+  - Visualizes the line layout and stations and places trains along the route.
+  - uses data from the previous (rotation page) to tell where some train is at what time
+  - tells which train might be prone to collisions and implements predictive maintenance
+  - Computes safety-related metrics (braking distance, separation, signal
+    aspects) and demonstrates a scripted safety-violation scenario used for
+    testing and UI validation.
+  - Provides interactive controls and UI: start/pause/reset, a train status
+    grid, speed and separation charts, and a per-train detail panel.
+
+  Why values are fixed for now:
+  - Inline, deterministic inputs produce reproducible behavior that makes
+    frontend development, debugging, and UX iteration straightforward while
+    a live CBTC feed is not available.
+
+  Important disclaimers:
+  - This is a demonstrative simulation only.
+
+  Next steps:
+  - Integrate a real-time CBTC data source, add a backend for validation and
+    sanitization of telemetry, and keep simulation code separated from any
+    production control logic.
+*/
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from 'react';

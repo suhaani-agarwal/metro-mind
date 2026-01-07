@@ -10,6 +10,7 @@ import joblib
 from datetime import datetime
 import warnings
 from pathlib import Path
+from sklearn.metrics import precision_score, recall_score, f1_score, confusion_matrix, classification_report
 warnings.filterwarnings('ignore')
 
 # Ensure directories exist
@@ -225,12 +226,34 @@ clf_model.fit(X_train, y_train_clf)
 clf_pred = clf_model.predict(X_test)
 clf_proba = clf_model.predict_proba(X_test)[:, 1]
 
+# Calculate all metrics
 clf_accuracy = accuracy_score(y_test_clf, clf_pred)
+clf_precision = precision_score(y_test_clf, clf_pred)
+clf_recall = recall_score(y_test_clf, clf_pred)
+clf_f1 = f1_score(y_test_clf, clf_pred)
 clf_auc = roc_auc_score(y_test_clf, clf_proba)
 
 print(f"✓ Classifier trained successfully!")
 print(f"✓ Accuracy: {clf_accuracy:.3f}")
+print(f"✓ Precision: {clf_precision:.3f}")
+print(f"✓ Recall: {clf_recall:.3f}")
+print(f"✓ F1-Score: {clf_f1:.3f}")
 print(f"✓ AUC: {clf_auc:.3f}")
+
+# Confusion Matrix
+print("\nConfusion Matrix:")
+conf_matrix = confusion_matrix(y_test_clf, clf_pred)
+conf_matrix_df = pd.DataFrame(conf_matrix, 
+                             index=['Actual No Delay', 'Actual Delay'],
+                             columns=['Predicted No Delay', 'Predicted Delay'])
+print(conf_matrix_df.to_string())
+
+# Detailed Classification Report
+print("\n" + "="*50)
+print("Detailed Classification Report")
+print("="*50)
+print(classification_report(y_test_clf, clf_pred, 
+                           target_names=['No Delay', 'Delay']))
 
 # Save models
 print("\n" + "="*50)
